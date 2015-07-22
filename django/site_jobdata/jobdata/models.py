@@ -232,10 +232,14 @@ class Document(models.Model):
         self.file.save(t, cf)
         #self.file.save(fn, cf)
         
-        # make pdf
-        h,t = os.path.splitext(fn)
-        if t == '.html':
+        # make pdf from html files
+        
+        # get the actual filename from django and split the extension
+        h,t = os.path.splitext(self.file.name)
 
+        if t == '.html':
+            print "convert pdf"
+            print "   ",self.file.name
             cmd = [
                     'wkhtmltopdf',
                     '-q',
@@ -246,6 +250,8 @@ class Document(models.Model):
             p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
 
             output = p.communicate()
+            print "output"
+            print output
 
     def __unicode__(self):
         return "{0:_>40}{1:_>40}{2:_>40}".format(

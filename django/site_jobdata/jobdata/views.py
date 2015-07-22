@@ -54,7 +54,7 @@ def form_signup(request):
     return render(request, 'jobdata/form_signup.html', {'form':form})
 
 def form_login(request):
-    #print "views.form_login"
+    #rint "views.form_login"
 
     redirect = request.POST['redirect']
     redirect_url = request.POST['redirect_url']
@@ -90,7 +90,7 @@ def form_login(request):
     return render(request, 'jobdata/form_login.html', c)
 
 def my_render(request, redirect, redirect_url, user):
-    #print "views.my_render", redirect
+    #rint "views.my_render", redirect
 
     if redirect == 'jobdata:json_editor':
         return json_editor(request)
@@ -103,13 +103,13 @@ def my_render(request, redirect, redirect_url, user):
     return render(request, redirect_url, c)
 
 def logout(request):
-    print "views.logout"
+    #rint "views.logout"
     
     django.contrib.auth.logout(request)
    
     # Redirect to a success page
-    print request.user
-    print request.user.is_authenticated()
+    #rint request.user
+    #rint request.user.is_authenticated()
 
     redirect     = request.POST['redirect']
     redirect_url = request.POST['redirect_url']
@@ -123,7 +123,7 @@ def logout(request):
 
 
 def json_editor(request):
-    print "views.json_editor"
+    #rint "views.json_editor"
  
     user = request.user
 
@@ -154,13 +154,13 @@ def json_editor(request):
     return render(request, 'jobdata/json_editor.html', c)
 
 def auth_check(request, page):
-    print "views.auth_check", page
+    #rint "views.auth_check", page
     
     user = request.user
     if request.user.is_authenticated():
         return None
 
-    print "auth failed"
+    #rint "auth failed"
 
     c = {
             'form':jobdata.forms.login(),
@@ -175,7 +175,7 @@ import python_resume
 
 
 def json_render(request):
-    print "views.json_render"
+    #rint "views.json_render"
  
     user = request.user
 
@@ -219,7 +219,7 @@ def json_render(request):
     return render(request, 'jobdata/json_render.html', c)
 
 def document_render(request, document_id):
-    print "views.document_render", request.method
+    #rint "views.document_render", request.method
     
     document = jobdata.models.Document.objects.get(pk=document_id)
     user = request.user
@@ -248,14 +248,14 @@ def document_render(request, document_id):
                 s0 = set(x['version'])
                 s1 = set(options_json['version'])
                 res = s0.issubset(s1)
-                #print "comparing {} {} {}".format(s0,s1,res)
+                #rint "comparing {} {} {}".format(s0,s1,res)
                 if not s0.issubset(s1):
                     return False
         return True
 
     _,paths = jobdata.html.json_to_html(j, document.id, json_html_filter)
     
-    #print "\n".join(
+    #rint "\n".join(
     #        ["paths"]+list("    {} {}".format(p,myjson.get_element(j,p + ['_selector'])) for p in paths))
 
 
@@ -273,14 +273,14 @@ def document_render(request, document_id):
 
                 sel = myjson.get_element(j,s + ['_selector'])
 
-                #print "   ",s,sel[str(document.id)],v
+                #rint "   ",s,sel[str(document.id)],v
                 sel[str(document.id)] = True
-                #print "   ",s,sel[str(document.id)],v
+                #rint "   ",s,sel[str(document.id)],v
 
         # remaining path are unchecked
-        #print "remaining paths"
+        #rint "remaining paths"
         for p in paths:
-            #print "   ",p
+            #rint "   ",p
             o = myjson.get_element(j,p)
             sel = o['_selector']
             sel[str(document.id)] = False
@@ -297,9 +297,9 @@ def document_render(request, document_id):
 
     def temp_test(x):
         if isinstance(x, dict):
-            #print "temp_test"
+            #rint "temp_test"
             if x.has_key(u'_selector'):
-                #print "TRUE"
+                #rint "TRUE"
                 return True
         return False
    
@@ -326,7 +326,7 @@ def document_render(request, document_id):
     # save to file
     html = g.render_text(name = h, fmt = t)
 
-    #print "write to", repr(document.filename())
+    #rint "write to", repr(document.filename())
     
     document.file_write_str(html)
 
