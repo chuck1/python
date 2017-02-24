@@ -3,11 +3,15 @@ import os
 
 class Makefile(object):
     def __init__(self):
-        self.rules = {}
+        self.rules = []
+    def find_rule(self, target):
+        for rule in self.rules:
+            if target in list(rule.f_out()):
+                return rule
+        return None
     def make(self, filename):
-        try:
-            rule = self.rules[filename]
-        except:
+        rule = self.find_rule(filename)
+        if rule is None:
             if os.path.exists(filename):
                 pass
             else:
@@ -27,13 +31,15 @@ class Rule(object):
         for f in f_in:
             master.make(f)
         
-        if not os.path.exists(f_out): return True
+        for f in f_out:
+            if not os.path.exists(f): return True
 
-        mtime = os.path.getmtime(f_out)
+        mtime = [os.path.getmtime(f) for f in f_out]
         
         for f in f_in:
-            if os.path.getmtime(f) > mtime:
-                return True
+            for t in mtime:
+                if os.path.getmtime(f) > t:
+                    return True
 
         return False
 
