@@ -13,7 +13,9 @@ class Makefile(object):
         self.rules = []
     def find_rule(self, target):
         for rule in self.rules:
-            if target in list(rule.f_out()):
+            f_out = list(rule.f_out())
+            #print target, f_out
+            if target in f_out:
                 return rule
         return None
     def make(self, filename):
@@ -38,10 +40,10 @@ class Rule(object):
         self.f_in = f_in
         self.func = func
 
-    def check(self, master, f_out, f_in):
+    def check(self, makefile, f_out, f_in):
 
         for f in f_in:
-            master.make(f)
+            makefile.make(f)
         
         for f in f_out:
             if not os.path.exists(f): return True
@@ -55,11 +57,11 @@ class Rule(object):
 
         return False
 
-    def make(self, master):
+    def make(self, makefile):
         f_in = list(self.f_in())
         f_out = list(self.f_out())
 
-        if self.check(master, f_out, f_in):
+        if self.check(makefile, f_out, f_in):
             ret = self.func(f_out, f_in)
 
             if ret != 0:
