@@ -18,13 +18,23 @@ class Makefile(object):
             if target in f_out:
                 return rule
         return None
-    def make(self, filename):
-        rule = self.find_rule(filename)
+    def make(self, t):
+        
+        #print('make', t)
+
+        if t is None:
+            raise Exception('target is None'+str(t))
+
+        if isinstance(t, Rule):
+            t.make(self)
+            return
+
+        rule = self.find_rule(t)
         if rule is None:
-            if os.path.exists(filename):
+            if os.path.exists(t):
                 pass
             else:
-                raise Exception("no rules to make {}".format(filename))
+                raise Exception("no rules to make {}".format(t))
         else:
             rule.make(self)
 
@@ -41,6 +51,10 @@ class Rule(object):
         self.func = func
 
     def check(self, makefile, f_out, f_in):
+        
+        #print('f_in',f_in)
+        if None in f_in:
+            raise Exception('None in f_in ' + str(self))
 
         for f in f_in:
             makefile.make(f)
@@ -51,9 +65,14 @@ class Rule(object):
         mtime = [os.path.getmtime(f) for f in f_out]
         
         for f in f_in:
+            if isinstance(f, Rule):
+                #return True
+                continue
+
             for t in mtime:
-                if os.path.getmtime(f) > t:
-                    return True
+                if os.path.exists(f):
+                    if os.path.getmtime(f) > t:
+                        return True
 
         return False
 
