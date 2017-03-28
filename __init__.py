@@ -50,18 +50,18 @@ class Rule(object):
         self.f_in = f_in
         self.func = func
 
-    def check(self, makefile, f_out, f_in):
+        self.up_to_date = False
         
-        #print('f_in',f_in)
+    def check(self, makefile, f_out, f_in):
         if None in f_in:
             raise Exception('None in f_in ' + str(self))
-
+        
         for f in f_in:
             makefile.make(f)
         
         for f in f_out:
             if not os.path.exists(f): return True
-
+        
         mtime = [os.path.getmtime(f) for f in f_out]
         
         for f in f_in:
@@ -77,6 +77,9 @@ class Rule(object):
         return False
 
     def make(self, makefile):
+
+        if self.up_to_date: return
+
         f_in = list(self.f_in())
         f_out = list(self.f_out())
 
@@ -85,6 +88,8 @@ class Rule(object):
 
             if ret != 0:
                 raise BuildError(str(self) + ' return code ' + str(ret))
+
+        self.up_to_date = True
 
 """
 a rule to which we can pass a static list of files for f_out and f_in
