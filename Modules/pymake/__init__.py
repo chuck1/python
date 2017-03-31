@@ -34,6 +34,8 @@ class Makefile(object):
             if os.path.exists(t):
                 pass
             else:
+                for r in self.rules:
+                    print(r,list(r.f_out()))
                 raise Exception("no rules to make {}".format(t))
         else:
             rule.make(self)
