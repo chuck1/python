@@ -6,6 +6,7 @@ import urllib.parse
 import urllib.request
 import pipes
 import pickle
+import mysocket
 
 def debug_google_response(d):
     print('items')
@@ -81,19 +82,19 @@ def compute_travel_time(src, dst, leave, arrive):
     
     return datetime.timedelta(seconds=seconds)
 
-def compute_travel_time_2(wp):
+def compute_travel_time_2(wp, leave, arrive):
 
     assert len(wp) > 1
 
     w1 = wp.pop(0)
     w2 = wp.pop(0)
 
-    dur = compute_travel_time(w1, w2)
+    dur = compute_travel_time(w1, w2, leave, arrive)
 
     while(wp):
         w1 = w2
         w2 = wp.pop(0)
-        dur += compute_travel_time(w1, w2)
+        dur += compute_travel_time(w1, w2, leave, arrive)
 
     return dur
 
@@ -155,25 +156,29 @@ class Deliver(Task):
 
         wp2.append(trip.dst)
 
-        dur2 = compute_travel_time_2(wp2)
+        dur2 = compute_travel_time_2(wp2, trip.leave, trip.arrive)
 
         print('dur1',dur1)
         print('dur2',dur2)
     
         print('will add {} travel time'.format(dur2-dur1))
 
-class Client(pipes.Client):
+#class Client(pipes.Client):
+class Client(mysocket.Client):
     def __init__(self):
-        super(Client, self).__init__("/tmp/reminder_pipe_1", "/tmp/reminder_pipe_2")
+        #super(Client, self).__init__("/tmp/reminder_pipe_1", "/tmp/reminder_pipe_2")
+        super(Client, self).__init__("", 6000)
 
-class Server(pipes.Server):
+#class Server(pipes.Server):
+class Server(mysocket.Server):
     def __init__(self):
-        super(Server, self).__init__("/tmp/reminder_pipe_1", "/tmp/reminder_pipe_2")
+        #super(Server, self).__init__("/tmp/reminder_pipe_1", "/tmp/reminder_pipe_2")
+        super(Server, self).__init__("", 6000)
 
         self.status = None
         self.tasks = list()
 
-    def do_read(self, b):
+    def do_read(self, s, b):
         print('reminder server recieved:')
         o = pickle.loads(b)
         print(o)
@@ -196,7 +201,8 @@ class Server(pipes.Server):
             print('which is a plan')
 
         # confirmation
-        self.write('message recieved'.encode('utf-8'))
+        s.send('message recieved'.encode('utf-8'))
+
 
 """
 types of interactions with program
