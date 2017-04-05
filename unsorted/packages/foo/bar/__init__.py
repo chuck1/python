@@ -1,0 +1,4 @@
+
+import foo
+
+print(foo)

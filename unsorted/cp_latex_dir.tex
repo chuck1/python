@@ -1,0 +1,21 @@
+import os
+import re
+
+def process(text):
+	
+	mates = re.findall('Media.*tex', text)
+
+	for m in mates:
+		print m
+	
+
+for dirpath, dirnames, filename in os.walk('src'):
+	
+	for filename in filenames:
+
+		if '.tex' in filename:
+			with open(filename, 'r') as f:
+
+				text = f.read()
+				
+				process(text)
