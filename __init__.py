@@ -19,6 +19,10 @@ class Makefile(object):
                 return rule
         return None
     def make(self, t):
+
+        if isinstance(t, list):
+            for t1 in t: self.make(t1)
+            return
         
         #print('make', t)
 
