@@ -55,6 +55,7 @@ class Rule(object):
         self.up_to_date = False
         
     def check(self, makefile, f_out, f_in):
+
         if None in f_in:
             raise Exception('None in f_in ' + str(self))
         
@@ -81,8 +82,8 @@ class Rule(object):
     def make(self, makefile):
 
         if self.up_to_date: return
-
-        f_in = list(self.f_in())
+        
+        f_in = list(self.f_in(makefile))
         f_out = list(self.f_out())
 
         if self.check(makefile, f_out, f_in):
@@ -93,6 +94,7 @@ class Rule(object):
 
         self.up_to_date = True
 
+
 """
 a rule to which we can pass a static list of files for f_out and f_in
 """
@@ -100,7 +102,7 @@ class RuleStatic(Rule):
     def __init__(self, static_f_out, static_f_in, func):
         super(RuleStatic, self).__init__(
                 lambda: static_f_out,
-                lambda: static_f_in,
+                lambda makefile: static_f_in,
                 func)
 
 
