@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
+import os
 import datetime
 import json
+import urllib.parse
 import urllib.request
 import pipes
 import pickle
@@ -34,25 +36,44 @@ def debug_google_response(d):
                 print('    ',step['maneuver'] if 'maneuver' in step else None)
                 print('    ',step['html_instructions'] if 'html_instructions' in step else None)
     
+    r = d['routes'][0]
+    for leg in r['legs']:
+        print(leg['duration'])
 
-def compute_travel_time(src, dst):
-    #return datetime.timedelta(minutes=30)
-    
-    # Disneyland
-    # Universal+Studios+Hollywood4
+google_maps_api_key = open(os.path.join(os.environ['HOME'],'git','sysadmin','other_config','google_maps_api.txt')).read()[:-1]
 
-    res = urllib.request.urlopen("https://maps.googleapis.com/maps/api/directions/json?origin={}&destination={}&key=AIzaSyBC80p5F9tIuz19N6RZezYZ7I9JVBBQLJ8".format(
-        src,
-        dst))
+def timestamp(dt):
+    return (dt - datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc)) // datetime.timedelta(seconds=1)
+
+def compute_travel_time(src, dst, leave, arrive):
     
-    s = res.read().decode('utf-8')
+    values = {
+            'origin':src,
+            'destination':dst,
+            'key':google_maps_api_key}
+
+    #values['traffic_model'] = 'pessimistic'
+
+    if arrive is not None:
+        values['arrival_time'] = timestamp(arrive)
+
+    if leave is not None:
+        values['departure_time'] = timestamp(leave)
+
+    data = "&".join(["{}={}".format(k,v) for k,v in values.items()])
+
+    url = "https://maps.googleapis.com/maps/api/directions/json?"+data
+
+    print('url',url)
+
+    with urllib.request.urlopen(url) as res:
+        s = res.read().decode('utf-8')
     
     d = json.loads(s)
 
     #debug_google_response(d)
 
     seconds = 0
-
 
     r = d['routes'][0]
     for leg in r['legs']:
@@ -88,18 +109,19 @@ class Trip(object):
     def __init__(self, src, dst, leave=None, arrive=None):
         self.src = src
         self.dst = dst
-       
+        self.arrive = arrive
+        self.leave = leave
+
         if (leave is not None) and (arrive is not None):
             raise RuntimeError()
         
-        #if leave is not None:
 
         print('Trip')
         print('  src',self.src)
         print('  dst',self.dst)
 
     def duration(self):
-        return compute_travel_time(self.src, self.dst)
+        return compute_travel_time(self.src, self.dst, self.leave, self.arrive)
 
 class Task(object): pass
 
