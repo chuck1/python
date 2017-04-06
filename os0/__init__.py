@@ -1,7 +1,7 @@
 import os
 
-def makedirs(f):
-    d = os.path.dirname(f)
+def makedirs(d):
+    #d = os.path.dirname(f)
     try:
         os.makedirs(d)
     except OSError:
