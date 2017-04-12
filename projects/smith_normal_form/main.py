@@ -1,9 +1,38 @@
 #!/usr/bin/env python3
-
+import functools
 import numpy
 import itertools
 import math
-    
+import operator
+import sympy
+
+def perm(n):
+    indices = list(range(n))
+    cycles = list(range(n, 0, -1))
+    c = 0
+    yield c,tuple(indices)
+    while n:
+        for i in reversed(range(n)):
+            cycles[i] -= 1
+            if cycles[i] == 0:
+                indices[i:] = indices[i+1:] + indices[i:i+1]
+                cycles[i] = n - i
+                if i < (n-1):
+                    c += 1
+            else:
+                j = cycles[i]
+                indices[i], indices[-j] = indices[-j], indices[i]
+                if i != n-j:
+                    c += 1
+                yield 1-c%2*2,tuple(indices)
+                break
+        else:
+            return
+
+def determinant(X):
+    m,n = numpy.shape(X)
+    assert m==n
+    return sum(s * functools.reduce(operator.mul, (X[p[i],i] for i in range(m))) for s,p in perm(n))
 
 def smith(X, j, t):
     
@@ -24,7 +53,8 @@ def submatricies(X, i):
 
 def minors(X, i):
     for sm in submatricies(X, i):
-        yield int(numpy.linalg.det(sm))
+        #yield int(numpy.linalg.det(sm))
+        yield determinant(sm)
 
 def determinant_divisor(X, i):
     
@@ -51,7 +81,11 @@ def smith(X):
 
 X=numpy.arange(12, dtype=numpy.int64).reshape((4,3))
 
-X = numpy.empty(shape=(4,4), dtype=object)
+X = numpy.empty(shape=(4,4), dtype=numpy.int64)
+
+s = sympy.symbols('a b')
+
+print(s)
 
 X[0,0] = 1
 X[0,1] = 2
@@ -72,11 +106,10 @@ X[3,3] = 3
 
 print(X)
 
-#smith(X)
-
+smith(X)
 
 print(list(itertools.permutations(range(3))))
-
+print(list(perm(3)))
 
 
 
