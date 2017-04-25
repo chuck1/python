@@ -3,6 +3,10 @@ import math
 import numpy
 import matplotlib.pyplot as plt
 
+def func(r_a, r_1, d):
+    f = r_a / r_1
+    return r_a * (f-1.0) / (f - 0.5*(1.0 + d))
+
 class Ellipse(object):
     def __init__(self, r_a, r_1, d):
         self.r_a = r_a
@@ -32,29 +36,17 @@ class Ellipse(object):
         plt.plot(self.a * numpy.cos(t), self.b * numpy.sin(t))
 
 
-r_a = 1.
+r_1 = 1.0
 
-#a = 2.
-a = numpy.linspace(2., 0.2, 100)
+r_a = numpy.linspace(0.5, 1.5, 100)
 
 #d = numpy.linspace(0,1,100)
-d = 0.1
+d = 0.5
 
-#r_2 = func(r_a, r_a/a, d)
+r_2 = func(r_a, r_1, d)
 
-#plt.plot(a, r_2)
-#plt.show()
-
-
-plt.plot(0,0,'o')
-
-for r_a in [1.5, 1.4]:
-    e = Ellipse(r_a, 1.0, 0.5)
-    e.calc()
-    e.plot()
-
-
-
+plt.plot(r_a, r_2)
+plt.plot(r_a, numpy.zeros(numpy.shape(r_a)))
 
 plt.show()
 
