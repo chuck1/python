@@ -14,7 +14,6 @@ class Makefile(object):
     def find_rule(self, target):
         for rule in self.rules:
             f_out = list(rule.f_out())
-            #print target, f_out
             if target in f_out:
                 return rule
         return None
@@ -24,7 +23,6 @@ class Makefile(object):
             for t1 in t: self.make(t1)
             return
         
-        #print('make', t)
 
         if t is None:
             raise Exception('target is None'+str(t))
