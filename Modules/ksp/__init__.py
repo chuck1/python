@@ -8,7 +8,7 @@ class Body(object):
     pass
 
 sun = Body()
-sun.mu = 1.1723328 * 10**18
+sun.mu = 1.1723328E18
 
 kerbin = Body()
 kerbin.obt = Orbit()
@@ -22,6 +22,13 @@ duna.obt.body      = sun
 duna.obt.apoapsis  = 21783189163
 duna.obt.periapsis = 19669121365
 
+mun = Body()
+mun.radius = 200000
+mun.mu = 6.5138398E10
+mun.obt = Orbit()
+mun.obt.body      = kerbin
+mun.obt.apoapsis  = 12000000
+mun.obt.periapsis = 12000000
 
 def circle_to_ellipse(body, r1, r2):
     tmp0 = math.sqrt(2.0 * r2 / (r1 + r2)) - 1.0
