@@ -17,18 +17,18 @@ class Makefile(object):
             if target in f_out:
                 return rule
         return None
-    def make(self, t):
+
+    def make(self, t, test):
 
         if isinstance(t, list):
-            for t1 in t: self.make(t1)
+            for t1 in t: self.make(t1, test)
             return
         
-
         if t is None:
             raise Exception('target is None'+str(t))
 
         if isinstance(t, Rule):
-            t.make(self)
+            t.make(self, test)
             return
 
         rule = self.find_rule(t)
@@ -40,7 +40,8 @@ class Makefile(object):
                     print(r,list(r.f_out()))
                 raise Exception("no rules to make {}".format(t))
         else:
-            rule.make(self)
+            rule.make(self, test)
+
 
 """
 a rule
@@ -56,16 +57,16 @@ class Rule(object):
 
         self.up_to_date = False
         
-    def check(self, makefile, f_out, f_in):
+    def check(self, makefile, f_out, f_in, test):
 
         if None in f_in:
             raise Exception('None in f_in ' + str(self))
         
         for f in f_in:
-            makefile.make(f)
+            makefile.make(f, test)
         
         for f in f_out:
-            if not os.path.exists(f): return True
+            if not os.path.exists(f): return True, "{} does not exist".format(f)
         
         mtime = [os.path.getmtime(f) for f in f_out]
         
@@ -77,22 +78,26 @@ class Rule(object):
             for t in mtime:
                 if os.path.exists(f):
                     if os.path.getmtime(f) > t:
-                        return True
+                        return True, f
 
-        return False
+        return False, None
 
-    def make(self, makefile):
+    def make(self, makefile, test):
 
         if self.up_to_date: return
         
         f_in = list(self.f_in(makefile))
         f_out = list(self.f_out())
+        
+        should_build, f = self.check(makefile, f_out, f_in, test)
+        if should_build:
+            if test:
+                print('build',f_out,'because',f)
+            else:
+                ret = self.func(f_out, f_in)
 
-        if self.check(makefile, f_out, f_in):
-            ret = self.func(f_out, f_in)
-
-            if ret != 0:
-                raise BuildError(str(self) + ' return code ' + str(ret))
+                if ret != 0:
+                    raise BuildError(str(self) + ' return code ' + str(ret))
 
         self.up_to_date = True
 
