@@ -45,9 +45,10 @@ if __name__=='__main__':
     y = numpy.sin(numpy.linspace(0,math.pi*(2-2/args.n),args.n))
     X = numpy.append(numpy.reshape(x,(args.n,1)),numpy.reshape(y,(args.n,1)),axis=1)
     
-    x = 2*numpy.cos(numpy.linspace(0,math.pi*(2-2/(args.n+1)),args.n+1))
-    y = 2*numpy.sin(numpy.linspace(0,math.pi*(2-2/(args.n+1)),args.n+1))
-    X = numpy.append(X,numpy.append(numpy.reshape(x,(args.n+1,1)),numpy.reshape(y,(args.n+1,1)),axis=1),axis=0)
+    if False:
+        x = 2*numpy.cos(numpy.linspace(0,math.pi*(2-2/(args.n+1)),args.n+1))
+        y = 2*numpy.sin(numpy.linspace(0,math.pi*(2-2/(args.n+1)),args.n+1))
+        X = numpy.append(X,numpy.append(numpy.reshape(x,(args.n+1,1)),numpy.reshape(y,(args.n+1,1)),axis=1),axis=0)
     
     draw = Draw(
             X,
