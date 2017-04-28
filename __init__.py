@@ -86,7 +86,7 @@ class Rule(object):
 
         if self.up_to_date: return
         
-        f_in = list(self.f_in(makefile))
+        f_in = list(self.f_in(makefile, test))
         f_out = list(self.f_out())
         
         should_build, f = self.check(makefile, f_out, f_in, test)
