@@ -1,5 +1,8 @@
 
 import os
+import traceback
+
+import pymake.os0
 
 def bin_compare(b0,b1):
     for c0,c1 in zip(b,b1):
@@ -32,6 +35,16 @@ class BuildError(Exception):
     def __init__(self, message):
         super(BuildError, self).__init__(message)
 
+
+class MakeCall(object):
+    def __init__(self,makefile,test=False,force=False):
+        self.makefile = makefile
+        self.test = test
+        self.force = force
+    
+    def make(self,t):
+        self.makefile.make(t,self.test,self.force)
+
 """
 manages the building of targets
 """
@@ -45,17 +58,17 @@ class Makefile(object):
                 return rule
         return None
 
-    def make(self, t, test):
+    def make(self, t, test=False, force=False):
 
         if isinstance(t, list):
-            for t1 in t: self.make(t1, test)
+            for t1 in t: self.make(t1, test, force)
             return
         
         if t is None:
             raise Exception('target is None'+str(t))
 
         if isinstance(t, Rule):
-            t.make(self, test)
+            t.make(MakeCall(self,test,force))
             return
 
         rule = self.find_rule(t)
@@ -63,34 +76,45 @@ class Makefile(object):
             if os.path.exists(t):
                 pass
             else:
-                for r in self.rules:
-                    print(r,list(r.f_out()))
+                #for r in self.rules:
+                #    print(r,list(r.f_out()))
                 raise Exception("no rules to make {}".format(t))
         else:
-            rule.make(self, test)
+            rule.make(MakeCall(self, test, force))
 
 
 """
 a rule
 f_out and f_in are generator functions that return a list of files
 func is a function that builds the output
+
+a rule does not have to build an actual file as output
 """
 class Rule(object):
 
     def __init__(self, f_out, f_in, func):
-        self.f_out = f_out
-        self.f_in = f_in
+        self.func_f_out = f_out
+        self.func_f_in = f_in
         self.func = func
 
         self.up_to_date = False
-        
-    def check(self, makefile, f_out, f_in, test):
+    
+    def rule_f_out(self):
+        for f in self.func_f_out():
+            if not isinstance(f,str):
+                raise TypeError('f_out generator must return str')
+            yield f
+
+    def check(self, makecall, f_out, f_in):
 
         if None in f_in:
-            raise Exception('None in f_in ' + str(self))
+            return True, "None in f_in {}".format(self)
+            raise Exception("None in f_in {}".format(self))
         
         for f in f_in:
-            makefile.make(f, test)
+            makecall.make(f)
+
+        if makecall.force: return True, None
         
         for f in f_out:
             if not os.path.exists(f): return True, "{} does not exist".format(f)
@@ -99,7 +123,7 @@ class Rule(object):
         
         for f in f_in:
             if isinstance(f, Rule):
-                #return True
+                #return True, "Rule object in f_in {}".format(f)
                 continue
 
             for t in mtime:
@@ -109,28 +133,36 @@ class Rule(object):
 
         return False, None
 
-    def make(self, makefile, test):
+    def make(self, makecall):
 
         if self.up_to_date: return
         
-        f_in = list(self.f_in(makefile, test))
-        f_out = list(self.f_out())
+        try:
+            f_in = list(self.f_in(makecall))
+        except Exception as e:
+            print(self)
+            traceback.print_exc()
+            raise e
+
+        f_out = list(self.rule_f_out())
         
-        should_build, f = self.check(makefile, f_out, f_in, test)
+        should_build, f = self.check(makecall, f_out, f_in)
 
         if should_build:
-            if test:
+            if makecall.test:
                 print('build',f_out,'because',f)
             else:
                 ret = self.func(f_out, f_in)
-
-                if ret != 0:
+                if ret is None:
+                    pass
+                elif ret != 0:
                     raise BuildError(str(self) + ' return code ' + str(ret))
 
         self.up_to_date = True
     
     def write_text(self, filename, s):
         if check_existing_binary_data(filename, s.encode()):
+            pymake.os0.makedirs(os.path.dirname(filename))
             with open(filename, 'w') as f:
                 f.write(s)
         else:
@@ -138,6 +170,7 @@ class Rule(object):
 
     def write_binary(self, filename, b):
         if check_existing_binary_data(filename, b):
+            pymake.os0.makedirs(os.path.dirname(filename))
             with open(filename, 'wb') as f:
                 f.write(b)
         else:
