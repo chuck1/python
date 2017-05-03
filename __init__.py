@@ -37,13 +37,13 @@ class BuildError(Exception):
 
 
 class MakeCall(object):
-    def __init__(self,makefile,test=False,force=False):
+    def __init__(self, makefile, test=False, force=False):
         self.makefile = makefile
         self.test = test
         self.force = force
     
     def make(self,t):
-        self.makefile.make(t,self.test,self.force)
+        self.makefile.make(t, self.test, self.force)
 
 """
 manages the building of targets
@@ -68,7 +68,7 @@ class Makefile(object):
             raise Exception('target is None'+str(t))
 
         if isinstance(t, Rule):
-            t.make(MakeCall(self,test,force))
+            t.make(MakeCall(self, test, force))
             return
 
         rule = self.find_rule(t)
@@ -161,7 +161,11 @@ class Rule(object):
         self.up_to_date = True
     
     def write_text(self, filename, s):
-        if check_existing_binary_data(filename, s.encode()):
+        # it appears that this functionality is actually not useful as currently
+        # implemented. revisit later
+
+        #if check_existing_binary_data(filename, s.encode()):
+        if True:
             pymake.os0.makedirs(os.path.dirname(filename))
             with open(filename, 'w') as f:
                 f.write(s)
@@ -169,7 +173,11 @@ class Rule(object):
             print('binary data unchanged. do not write.')
 
     def write_binary(self, filename, b):
-        if check_existing_binary_data(filename, b):
+        # it appears that this functionality is actually not useful as currently
+        # implemented. revisit later
+
+        #if check_existing_binary_data(filename, b):
+        if True:
             pymake.os0.makedirs(os.path.dirname(filename))
             with open(filename, 'wb') as f:
                 f.write(b)
