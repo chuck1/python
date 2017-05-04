@@ -303,14 +303,14 @@ e1.calc()
 e2 = Ellipse()
 #e2.a = 0.6
 e2.b = 0.3
-e2.alpha = 4.7 * math.pi / 4
+e2.alpha = math.pi * 1.5
 
-a2 = scipy.optimize.fsolve(func3, 0.9, (e1, e2))[0]
-#a2 = [0.9]
+#a2 = scipy.optimize.fsolve(func3, 0.9, (e1, e2))[0]
+a2 = [0.7]
 
 print('a2',a2)
 
-#func3(a2, e1, e2)
+func3(a2, e1, e2)
 
 pair_plot(e1, e2)
 
