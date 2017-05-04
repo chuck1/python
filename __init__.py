@@ -1,4 +1,4 @@
-
+import re
 import os
 import traceback
 
@@ -82,6 +82,21 @@ class Makefile(object):
         else:
             rule.make(MakeCall(self, test, force))
 
+    def search(self, t):
+        if isinstance(t, list):
+            for t1 in t: self.search(t1)
+            return
+        
+        print('regex ',repr(t))
+
+        pat = re.compile(t)
+        
+        for rule in self.rules:
+            f_out = list(rule.f_out())
+            for f in f_out:
+                m = pat.match(f)
+                if m:
+                    print(f)
 
 """
 a rule
