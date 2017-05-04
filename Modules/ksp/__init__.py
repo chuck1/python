@@ -1,4 +1,5 @@
 import math
+import geometry
 
 class Orbit(object):
     def a(self):
@@ -9,6 +10,10 @@ class Body(object):
 
 sun = Body()
 sun.mu = 1.1723328E18
+
+eve = Body()
+eve.mu = 8.1717302E12
+eve.radius = 700E3
 
 kerbin = Body()
 kerbin.obt = Orbit()
@@ -29,6 +34,17 @@ mun.obt = Orbit()
 mun.obt.body      = kerbin
 mun.obt.apoapsis  = 12000000
 mun.obt.periapsis = 12000000
+
+gilly = Body()
+gilly.radius = 13000
+gilly.mu = 8.2894498E6
+gilly.obt = geometry.Ellipse()
+gilly.obt.body = eve
+gilly.obt.apo = 48.825E6
+gilly.obt.per = 14.175E6
+gilly.obt.meananomalyatepoch = 0.9
+gilly.obt.alpha = 0.174533 # argument of periapsis
+gilly.obt.calc_per_apo()
 
 def circle_to_ellipse(body, r1, r2):
     tmp0 = math.sqrt(2.0 * r2 / (r1 + r2)) - 1.0

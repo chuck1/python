@@ -5,315 +5,196 @@ import math
 import matplotlib.pyplot as plt
 import scipy.optimize
 
-def func1(E1, e1, e2):
+import ksp
 
-    f1 = e1.true_anomaly_from_eccentric_anomaly(E1)
+import geometry
+from geometry import Ellipse
 
-    f2 = f1 + e1.alpha - e2.alpha
+def func4():
     
-    rho1 = e1.tangent_angle_from_true_anomaly(f1)
-
-    rho2 = e2.tangent_angle_from_true_anomaly(f2)
+    e1 = Ellipse()
+    e1.a = 2
+    e1.b = 1
+    e1.alpha = math.pi
+    e1.calc()
     
-    return rho1 - rho2
-
-def func2(E1, e1, e2):
-
-    f1 = e1.true_anomaly_from_eccentric_anomaly(E1)
-
-    f2 = f1 + e1.alpha - e2.alpha
+    e2 = Ellipse()
+    #e2.a = 0.6
+    e2.b = 0.3
+    e2.alpha = 4.7 * math.pi / 4
     
-    g1 = e1.foci_angle_from_true_anomaly(f1)
-
-    g2 = e2.foci_angle_from_true_anomaly(f2)
+    a2 = scipy.optimize.fsolve(func3, 0.9, (e1, e2))[0]
+    #a2 = [0.9]
     
-    return g1 - g2
-
-class Ellipse(object):
+    print('e2.alpha', e2.alpha)
+    print('a2      ',a2)
     
-    def calc(self):
-
-        if self.b > self.a:
-            self.a, self.b = self.b, self.a
-
-        a = self.a
-        b = self.b
-
-        e = math.sqrt(1 - b**2 / a**2)
-
-        c = math.sqrt(a**2 - b**2)
-
-        #print('a',a)
-        #print('b',b)
-        #print('e',e)
-
-        self.e = e
-        self.c = c
-
-    def radius_from_true_anomaly(self, true_anomaly):
-        a = self.a
-        e = self.e
-        r = a * (1 - e**2) / (1 + e * numpy.cos(true_anomaly))
-        return r
+    #func3(a2, e1, e2)
     
-    def radius_from_eccentric_anomaly(self, eccentric_anomaly):
-        a = self.a
-        e = self.e
-        f = self.true_anomaly_from_eccentric_anomaly(eccentric_anomaly)
-        r = a * (1 - e**2) / (1 + e * numpy.cos(f))
-        return r
-
-    def tangent_angle_from_true_anomaly(self, true_anomaly):
-
-        gamma = self.foci_angle_from_true_anomaly(true_anomaly)
-        
-        rho = gamma / 2 + math.pi / 2
-        
-        return rho
-
-    def foci_angle_from_true_anomaly(self, true_anomaly):
-        f = true_anomaly
-
-        a = self.a
-        c = self.c
-
-        r = self.radius_from_true_anomaly(f)
-
-        #gamma = numpy.arcsin(2 * c * numpy.sin(math.pi-f) / (2 * a - r))
-        
-        gamma = numpy.arctan(numpy.sin(f) / (r / 2 / c + numpy.cos(f)))
-
-        z = numpy.cos(f) + r / 2 / c
-
-        bool1 = numpy.logical_and(z < 0, f < math.pi)
-        bool2 = numpy.logical_and(z < 0, f > math.pi)
-
-        gamma[bool1] = gamma[bool1] + math.pi
-        gamma[bool2] = gamma[bool2] - math.pi
-
-        return gamma
-
-    def tan_foci_angle_from_true_anomaly(self, true_anomaly):
-        f = true_anomaly
-
-        a = self.a
-        c = self.c
-
-        r = self.radius_from_true_anomaly(f)
-
-        #gamma = numpy.arcsin(2 * c * numpy.sin(math.pi-f) / (2 * a - r))
-        
-        tan_gamma = numpy.sin(f) / (r / 2 / c + numpy.cos(f))
-
-        return tan_gamma
-
-    def eccentric_anomaly(self, mean_anomaly):
-        M = mean_anomaly
-        
-        e = self.e
-
-        def f(E,M):
-            return (E - e * numpy.sin(E)) - M
-
-        E = 2 * numpy.arcsin(M / math.pi - 1) + math.pi
-
-        E = scipy.optimize.fsolve(f,E,(M,))
-
-        return E
-
-    def true_anomaly_from_eccentric_anomaly(self, eccentric_anomaly):
-
-        E = eccentric_anomaly
-
-        e = self.e
-
-        z1 = math.sqrt((1 + e) / (1 - e))
-
-        f = 2 * numpy.arctan(z1 * numpy.tan(E / 2))
-        
-        f[f<0] = f[f<0] + 2 * math.pi
-        
-        return f
-
-    def plot(self):
-        # xp,yp is coordinate system centered on focal point with xp alligned with major axis
-        # f true anomaly
-        # r distance from focal point
-        
-        a = self.a
-        b = self.b
-        c = self.c
-        e = self.e
-        alpha = self.alpha
-
-        E = numpy.linspace(0,math.pi*2,100)
-        
-        f = self.true_anomaly_from_eccentric_anomaly(E)
-        
-        r = self.radius_from_true_anomaly(f)
-
-        xp = r * numpy.cos(f)
-        yp = r * numpy.sin(f)
-        
-        x = xp * numpy.cos(alpha) - yp * math.sin(alpha)
-        y = xp * numpy.sin(alpha) + yp * math.cos(alpha)
-        
-        plt.plot(x,y,'-')
-        #plt.plot([0,2*c*math.cos(alpha+math.pi)],[0,2*c*math.sin(alpha+math.pi)])
-
-    def plot_points_from_true_anomaly(self, f):
-        
-        c = self.c
-
-        r = self.radius_from_true_anomaly(f)
-
-        alpha = self.alpha
-
-        xp = r * numpy.cos(f)
-        yp = r * numpy.sin(f)
-        
-        X = xp * numpy.cos(alpha) - yp * math.sin(alpha)
-        Y = xp * numpy.sin(alpha) + yp * math.cos(alpha)
-        
-        x_foci = 2 * c * math.cos(alpha + math.pi)
-        y_foci = 2 * c * math.sin(alpha + math.pi)
-        
-        def func(x,y):
-            plt.plot([0,x],[0,y],'-r',linewidth=0.1)
-            plt.plot([x_foci,x],[y_foci,y],'-b',linewidth=0.1)
-
-        numpy.vectorize(func)(X,Y)
-
-##########################
-
-def func3(a2, e1, e2):
-
-    e2.a = a2[0]
+    #pair_plot(e1, e2)
     
-    print('a2',a2)
+    #plt.show()
+    
 
+def func5(alpha2):
+    e1 = Ellipse()
+    e1.a = 2
+    e1.b = 1
+    e1.alpha = math.pi
+    e1.calc()
+    
+    e2 = Ellipse()
+    e2.a = 0.6
+    e2.b = 0.3
+    e2.alpha = alpha2
     e2.calc()
 
-    #E1_sample = [0,math.pi/2,math.pi,3*math.pi/2]
-    #E1_sample = [0,math.pi/2,math.pi,3*math.pi/2]
-    #E1_sample = [0,math.pi]
-    #E1_sample = numpy.linspace(0,2*math.pi)
-    E1_sample = 0
+    y = get_f_gamma_equal(e1, e2)
+    y1 = numpy.min(y)
+    y2 = numpy.max(y)
+    return y1,y2
+
+def func6():
+    #numpy.array([5/4*math.pi])
+    alpha2 = numpy.linspace(0,2*math.pi)
+    y1,y2 = numpy.vectorize(func5)(alpha2)
     
-    E1_gamma_equal = scipy.optimize.fsolve(func2, 0, (e1,e2))
+    plt.plot(alpha2,y1,'-o')
+    plt.plot(alpha2,y2,'-o')
+
+    plt.savefig('/var/www/html/fig1.png')
+
+def get_f_gamma_equal_at_closest(e1, e2):
+    f1_gamma_equal, f2_gamma_equal = geometry.get_f_gamma_equal(e1, e2)
     
-    E1_gamma_equal = numpy.append(E1_gamma_equal, E1_gamma_equal+math.pi)
+    distance_gamma_equal = e1.radius_from_true_anomaly(f1_gamma_equal) - e2.radius_from_true_anomaly(f2_gamma_equal)
     
-    E1_gamma_equal = numpy.mod(E1_gamma_equal, 2 * math.pi)
+    i = numpy.argmin(numpy.abs(distance_gamma_equal))
     
-    f1_gamma_equal = e1.true_anomaly_from_eccentric_anomaly(E1_gamma_equal)
+    return f1_gamma_equal[i], f2_gamma_equal[i]
+
+def func7a(apo, t, e1, e2):
+    # find the apoapsis for e2 for which
+    # e1 and e2 intersect and are tangent at the point of intersection
+
+    e2.apo = apo
+    e2.calc_per_apo()
     
-    f2_gamma_equal = f1_gamma_equal + e1.alpha - e2.alpha
+    f1_gamma_equal, f2_gamma_equal = geometry.get_f_gamma_equal(e1, e2)
     
-    distance_gamma_equal = numpy.abs(e1.radius_from_true_anomaly(f1_gamma_equal) - e2.radius_from_true_anomaly(f2_gamma_equal))
+    distance_gamma_equal = e1.radius_from_true_anomaly(f1_gamma_equal) - e2.radius_from_true_anomaly(f2_gamma_equal)
     
-    print('E1_gamma_equal      ',E1_gamma_equal)
-    print('distance_gamma_equal',distance_gamma_equal)
+    i = numpy.argmin(numpy.abs(distance_gamma_equal))
     
+    #return numpy.min(numpy.abs(distance_gamma_equal))
+
+    y = distance_gamma_equal[i]
+
+    return y
+
+class func7(object):
+    def __call__(self, t, e1, c2):
+        # constants
+        # e1 c2
+        
+        # variables
+        # t - time at which satellite 2 will execute transfer burn
+        
+        print('func7 t=',t)
     
+        # time 1
+        E2 = c2.eccentric_anomaly_from_time(t)
+        M2 = c2.mean_anomaly_from_eccentric_anomaly(E2)
+        f2 = c2.true_anomaly_from_eccentric_anomaly(E2)
+        f1 = f2 + c2.alpha - e1.alpha
+        
+        r1 = e1.radius_from_true_anomaly(f1 + math.pi)
+        
+        e2 = Ellipse()
+        e2.body = c2.body
+        e2.per = c2.per
+        e2.alpha = c2.alpha + f2
+        
+        scipy.optimize.fsolve(func7a, r1, (t, e1, e2))
     
-    if False:
+        e2.meananomalyatepoch = M2 - 2 * math.pi / e2.period * t
+    
+        # time 2
+        _, f2 = get_f_gamma_equal_at_closest(e1, e2)
+        
+        E2 = e2.eccentric_anomaly_from_true_anomaly(f2)
+        
+        A = e2.area_swept_from_eccentric_anomaly(numpy.array([0]), E2)
+    
+        t = t + e2.time_delta_from_area_delta(A)
+        
+        f1 = e1.true_anomaly_from_time(t)
+     
+        self.e1 = e1
+        self.e2 = e2
+        self.f1 = f1
+        self.f2 = f2
+        
+        
+        y = f1 + e1.alpha - f2 - e2.alpha
+    
+        #y = numpy.mod(y + 2 * math.pi, 2 * math.pi)
+    
+        print(y)
+    
+        return y
+    
+    def plot(self):
+        geometry.pair_plot(self.e1, self.e2)
+        self.e1.plot_points_from_true_anomaly(self.f1)
+        self.e2.plot_points_from_true_anomaly(self.f2)
+
+def func8():
+    e1 = ksp.gilly.obt
+
+    c2 = Ellipse()
+    c2.body = ksp.eve
+    c2.apo = c2.per = ksp.eve.radius * 2
+    c2.meananomalyatepoch = 0
+    c2.alpha = math.pi
+    c2.calc_per_apo()
+    
+    #func7(0, e1, c2)
+    #func7(c2.period/4, e1, c2)
+    
+    ftor = func7()
+
+    scipy.optimize.fsolve(ftor, 1000, (e1, c2))
+    #scipy.optimize.minimize(ftor, 0, (e1, c2))
+
+    ftor.plot()
+
+    if True:
         plt.figure()
-    
-        E1 = numpy.linspace(0,2*math.pi,100)
-        
-        f1 = e1.true_anomaly_from_eccentric_anomaly(E1)
-        
-        f2 = f1 + e1.alpha - e2.alpha
-        
-        rho1 = e1.tangent_angle_from_true_anomaly(f1)
-        
-        rho2 = e2.tangent_angle_from_true_anomaly(f2)
-        
-        plt.plot(E1/math.pi,rho1/math.pi,'-o')
-        plt.plot(E1/math.pi,rho2/math.pi,'-o')
-        for E1 in E1_rho_equal:
-            plt.plot([E1/math.pi,E1/math.pi],[0,1])
-    
-    if False:
-        fig = plt.figure()
-    
-        E1 = numpy.linspace(0,2*math.pi,100)
-        
-        f1 = e1.true_anomaly_from_eccentric_anomaly(E1)
-        
-        f2 = f1 + e1.alpha - e2.alpha
-        
-        gamma1 = e1.foci_angle_from_true_anomaly(f1)
-        
-        gamma2 = e2.foci_angle_from_true_anomaly(f2)
-    
-        tan_gamma1 = e1.tan_foci_angle_from_true_anomaly(f1)
-        
-        tan_gamma2 = e2.tan_foci_angle_from_true_anomaly(f2)
-        
-        ax1 = fig.add_subplot(111)
-    
-        ax1.plot(E1/math.pi, gamma1/math.pi,'-o')
-        ax1.plot(E1/math.pi, gamma2/math.pi,'-o')
-        
-        r1 = e1.radius_from_true_anomaly(f1)
-        r2 = e2.radius_from_true_anomaly(f2)
-    
-        if True:
-            for E1 in E1_gamma_equal:
-                ax1.plot([E1/math.pi,E1/math.pi],[-1,1])
-    
-    print(numpy.min(distance_gamma_equal))
-    
-    return numpy.min(distance_gamma_equal)
+        t = numpy.linspace(0,2000)
+        z = numpy.vectorize(ftor)(t, e1, c2)
+        plt.plot(t,z)
 
-    #plt.show()
+def test_angle_transform():
 
-def pair_plot(e1, e2):
+    s = 0.66434
 
-    e1.plot()
-    e2.plot()
-
-    E1_sample = 0
+    a1 = numpy.linspace(0,2*math.pi)
     
-    E1_gamma_equal = scipy.optimize.fsolve(func2, 0, (e1,e2))
+    a2 = numpy.arctan(s * numpy.tan(a1))
+
+    a2[a1>(math.pi/2)] += math.pi
+    a2[a1>(3*math.pi/2)] += math.pi
     
-    E1_gamma_equal = numpy.append(E1_gamma_equal, E1_gamma_equal+math.pi)
+    plt.figure()
+    plt.plot(a1,a2)
     
-    E1_gamma_equal = numpy.mod(E1_gamma_equal, 2 * math.pi)
-    
-    f1_gamma_equal = e1.true_anomaly_from_eccentric_anomaly(E1_gamma_equal)
-    
-    f2_gamma_equal = f1_gamma_equal + e1.alpha - e2.alpha
+    plt.show()
 
-    e1.plot_points_from_true_anomaly(f1_gamma_equal)
-    e2.plot_points_from_true_anomaly(f2_gamma_equal)
-
-    plt.axis('equal')
-
-###########################
-
-e1 = Ellipse()
-e1.a = 2
-e1.b = 1
-e1.alpha = math.pi
-e1.calc()
-
-e2 = Ellipse()
-#e2.a = 0.6
-e2.b = 0.3
-e2.alpha = math.pi * 1.5
-
-#a2 = scipy.optimize.fsolve(func3, 0.9, (e1, e2))[0]
-a2 = [0.7]
-
-print('a2',a2)
-
-func3(a2, e1, e2)
-
-pair_plot(e1, e2)
+func8()
 
 plt.show()
+
+
 
 
