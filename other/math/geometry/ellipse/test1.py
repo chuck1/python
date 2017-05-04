@@ -2,8 +2,12 @@
 
 import numpy
 import math
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import scipy.optimize
+
+
 
 def func1(E1, e1, e2):
 
@@ -270,13 +274,7 @@ def func3(a2, e1, e2):
 
     #plt.show()
 
-def pair_plot(e1, e2):
-
-    e1.plot()
-    e2.plot()
-
-    E1_sample = 0
-    
+def get_f_gamma_equal(e1,e2):
     E1_gamma_equal = scipy.optimize.fsolve(func2, 0, (e1,e2))
     
     E1_gamma_equal = numpy.append(E1_gamma_equal, E1_gamma_equal+math.pi)
@@ -287,6 +285,14 @@ def pair_plot(e1, e2):
     
     f2_gamma_equal = f1_gamma_equal + e1.alpha - e2.alpha
 
+    return f1_gamma_equal
+
+def pair_plot(e1, e2):
+
+    e1.plot()
+    e2.plot()
+
+
     e1.plot_points_from_true_anomaly(f1_gamma_equal)
     e2.plot_points_from_true_anomaly(f2_gamma_equal)
 
@@ -294,26 +300,57 @@ def pair_plot(e1, e2):
 
 ###########################
 
-e1 = Ellipse()
-e1.a = 2
-e1.b = 1
-e1.alpha = math.pi
-e1.calc()
+def func4():
+    
+    e1 = Ellipse()
+    e1.a = 2
+    e1.b = 1
+    e1.alpha = math.pi
+    e1.calc()
+    
+    e2 = Ellipse()
+    #e2.a = 0.6
+    e2.b = 0.3
+    e2.alpha = 4.7 * math.pi / 4
+    
+    a2 = scipy.optimize.fsolve(func3, 0.9, (e1, e2))[0]
+    #a2 = [0.9]
+    
+    print('e2.alpha', e2.alpha)
+    print('a2      ',a2)
+    
+    #func3(a2, e1, e2)
+    
+    #pair_plot(e1, e2)
+    
+    #plt.show()
+    
 
-e2 = Ellipse()
-#e2.a = 0.6
-e2.b = 0.3
-e2.alpha = 4.7 * math.pi / 4
+def func5(alpha2):
+    e1 = Ellipse()
+    e1.a = 2
+    e1.b = 1
+    e1.alpha = math.pi
+    e1.calc()
+    
+    e2 = Ellipse()
+    e2.a = 0.6
+    e2.b = 0.3
+    e2.alpha = alpha2
+    e2.calc()
 
-a2 = scipy.optimize.fsolve(func3, 0.9, (e1, e2))[0]
-#a2 = [0.9]
+    y = get_f_gamma_equal(e1, e2)
+    y1 = numpy.min(y)
+    y2 = numpy.max(y)
+    return y1,y2
+    
+#numpy.array([5/4*math.pi])
+alpha2 = numpy.linspace(0,2*math.pi)
+y1,y2 = numpy.vectorize(func5)(alpha2)
 
-print('a2',a2)
+plt.plot(alpha2,y1,'-o')
+plt.plot(alpha2,y2,'-o')
 
-#func3(a2, e1, e2)
-
-pair_plot(e1, e2)
-
-plt.show()
+plt.savefig('/var/www/html/fig1.png')
 
 
