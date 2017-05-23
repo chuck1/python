@@ -5,7 +5,8 @@ MAX_INDENT = 8
 def explore(a, indent=0, p=False, stack=[]):
         try:
             if isinstance(a, str):
-                #print(' '*indent + repr(a))
+                if p:
+                    print(' '*indent + repr(a))
                 pass
             elif isinstance(a, dict):
                 explore_dict(a, indent, p)
@@ -32,18 +33,26 @@ def explore_list(obj, indent=0):
         #print(' '*indent + str(v))
         explore(v, indent+2)
 
-def explore_obj(obj, indent=0, p_=False, stack):
+def explore_obj(obj, indent=0, p_=False, stack=[]):
     if indent > MAX_INDENT: return
 
     for name in dir(obj):
+
         p = p_
         if name in ('__globals__', '__builtins__',):
             print(' '*indent + str(name))
+            print(s)
             p = True
 
         try:
             a = getattr(obj, name)
-            explore(a, indent+2, p)
+            if a in stack:
+                explore('loop found.', indent+2, p)
+            else:
+                s = list(stack)
+                s.append(name)
+                s.append(a)
+                explore(a, indent=indent+2, p=p, stack=s)
         except Exception as e:
             explore(str(e), indent+2, p)
 
@@ -59,7 +68,7 @@ class Foo(object):
 
     def __getattribute__(self, name):
         #if name in ('a',):
-        if name in ('a', '__dict__', '__class__', 'func1', 'func2'):
+        if name in ('a', '__dict__', '__class__', 'func2'):
             return object.__getattribute__(self, name)
         else:
             return "get not allowed {}".format(name)
@@ -109,5 +118,5 @@ print(foo.b)
 
 print(foo.func2.__func__.__globals__)
 
-explore(foo)
+explore(foo, stack=[foo])
 
