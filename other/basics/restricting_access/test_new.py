@@ -1,4 +1,4 @@
-
+#!/usr/bin/env python3
 
 class Meta(type):
     def __new__(cls, name, bases, dct, **kwds):
