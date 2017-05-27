@@ -4,6 +4,10 @@ import sys
 import dis
 import types
 
+import executor
+
+
+
 def inst_to_bytes(inst):
     if inst.opcode in (100, 101, ):
         return bytes([
@@ -72,7 +76,6 @@ class Inst(object):
         self.offset += 1
         
         self.insts.append(inst)
-
 
     def code(self):
 
@@ -152,84 +155,8 @@ class Foo(object):
 
 foo = Foo()
 
-def run_code(c, stack=[], fai=None, store_name=globals()):
-    inst = dis.Bytecode(c)
-    
-    return_value_set = False
 
-    for i in inst:
-        if return_value_set:
-            raise RuntimeError('RETURN_VALUE is not last opcode')
-
-        #print('se',dis.stack_effect(i.opcode, i.arg))
-        if i.opcode == 1:
-            stack.pop()
-        elif i.opcode == 83:
-            # RETURN_VALUE
-            return_value = stack.pop()
-            return_value_set = True
-            pass
-        elif i.opcode == 90:
-            #print('store name:',c.co_names[i.arg],'<-',stack[-1])
-            store_name[c.co_names[i.arg]] = stack.pop()
-        elif i.opcode == 100: # LOAD_CONST
-            stack.append(c.co_consts[i.arg])
-        elif i.opcode == 101: # LOAD_NAME
-            name = c.co_names[i.arg]
-
-            try:
-                val = store_name[name]
-            except:
-                val = getattr(store_name['__builtins__'], name)
-            
-            stack.append(val)
-        elif i.opcode == 106: # LOAD_ATTR
-            name = c.co_names[i.arg]
-            o = stack.pop()
-            stack.append(getattr(o, name))
-        elif i.opcode == 116: # LOAD_GLOBAL
-            name = c.co_names[i.arg]
-
-            try:
-                val = store_name[name]
-            except:
-                val = getattr(store_name['__builtins__'], name)
-            
-            stack.append(val)
-        elif i.opcode == 124: # LOAD_FAST:
-            #print('load fast', i.arg)
-            stack.append(stack[fai+i.arg])
-
-        elif i.opcode == 132: # MAKE_FUNCTION
-            stack = stack[:dis.stack_effect(i.opcode, i.arg)]
-            code = stack.pop()
-            stack.append(code)
-        elif i.opcode == 131: # CALL_FUNCTION
-            code = stack[-1-i.arg]
-            #print('calling function:',code,code.__class__.__name__)
-            firstargindex = len(stack)-i.arg
-            
-            args = stack[-i.arg:]
-            print('function args =',args)
-
-            if code.__class__.__name__ == 'builtin_function_or_method':
-                #print('call builtin function')
-                ret = '<builtin return value>'    
-            elif code.__class__.__name__ == 'code':
-                stack, ret = run_code(code, stack, firstargindex, store_name)
-            else:
-                ret = code(*args)
-            
-            stack = stack[:-1-i.arg]
-            stack.append(ret)
-            
-        else:
-            raise RuntimeError('unhandled opcode',i.opcode,i.opname)
-
-        print(stack)
-
-    return stack, return_value
-
+intp = Interpreter()
 
 def analyze(s):
     print('=================================')
@@ -248,10 +175,10 @@ def analyze(s):
    
     print('stack')
   
-    stack, ret = run_code(c)
+    ret = intp.exec(c)
     print('return:',ret)
     print()
- 
+
  
 def test1(): 
     
