@@ -1,0 +1,35 @@
+{
+    "_meta": {
+        "hash": {
+            "sha256": "148384ca8b06921b391a6f2266a1bf16543ad43211ad5e7aebbaa8f46cbd9a38"
+        },
+        "requires": {},
+        "sources": [
+            {
+                "url": "https://pypi.python.org/simple",
+                "verify_ssl": true
+            }
+        ]
+    },
+    "default": {
+        "aiohttp": {
+            "version": "==2.2.3"
+        },
+        "aiohttp-session": {
+            "version": "==0.8.0"
+        },
+        "async-timeout": {
+            "version": "==1.2.1"
+        },
+        "chardet": {
+            "version": "==3.0.4"
+        },
+        "multidict": {
+            "version": "==3.1.3"
+        },
+        "yarl": {
+            "version": "==0.12.0"
+        }
+    },
+    "develop": {}
+}
