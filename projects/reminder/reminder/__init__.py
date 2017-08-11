@@ -6,6 +6,8 @@ import urllib.parse
 import urllib.request
 import pipes
 import pickle
+from pprint import pprint
+
 import mysocket
 
 def debug_google_response(d):
@@ -17,25 +19,32 @@ def debug_google_response(d):
     for r in d['routes']:
         print('route items')
         for k,v in r.items():
-            print('  ',k)
+            print('  ',k,repr(str(v)[:32]))
             pass
         
+        legs = r['legs']
+        print('legs', len(legs))
         for leg in r['legs']:
-            print('leg items')
+            print('  leg items')
             for k,v in leg.items():
-                print('  ',k)
+                print('  ',k,repr(str(v)[:32]))
                 pass
             print()
+           
+            pprint(leg['duration_in_traffic'])
 
             for step in leg['steps']:
-                if 0:
-                    print('  step items')
-                    for k,v in step.items():
-                        print('  ',k)
+                print('step items')
+                for k,v in step.items():
+                    print('  ',k)
+                break
 
-                print('    ',step['start_location'])
-                print('    ',step['maneuver'] if 'maneuver' in step else None)
-                print('    ',step['html_instructions'] if 'html_instructions' in step else None)
+            print('  steps')
+            for step in leg['steps']:
+                #print('      ',step['start_location'])
+                print('      ',step['html_instructions'] if 'html_instructions' in step else None)
+                if 'maneuver' in step:
+                    print('        ',step['maneuver'])
     
     r = d['routes'][0]
     for leg in r['legs']:
@@ -65,7 +74,7 @@ def compute_travel_time(src, dst, leave, arrive):
 
     url = "https://maps.googleapis.com/maps/api/directions/json?"+data
 
-    print('url',url)
+    #print('url',url)
 
     with urllib.request.urlopen(url) as res:
         s = res.read().decode('utf-8')
@@ -78,7 +87,10 @@ def compute_travel_time(src, dst, leave, arrive):
 
     r = d['routes'][0]
     for leg in r['legs']:
-        seconds += leg['duration']['value']
+        if 'duration_in_traffic' in leg:
+            seconds += leg['duration_in_traffic']['value']
+        else:
+            seconds += leg['duration']['value']
     
     return datetime.timedelta(seconds=seconds)
 
@@ -117,9 +129,9 @@ class Trip(object):
             raise RuntimeError()
         
 
-        print('Trip')
-        print('  src',self.src)
-        print('  dst',self.dst)
+        #print('Trip')
+        #print('  src',self.src)
+        #print('  dst',self.dst)
 
     def duration(self):
         return compute_travel_time(self.src, self.dst, self.leave, self.arrive)
