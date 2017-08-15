@@ -1,5 +1,6 @@
 import datetime
 import csv
+import math
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -15,10 +16,20 @@ def rolling(x, y, n):
     
     X = x[n:l-n]
     Y = np.zeros(np.shape(X))
+    
+    W = 0
+    
+    for ys, i in zip(sub(y, l, m), range(m)):
+        d = abs(i - n)
+        #print(d, 1/(1+d))
+        #w = 1
+        #w = 1/(1+d)
+        w = math.exp(-d)
 
-    for ys in sub(y, l, m):
-        Y += ys
-    Y /= m
+        Y += np.multiply(ys, w)
+        W += w
+
+    Y /= W
     
     return X, Y
 
