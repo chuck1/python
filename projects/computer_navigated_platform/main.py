@@ -1,3 +1,4 @@
+import copy
 import math
 import re
 import functools
@@ -153,16 +154,15 @@ class Tool:
             self.lines_2dz[i].set_data(data[np.array([0,1])])
 
 class Platform:
-    def __init__(self, tool_q):
+    def __init__(self, tool_o, tool_q):
 
-        self.tool = Tool(0.1, np.array([0,0,-0.4]), tool_q)
+        self.tool = Tool(0.1, tool_o, tool_q)
         
         arm_anchor_radius = 0.5
 
         self.arms = []
         for i in range(6):
             j = (i-i%2)//2
-            print(i, j)
 
             a = i * math.pi * 2 / 6
 
@@ -209,6 +209,9 @@ class Platform:
 
             self.arms[i].q = q
 
+    def get_lengths(self):
+        return np.array([a.l for a in self.arms])
+
     def get_tool_verts(self):
         return [[self.tool.point(i) for i in range(3)]]
 
@@ -245,30 +248,6 @@ class Platform:
             print('    {}'.format(a.o))
             print('    {}'.format(a.l))
 
-p = Platform(axis_angle(Z,2*math.pi/12))
-
-#axis_angle(X, math.pi/2)
-
-if False:
-    print(rotate(X, axis_angle(Y, math.pi/2)))
-    print(rotate(X, axis_angle(Z, math.pi/2)))
-    print(rotate(Y, axis_angle(X, math.pi/2)))
-    print(rotate(Y, axis_angle(Z, math.pi/2)))
-    print(rotate(Z, axis_angle(X, math.pi/2)))
-    print(rotate(Z, axis_angle(Y, math.pi/2)))
-
-    q = from_vectors(X, Y)
-    print(Y)
-    print(rotate(X, q))
-    
-    q = from_vectors(X, Z)
-    print(Z)
-    print(rotate(X, q))
-
-p.print_()
-
-
-p.print_()
 
 if False:
     p.plot()
@@ -388,22 +367,118 @@ def update_plot(num, p, prog):
 def update_plot_2d(num, p, prog):
     return list(update_plot_2d_(num, p, prog))
 
-fig = plt.figure()
-fig2d = plt.figure()
+def calculate_length_delta(l0, p, o):
+    p.move_tool(o, p.tool.q)
 
-p.plot(fig, fig2d)
+    l = p.get_lengths()
 
-frames = 60
+    #print('l0',l0)
+    #print('l ',l)
 
-prog = Program(p, fps)
-prog.lines.append("G1 X100")
+    return l - l0
 
-#line_ani_3d = animation.FuncAnimation(fig, update_plot, frames, fargs=(p, prog), interval=1000/fps, blit=True)
-line_ani_2d = animation.FuncAnimation(fig2d, update_plot_2d, frames, fargs=(p, prog), interval=1000/fps, blit=True)
+def func_home(X, p, length_delta_list, pos_list):
+    tool_o_0 = X[:3]
+    
+    p.move_tool(tool_o_0, p.tool.q)
+    
+    l_0 = p.get_lengths()
 
-plt.show()
+    e = 0
 
-#print(line_ani)
+    for length_delta, pos in zip(length_delta_list, pos_list):
+        length = l_0 + length_delta
+        
+        p.move_arms([(i, l) for i, l in zip(range(6), length)])
+        
+        e += abs(p.tool.o[2] - pos[2])
+
+    return e
+
+def test_home():
+    print('home program')
+    print('actual starting position')
+
+    o = np.array([.05, 0, -0.4])
+
+    # actual starting position
+    p = Platform(o, axis_angle(Z, 2*math.pi/12))
+
+    print(p.tool.o)
+    
+    # original arm lengths
+    l0 = p.get_lengths()
+    
+    print('actual starting arm length')
+    print(l0)
+
+    # list of tool positions
+    pos_list = []
+    for x in np.linspace(-.1, .1, 3):
+        for y in np.linspace(-.1, .1, 3):
+            pos_list.append(np.array([x,y,-.5]))
+    
+    # list of arm length deltas associated with the list of positions
+    length_delta_list = [calculate_length_delta(l0, p, pos) for pos in pos_list]
+   
+    print('length delta list')
+    for pos, length_delta in zip(pos_list, length_delta_list):
+        print(pos, length_delta)
+
+    #print(pos_list)
+    #print(length_delta_list)
+
+    #e = func_home(o, p, length_delta_list, pos_list)
+    #print('error', e)
+
+    x0 = np.array([0,0,-0.4])
+
+    r = scipy.optimize.minimize(func_home, x0, (p, length_delta_list, pos_list))
+    print(r)
+
+def test_math():
+    print(rotate(X, axis_angle(Y, math.pi/2)))
+    print(rotate(X, axis_angle(Z, math.pi/2)))
+    print(rotate(Y, axis_angle(X, math.pi/2)))
+    print(rotate(Y, axis_angle(Z, math.pi/2)))
+    print(rotate(Z, axis_angle(X, math.pi/2)))
+    print(rotate(Z, axis_angle(Y, math.pi/2)))
+
+    q = from_vectors(X, Y)
+    print(Y)
+    print(rotate(X, q))
+    
+    q = from_vectors(X, Z)
+    print(Z)
+    print(rotate(X, q))
+
+
+#axis_angle(X, math.pi/2)
+
+def test():
+    p = Platform(axis_angle(Z,2*math.pi/12))
+
+    p.print_()
+
+    fig = plt.figure()
+    fig2d = plt.figure()
+
+    p.plot(fig, fig2d)
+
+    frames = 60
+
+    prog = Program(p, fps)
+    prog.lines.append("G1 X100")
+
+    #line_ani_3d = animation.FuncAnimation(fig, update_plot, frames, fargs=(p, prog), interval=1000/fps, blit=True)
+    line_ani_2d = animation.FuncAnimation(fig2d, update_plot_2d, frames, fargs=(p, prog), interval=1000/fps, blit=True)
+    
+    plt.show()
+
+
+#######################
+
+test_home()
 
 
 
