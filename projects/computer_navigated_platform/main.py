@@ -395,11 +395,9 @@ def func_home(X, p, length_delta_list, pos_list):
 
     return e
 
-def test_home():
+def test_home(o):
     print('home program')
     print('actual starting position')
-
-    o = np.array([.05, 0, -0.4])
 
     # actual starting position
     p = Platform(o, axis_angle(Z, 2*math.pi/12))
@@ -428,10 +426,13 @@ def test_home():
     #print(pos_list)
     #print(length_delta_list)
 
-    #e = func_home(o, p, length_delta_list, pos_list)
-    #print('error', e)
-
     x0 = np.array([0,0,-0.4])
+
+    e = func_home(x0, p, length_delta_list, pos_list)
+    print('error', e)
+    
+    return
+
 
     r = scipy.optimize.minimize(func_home, x0, (p, length_delta_list, pos_list))
     print(r)
@@ -478,7 +479,7 @@ def test():
 
 #######################
 
-test_home()
+test_home(np.array([.05, 0, -0.4]))
 
 
 
