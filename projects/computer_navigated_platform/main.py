@@ -379,6 +379,8 @@ def calculate_length_delta(l0, p, o):
 
 def func_home(X, p, length_delta_list, pos_list):
     tool_o_0 = X[:3]
+
+    print('tool position guess', tool_o_0)
     
     p.move_tool(tool_o_0, p.tool.q)
     
@@ -392,6 +394,8 @@ def func_home(X, p, length_delta_list, pos_list):
         p.move_arms([(i, l) for i, l in zip(range(6), length)])
         
         e += abs(p.tool.o[2] - pos[2])
+    
+    print('home error', e)
 
     return e
 
@@ -428,12 +432,9 @@ def test_home(o):
 
     x0 = np.array([0,0,-0.4])
 
-    e = func_home(x0, p, length_delta_list, pos_list)
-    print('error', e)
+    #e = func_home(x0, p, length_delta_list, pos_list)
+    #print('error', e)
     
-    return
-
-
     r = scipy.optimize.minimize(func_home, x0, (p, length_delta_list, pos_list))
     print(r)
 
