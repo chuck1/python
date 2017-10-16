@@ -3,6 +3,7 @@ import math
 import re
 import functools
 import numpy as np
+import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import mpl_toolkits.mplot3d as a3
@@ -377,34 +378,51 @@ def calculate_length_delta(l0, p, o):
 
     return l - l0
 
-def func_home(X, p, length_delta_list, pos_list):
+def func_home(X, o, q, p, length_delta_list, pos_list, verbose):
     tool_o_0 = X[:3]
 
-    print('tool position guess', tool_o_0)
+    if verbose: print('tool starting position guess', tool_o_0)
     
-    p.move_tool(tool_o_0, p.tool.q)
+    p.move_tool(tool_o_0, q)
     
     l_0 = p.get_lengths()
 
     e = 0
 
     for length_delta, pos in zip(length_delta_list, pos_list):
-        length = l_0 + length_delta
-        
-        p.move_arms([(i, l) for i, l in zip(range(6), length)])
-        
-        e += abs(p.tool.o[2] - pos[2])
+        if True:
+            length = l_0 + length_delta
+            p.move_arms([(i, l) for i, l in zip(range(6), length)])
+            e += abs(p.tool.o[2] - pos[2])
+        else:
+            p.move_tool(pos, q)
+            e += np.sum(np.abs(length_delta - (p.get_lengths() - l_0)))
     
-    print('home error', e)
+    if verbose: print('home error', e)
 
     return e
 
-def test_home(o):
+def plot_2d_homing_func(o, q0, p, length_delta_list, pos_list):
+    s = 0.50
+    x = np.linspace(o[0]-s, o[0]+s, 11)
+    y = np.linspace(o[1]-s, o[1]+s, 11)
+    X, Y = np.meshgrid(x, y)
+
+    def f(x, y):
+        return func_home(np.array([x, y, -.4]), o, q0, p, length_delta_list, pos_list, False)
+
+    Z = np.log10(np.vectorize(f)(X, Y))
+
+    c = plt.contourf(X, Y, Z)
+    plt.colorbar(c)
+    plt.show()
+
+def test_home(o, q):
     print('home program')
     print('actual starting position')
 
     # actual starting position
-    p = Platform(o, axis_angle(Z, 2*math.pi/12))
+    p = Platform(o, q)
 
     print(p.tool.o)
     
@@ -415,9 +433,10 @@ def test_home(o):
     print(l0)
 
     # list of tool positions
+    n = 2
     pos_list = []
-    for x in np.linspace(-.1, .1, 3):
-        for y in np.linspace(-.1, .1, 3):
+    for x in np.linspace(-.1, .1, n):
+        for y in np.linspace(-.1, .1, n):
             pos_list.append(np.array([x,y,-.5]))
     
     # list of arm length deltas associated with the list of positions
@@ -427,16 +446,30 @@ def test_home(o):
     for pos, length_delta in zip(pos_list, length_delta_list):
         print(pos, length_delta)
 
+    #plot_2d_homing_func(o, q, p, length_delta_list, pos_list)
+
     #print(pos_list)
     #print(length_delta_list)
 
-    x0 = np.array([0,0,-0.4])
+    # test objective function
+    e = func_home(o, o, q, p, length_delta_list, pos_list, False)
+    print('test objective function:', e)
 
-    #e = func_home(x0, p, length_delta_list, pos_list)
-    #print('error', e)
+    bounds = [(-1,1),(-1,1),(-1,0)]
+
+    for x in np.linspace(-.1, .1, 3):
+        x0 = np.array([x, 0, -0.4])
     
-    r = scipy.optimize.minimize(func_home, x0, (p, length_delta_list, pos_list))
+        #method = 'Nelder-Mead'
+        r = scipy.optimize.minimize(func_home, x0, (o, q, p, length_delta_list, pos_list, False), bounds=bounds)
+        
+        if r.success:
+            break
+    
+    assert(r.success)
+
     print(r)
+    
 
 def test_math():
     print(rotate(X, axis_angle(Y, math.pi/2)))
@@ -480,7 +513,7 @@ def test():
 
 #######################
 
-test_home(np.array([.05, 0, -0.4]))
+test_home(np.array([.05, 0, -0.35]), axis_angle(Z, 2*math.pi/12))
 
 
 
