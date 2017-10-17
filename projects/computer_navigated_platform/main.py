@@ -368,7 +368,7 @@ def update_plot(num, p, prog):
 def update_plot_2d(num, p, prog):
     return list(update_plot_2d_(num, p, prog))
 
-def calculate_length_delta(l0, p, o):
+def calculate_length_delta(l0, p, o, q):
     p.move_tool(o, p.tool.q)
 
     l = p.get_lengths()
@@ -378,25 +378,27 @@ def calculate_length_delta(l0, p, o):
 
     return l - l0
 
-def func_home(X, o, q, p, length_delta_list, pos_list, verbose):
-    tool_o_0 = X[:3]
+def func_home(X, p, q, platform, length_delta_list, pos_list, verbose):
+    p_0 = X[:3]
+    q_0 = X[3:]
 
-    if verbose: print('tool starting position guess', tool_o_0)
+    if verbose: print('tool starting position guess', p_0, q_0)
     
-    p.move_tool(tool_o_0, q)
+    #platform.move_tool(p_0, q)
+    platform.move_tool(p_0, q_0)
     
-    l_0 = p.get_lengths()
+    l_0 = platform.get_lengths()
 
     e = 0
 
     for length_delta, pos in zip(length_delta_list, pos_list):
-        if True:
-            length = l_0 + length_delta
-            p.move_arms([(i, l) for i, l in zip(range(6), length)])
-            e += abs(p.tool.o[2] - pos[2])
-        else:
-            p.move_tool(pos, q)
-            e += np.sum(np.abs(length_delta - (p.get_lengths() - l_0)))
+        p_1, q_1 = pos
+            
+        length = l_0 + length_delta
+        
+        platform.move_arms([(i, l) for i, l in zip(range(6), length)])
+            
+        e += abs(platform.tool.o[2] - p_1[2])
     
     if verbose: print('home error', e)
 
@@ -417,6 +419,23 @@ def plot_2d_homing_func(o, q0, p, length_delta_list, pos_list):
     plt.colorbar(c)
     plt.show()
 
+def create_test_points(platform, l0):
+    # list of tool positions
+    n = 2
+    pos_list = []
+    for x in np.linspace(-.1, .1, n):
+        for y in np.linspace(-.1, .1, n):
+            pos_list.append((np.array([x,y,-.5]), axis_angle(Z, 0)))
+    
+    # list of arm length deltas associated with the list of positions
+    length_delta_list = [calculate_length_delta(l0, platform, p, q) for p, q in pos_list]
+
+    print('length delta list')
+    for pos, length_delta in zip(pos_list, length_delta_list):
+        print(pos, length_delta)
+
+    return pos_list, length_delta_list
+
 def test_home(o, q):
     print('home program')
     print('actual starting position')
@@ -431,20 +450,8 @@ def test_home(o, q):
     
     print('actual starting arm length')
     print(l0)
-
-    # list of tool positions
-    n = 2
-    pos_list = []
-    for x in np.linspace(-.1, .1, n):
-        for y in np.linspace(-.1, .1, n):
-            pos_list.append(np.array([x,y,-.5]))
     
-    # list of arm length deltas associated with the list of positions
-    length_delta_list = [calculate_length_delta(l0, p, pos) for pos in pos_list]
-   
-    print('length delta list')
-    for pos, length_delta in zip(pos_list, length_delta_list):
-        print(pos, length_delta)
+    pos_list, length_delta_list = create_test_points(p, l0)
 
     #plot_2d_homing_func(o, q, p, length_delta_list, pos_list)
 
@@ -452,16 +459,19 @@ def test_home(o, q):
     #print(length_delta_list)
 
     # test objective function
-    e = func_home(o, o, q, p, length_delta_list, pos_list, False)
+    e = func_home(np.concatenate((o, q)), o, q, p, length_delta_list, pos_list, True)
     print('test objective function:', e)
 
-    bounds = [(-1,1),(-1,1),(-1,0)]
+    bounds = [(-1,1),(-1,1),(-1,0),(-1,1),(-1,1),(-1,1),(-1,1)]
 
     for x in np.linspace(-.1, .1, 3):
-        x0 = np.array([x, 0, -0.4])
-    
-        #method = 'Nelder-Mead'
-        r = scipy.optimize.minimize(func_home, x0, (o, q, p, length_delta_list, pos_list, False), bounds=bounds)
+        p0 = np.array([x, 0, -0.4])
+        q0 = axis_angle(Z, 0)
+
+        #x0 = p0
+        x0 = np.concatenate((p0, q0))
+        
+        r = scipy.optimize.minimize(func_home, x0, (o, q, p, length_delta_list, pos_list, True), bounds=bounds)
         
         if r.success:
             break
