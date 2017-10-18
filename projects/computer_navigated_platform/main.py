@@ -10,249 +10,8 @@ import mpl_toolkits.mplot3d as a3
 import scipy.optimize
 #import mpl_toolkits.mplot3d.art3d
 
-X = np.array([1,0,0])
-Y = np.array([0,1,0])
-Z = np.array([0,0,1])
+from platform_ import *
 
-def solve1(X_, p):
-    p.tool.o = X_[0:3]
-    p.tool.q = X_[3:7]
-    
-    Y = np.zeros(7)
-   
-    Y[0] = np.linalg.norm(p.tool.q) - 1
-
-    for i in range(6):
-        j = (i-i%2)//2
-        
-        l = np.linalg.norm(p.arms[i].o - p.tool.point(j))
-
-        Y[i + 1] = l - p.arms[i].l
-    
-    return Y
-
-def solve(p):
-    x = scipy.optimize.fsolve(solve1, np.concatenate((p.tool.o, p.tool.q)), (p,))
-    p.tool.o = x[0:3]
-    p.tool.q = x[3:7]
-    p.update_arms()
-
-def quaternion_multiply(quaternion1, quaternion0):
-    w0, x0, y0, z0 = quaternion0
-    w1, x1, y1, z1 = quaternion1
-    return np.array([
-        -x1 * x0 - y1 * y0 - z1 * z0 + w1 * w0,
-         x1 * w0 + y1 * z0 - z1 * y0 + w1 * x0,
-        -x1 * z0 + y1 * w0 + z1 * x0 + w1 * y0,
-         x1 * y0 - y1 * x0 + z1 * w0 + w1 * z0
-        ])
-
-def quaternion_reciprocal(q):
-    w, x, y, z = q
-    return np.array([w, -x, -y, -z])
-
-def rotate(v, q):
-    a = np.concatenate(([0], v))
-    qp = quaternion_reciprocal(q)
-    b = quaternion_multiply(q, quaternion_multiply(a, qp))
-    return b[1:]
-
-def axis_angle(v, a):
-    w = math.cos(a/2)
-    v = v * math.sin(a/2)
-    return np.concatenate(([w], v))
-
-def from_vectors(v1, v2):
-    v1 = v1 / np.linalg.norm(v1)
-    v2 = v2 / np.linalg.norm(v2)
-
-    a = np.cross(v1, v2);
-    w = math.sqrt((np.linalg.norm(v1)**2) * (np.linalg.norm(v2)**2)) + np.dot(v1, v2)
-    ret = np.concatenate(([w], a))
-    l = np.linalg.norm(ret)
-    ret /= l
-    return ret
-
-class Arm:
-    def __init__(self, l, o, q):
-        self.l = l
-        self.o = o
-        self.q = q
-
-    def p(self):
-        return self.o + self.l * rotate(X, self.q)
-
-    def get_plot_data(self):
-        o = np.reshape(self.o, (3,1))
-        p = np.reshape(self.p(), (3,1))
-        data = np.concatenate((o, p), 1)
-        return data
-
-    def plot(self, ax, ax_2dx, ax_2dy, ax_2dz, linewidth):
-        data = self.get_plot_data()
-        self.line, = ax.plot(data[0], data[1], data[2], linewidth=linewidth)
-        self.line_2dx, = ax_2dx.plot(data[1], data[2], linewidth=linewidth)
-        self.line_2dy, = ax_2dy.plot(data[0], data[2], linewidth=linewidth)
-        self.line_2dz, = ax_2dz.plot(data[0], data[1], linewidth=linewidth)
-
-    def plot_update(self):
-        data = self.get_plot_data()
-
-        self.line.set_data(data[0:2])
-        self.line.set_3d_properties(data[2])
-        
-        self.line_2dx.set_data(data[np.array([1,2])])
-        self.line_2dy.set_data(data[np.array([0,2])])
-        self.line_2dz.set_data(data[np.array([0,1])])
-
-class Tool:
-    def __init__(self, l, o, q):
-        self.l = l
-        self.o = o
-        self.q = q
-        
-    def point(self, i):
-        v = rotate(rotate(X, axis_angle(Z, math.pi * 2 / 3 * i)), self.q)
-        return self.o + self.l * v
-
-    def plot_data(self, i):
-        o = np.reshape(self.point(i), (3,1))
-        p = np.reshape(self.point((i+1)%3), (3,1))
-        data = np.concatenate((o, p), 1)
-        return data
-
-    def plot(self, ax, ax_2dx, ax_2dy, ax_2dz):
-        self.lines = []
-        self.lines_2dx = []
-        self.lines_2dy = []
-        self.lines_2dz = []
-
-        for i in range(3):
-            data = self.plot_data(i)
-            
-            line, = ax.plot(data[0], data[1], data[2])
-            self.lines.append(line)
-    
-            line, = ax_2dx.plot(data[1], data[2])
-            self.lines_2dx.append(line)
-
-            line, = ax_2dy.plot(data[0], data[2])
-            self.lines_2dy.append(line)
-
-            line, = ax_2dz.plot(data[0], data[1])
-            self.lines_2dz.append(line)
-
-    def plot_update(self):
-        for i in range(3):
-            data = self.plot_data(i)
-            
-            line = self.lines[i]
-            line.set_data(data[0:2])
-            line.set_3d_properties(data[2])
-
-            self.lines_2dx[i].set_data(data[np.array([1,2])])
-            self.lines_2dy[i].set_data(data[np.array([0,2])])
-            self.lines_2dz[i].set_data(data[np.array([0,1])])
-
-class Platform:
-    def __init__(self, tool_o, tool_q):
-
-        self.tool = Tool(0.1, tool_o, tool_q)
-        
-        arm_anchor_radius = 0.5
-
-        self.arms = []
-        for i in range(6):
-            j = (i-i%2)//2
-
-            a = i * math.pi * 2 / 6
-
-            x = math.cos(a)
-            y = math.sin(a)
-            z = 0
-            
-            o = np.array([x,y,z]) * arm_anchor_radius
-            
-            p = self.tool.point(j)
-            v = p - o
-
-            q = from_vectors(X, v)
-
-            #print(q)
-
-            arm = Arm(np.linalg.norm(v), o, q)
-
-            self.arms.append(arm)
-
-    def move_tool(self, o, q):
-        self.tool.o = o
-        self.tool.q = q
-        self.update_arms()
-    
-    def move_arms(self, moves):
-        for i, l in moves:
-            self.arms[i].l = l
-
-        solve(self)
-
-    def update_arms(self):
-        for i in range(6):
-            j = (i-i%2)//2
-
-            o = self.arms[i].o
-            
-            p = self.tool.point(j)
-            v = p - o
-
-            self.arms[i].l = np.linalg.norm(v)
-
-            q = from_vectors(X, v)
-
-            self.arms[i].q = q
-
-    def get_lengths(self):
-        return np.array([a.l for a in self.arms])
-
-    def get_tool_verts(self):
-        return [[self.tool.point(i) for i in range(3)]]
-
-    def plot(self, fig, fig2d):
-        ax = a3.Axes3D(fig)
-        
-        ax_2dx = fig2d.add_subplot(2,2,1)
-        ax_2dy = fig2d.add_subplot(2,2,2)
-        ax_2dz = fig2d.add_subplot(2,2,3)
-
-        for i, arm in zip(range(6), self.arms):
-            linewidth = 3 if i == 0 else 1
-            arm.plot(ax, ax_2dx, ax_2dy, ax_2dz, linewidth)
-       
-        self.tool.plot(ax, ax_2dx, ax_2dy, ax_2dz)
-
-        p = np.array([-0.5,0.5])
-        ax.set_xlim3d(p)
-        ax.set_ylim3d(p)
-        ax.set_zlim3d(p-0.5)
-
-    def plot_update(self):
-        for arm in self.arms:
-            arm.plot_update()
-        
-        self.tool.plot_update()
-
-    def print_(self):
-        print('tool')
-        print('    {}'.format(self.tool.o))
-        print('    {}'.format(self.tool.q))
-        print('arms')
-        for a in self.arms:
-            print('    {}'.format(a.o))
-            print('    {}'.format(a.l))
-
-
-if False:
-    p.plot()
-    plt.show()
 
 def circle(i, z):
     period_in_frames = 60
@@ -368,22 +127,22 @@ def update_plot(num, p, prog):
 def update_plot_2d(num, p, prog):
     return list(update_plot_2d_(num, p, prog))
 
-def calculate_length_delta(l0, p, o, q):
-    p.move_tool(o, p.tool.q)
+def calculate_length_delta(l0, platform, p, q):
+    platform.move_tool(p, q)
 
-    l = p.get_lengths()
+    l = platform.get_lengths()
 
     #print('l0',l0)
     #print('l ',l)
 
     return l - l0
 
-def func_home(X, p, q, platform, length_delta_list, pos_list, verbose):
+def func_home(X, p, q, platform, length_delta_list, tip_z_list, verbose):
     p_0 = X[:3]
     q_0 = X[3:]
     q_0 = q_0 / np.linalg.norm(q_0)
 
-    if verbose: print('tool starting position guess', p_0, q_0)
+    if verbose: print('tool starting position guess p = {:+.4e} {:+.4e} {:+.4e} q = {}'.format(p_0[0], p_0[1], p_0[2], q_0))
     
     #platform.move_tool(p_0, q)
     platform.move_tool(p_0, q_0)
@@ -392,14 +151,12 @@ def func_home(X, p, q, platform, length_delta_list, pos_list, verbose):
 
     e = 0
 
-    for length_delta, pos in zip(length_delta_list, pos_list):
-        p_1, q_1 = pos
-            
+    for length_delta, z in zip(length_delta_list, tip_z_list):
         length = l_0 + length_delta
         
         platform.move_arms([(i, l) for i, l in zip(range(6), length)])
             
-        e += (platform.tool.o[2] - p_1[2])**2
+        e += (platform.tool.tip()[2] - z)**2
     
     e = math.sqrt(e)
 
@@ -422,22 +179,33 @@ def plot_2d_homing_func(o, q0, p, length_delta_list, pos_list):
     plt.colorbar(c)
     plt.show()
 
+def calculate_tip_pos(platform, p, q):
+    platform.move_tool(p, q)
+    return platform.tool.tip()
+
 def create_test_points(platform, l0):
     # list of tool positions
     n = 3
     pos_list = []
     for x in np.linspace(-.1, .1, n):
         for y in np.linspace(-.1, .1, n):
-            pos_list.append((np.array([x,y,-.5]), axis_angle(Z, 0)))
+            p = np.array([x, y, -0.5])
+            #q = quaternion_multiply(axis_angle(), axis_angle(Z, 0))
+            #q = np.array(platform.tool.q)
+            q = axis_angle(X, x/.1*math.pi/4)
+
+            pos_list.append((p, q))
     
     # list of arm length deltas associated with the list of positions
     length_delta_list = [calculate_length_delta(l0, platform, p, q) for p, q in pos_list]
 
-    print('length delta list')
-    for pos, length_delta in zip(pos_list, length_delta_list):
-        print(pos, length_delta)
+    tip_z_list = [calculate_tip_pos(platform, p, q)[2] for p, q in pos_list]
 
-    return pos_list, length_delta_list
+    print('length delta list')
+    for z, pos, length_delta in zip(tip_z_list, pos_list, length_delta_list):
+        print(z, pos, length_delta)
+    
+    return tip_z_list, length_delta_list
 
 def test_home(o, q):
     print('home program')
@@ -469,13 +237,18 @@ def test_home(o, q):
 
     for x in np.linspace(-.1, .1, 3):
         p0 = np.array([x, 0, -0.4])
-        q0 = axis_angle(Z, 0)
+        p0 = np.array([0.05, 0, -0.35])
+        q0 = axis_angle(Z, math.pi/6)
 
         #x0 = p0
         x0 = np.concatenate((p0, q0))
         
-        r = scipy.optimize.minimize(func_home, x0, (o, q, p, length_delta_list, pos_list, True), bounds=bounds,
-                options = {'eps': 1e-4})
+        r = scipy.optimize.minimize(
+                func_home, 
+                x0, 
+                (o, q, p, length_delta_list, pos_list, True), 
+                bounds=bounds,
+                options = {'eps': 1e-5})
         
         if r.success:
             break
@@ -511,7 +284,7 @@ def test_math():
 #axis_angle(X, math.pi/2)
 
 def test():
-    p = Platform(axis_angle(Z,2*math.pi/12))
+    p = Platform()
 
     p.print_()
 
@@ -533,7 +306,11 @@ def test():
 
 #######################
 
-test_home(np.array([.05, 0, -0.35]), axis_angle(Z, 2*math.pi/12))
+if False:
+    p.plot()
+    plt.show()
+
+test_home(np.array([.05, 0, -0.35]), axis_angle(Z, math.pi/6))
 
 
 
