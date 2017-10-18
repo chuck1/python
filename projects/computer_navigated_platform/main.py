@@ -381,6 +381,7 @@ def calculate_length_delta(l0, p, o, q):
 def func_home(X, p, q, platform, length_delta_list, pos_list, verbose):
     p_0 = X[:3]
     q_0 = X[3:]
+    q_0 = q_0 / np.linalg.norm(q_0)
 
     if verbose: print('tool starting position guess', p_0, q_0)
     
@@ -398,8 +399,10 @@ def func_home(X, p, q, platform, length_delta_list, pos_list, verbose):
         
         platform.move_arms([(i, l) for i, l in zip(range(6), length)])
             
-        e += abs(platform.tool.o[2] - p_1[2])
+        e += (platform.tool.o[2] - p_1[2])**2
     
+    e = math.sqrt(e)
+
     if verbose: print('home error', e)
 
     return e
@@ -421,7 +424,7 @@ def plot_2d_homing_func(o, q0, p, length_delta_list, pos_list):
 
 def create_test_points(platform, l0):
     # list of tool positions
-    n = 2
+    n = 3
     pos_list = []
     for x in np.linspace(-.1, .1, n):
         for y in np.linspace(-.1, .1, n):
@@ -471,7 +474,8 @@ def test_home(o, q):
         #x0 = p0
         x0 = np.concatenate((p0, q0))
         
-        r = scipy.optimize.minimize(func_home, x0, (o, q, p, length_delta_list, pos_list, True), bounds=bounds)
+        r = scipy.optimize.minimize(func_home, x0, (o, q, p, length_delta_list, pos_list, True), bounds=bounds,
+                options = {'eps': 1e-4})
         
         if r.success:
             break
@@ -480,6 +484,12 @@ def test_home(o, q):
 
     print(r)
     
+    print('p')
+    print(r.x[:3])
+    print(o)
+    print('q')
+    print(r.x[3:])
+    print(q)
 
 def test_math():
     print(rotate(X, axis_angle(Y, math.pi/2)))
