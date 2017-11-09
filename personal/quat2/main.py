@@ -128,6 +128,9 @@ def example():
 
     V1 = [(p - o) for p in P]
 
+    for v1 in V1:
+        print(v1)
+
     k = [np.linalg.norm(v) for v in V1]
 
     V = [normalize(v) for v in V1]
