@@ -72,8 +72,10 @@ class Example:
         #print(x)
         
         self.J = np.array([[sympy.diff(y0,x0) for x0 in x] for y0 in self.Y])
-    
-        #print(np.shape(self.J))
+        
+        print(len(self.Y))
+        print(len(x))
+        print(np.shape(self.J))
     
         #print(self.J)
         
@@ -103,6 +105,7 @@ def solve(f, fj, x, args):
         print(" ".join("{:10.3e}".format(y1) for y1 in y))
 
         j = fj(x, *args)
+        
         jt = np.transpose(j)
     
         ji = np.dot(np.linalg.inv(np.dot(jt, j)), jt)
@@ -137,7 +140,7 @@ def example():
 
     x = np.concatenate((q, np.reshape(a, (3,)), k))
 
-    if False:
+    if True:
         print(q,a,k)
     
         print('q')
@@ -178,6 +181,23 @@ a = np.array(a)
 a[1,0] += 1.5
 
 x = x_from_parts(q, a, k)
+
+j = e.GetJ(x, o, v, b)
+jt = np.transpose(j)
+jtj = np.dot(jt, j)
+jtji = np.linalg.inv(jtj)
+ji = np.dot(np.linalg.inv(jtj), jt)
+
+print('j')
+print(j)
+print('jt')
+print(jt)
+print('jtj')
+print(jtj)
+print('jtji')
+print(jtji)
+print('ji')
+print(ji)
 
 solve(e.GetY, e.GetJ, x, (o, v, b))
 
