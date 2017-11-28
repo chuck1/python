@@ -1,4 +1,4 @@
-import pyaudio
+#import pyaudio
 import sys
 import wave
 import math
@@ -78,7 +78,14 @@ def compute_samples(channels, nsamples=None):
     essentially it creates a sequence of the sum of each function in the channel
     at each sample in the file for each channel.
     '''
-    return islice(zip(*(map(sum, zip(*channel)) for channel in channels)), nsamples)
+    
+    b = (map(sum, zip(*channel)) for channel in channels)
+    a = zip(*b)
+
+    return islice(a, nsamples)
+
+def MaxAmp(sampwidth):
+    return float(int((2 ** (sampwidth * 8)) / 2) - 1)
 
 def write_wavefile(filename, samples, nframes=None, nchannels=2, sampwidth=2, framerate=44100, bufsize=2048):
     "Write samples to a wavefile."
@@ -93,7 +100,7 @@ def write_wavefile(filename, samples, nframes=None, nchannels=2, sampwidth=2, fr
 
     print('sampwidth', sampwidth)
 
-    max_amplitude = float(int((2 ** (sampwidth * 8)) / 2) - 1)
+    max_amplitude = MaxAmp(sampwidth)
     
     def f2(channels):
         for sample in channels:
@@ -169,7 +176,7 @@ class Noise:
     #    z = scipy.signal.lfilter(b, a, self.y)
     #    return z[-1]
 
-def main():
+def writewave():
 
     framerate = 44100
     duration = 10
@@ -210,6 +217,130 @@ def main():
     write_wavefile(sys.argv[1], samples, framerate * duration, 2, 16 // 8, framerate)
 
 
+def histwave(freq, sp):
+    
+    x = np.array(freq)
+    y = np.array(sp)
+    
+    nbins = 100
+    
+    bins = np.linspace(0, np.max(freq), nbins)
+
+    for f0, f1 in zip(bins[:-1], bins[1:]):
+
+        ind = np.logical_and(freq > f0, freq <= f1)
+
+        sp1 = sp[ind]
+        
+        y = np.average(sp1)
+        #y = np.sum(sp1)
+
+        yield (f0 + f1) / 2, y
+
+    return x, y
+
+def histwave2(freq, sp):
+    
+    y = np.array(sp)
+    
+    a = y.argsort()
+    
+    y_cutoff = y[a[-5]]
+    
+    y[y < y_cutoff] = 0
+    
+    return y
+
+def wav_filter(z, W):
+    b, a = scipy.signal.butter(1, W)
+    return scipy.signal.lfilter(b, a, z)
+
+def hist_to_full(freq, freq1, sp1):
+    
+    #fig = plt.figure()
+    #ax = fig.add_subplot(111)
+ 
+    sp = np.zeros(np.shape(freq))
+    
+    i = np.array(range(np.shape(freq)[0]))
+
+    for f, s in zip(freq1, sp1):
+        
+        i1 = i[freq > f][0]
+
+        sp[i1] = s
+
+    return sp
+
+def plotwavefft(*Z):
+    
+    fig = plt.figure()
+    ax0 = fig.add_subplot(121)
+    ax1 = fig.add_subplot(122)
+
+    for z in Z:
+            
+        fig1 = plt.figure()
+        ax10 = fig1.add_subplot(121)
+        ax11 = fig1.add_subplot(122)
+
+        z = wav_filter(z, 0.05)
+
+        sp = np.fft.fft(z)
+        n = len(z)
+        freq = np.fft.fftfreq(n)
+    
+        #print(np.shape(freq))
+
+        n = np.shape(freq)[0]
+
+        freq1 = freq[:n//2]
+        sp1 = sp[:n//2]
+
+        #plt.plot(freq, sp.real, freq, sp.imag)
+        ax0.semilogy(freq[:n//2], np.absolute(sp1))
+        
+        #print(np.shape(sp1))
+        
+        sp2 = histwave2(freq1, sp1)
+        
+        ax1.semilogy(freq1, np.absolute(sp2), 'o')
+        
+        ax10.plot(z)
+        ax11.plot(np.fft.ifft(sp2))
+
+
+    plt.show()
+
+def readwave():
+
+    w = wave.open(sys.argv[1])
+
+    fr = w.getframerate()
+
+    print("framerate:",fr)
+    
+    max_amp = MaxAmp(w.getsampwidth())
+
+    n = w.getnframes()
+    print('frames:', n)
+    
+    t = np.arange(n) / float(fr)
+
+    b = w.readframes(n)
+    
+    i = struct.iter_unpack('hh', b)
+
+    z = [[float(x) / max_amp for x in c] for c in zip(*i)]
+
+    #plotwave(t,z[0])
+    #plotwavefft(z[0][23000:23500], z[0][62500:63000], z[0][20500:21000])
+    plotwavefft(z[0][22000:22500], z[0][22500:23000], z[0][23000:23500])
+    #plotwavefft(t[61800:63400], z[0][61800:63400])
+
+
 if __name__ == "__main__":
-    main()
+    readwave()
+
+
 
