@@ -4,109 +4,6 @@ import crayons
 
 from products import *
 
-def insert_process(l, product, process):
-    for i, p in l:
-        if i.product == product:
-            yield i, process
-
-            for i1 in process.inputs:
-                if i1.q > 0:
-                    yield i1, None
-
-        else:
-            yield i, p
-
-def insert_process_raw(l, product, process):
-    for i, p in l:
-        if i.product == product:
-            for i1 in process.inputs:
-                if i1.q < 0:
-                    yield i1, process
-                else:
-                    yield i1, None
-
-        else:
-            yield i, p
-
-def all_inputs3(x, inputs):
-    for i, process in inputs:
-        yield i, process
-    
-        #for i1 in process.inputs:
-        #    print(i1.product.name)
-        
-def all_inputs2(x, inputs):
-    if False:
-        print("all_inputs2")
-        for i, process in inputs:
-            print(i.product.name, process)
-    
-    for i, process in inputs:
-        if process is None:
-            for p in i.product.processes():
-                yield from all_inputs2(x, list(insert_process(inputs, i.product, p)))
-            break
-    
-    if all([process is not None for i, process in inputs]):
-        #yield inputs
-        yield all_inputs3(x, inputs)
-
-        #for i, process in inputs:
-
-def all_raw2(x, inputs):
-    if True:
-        print("all_raw2")
-        for i, process in inputs:
-            print(i.product.name, process)
-    
-    for i, process in inputs:
-        if i.q < 0:
-            continue
-
-        if process is None:
-            for p in i.product.processes():
-                yield from all_raw2(x, list(insert_process_raw(inputs, i.product, p)))
-            break
-    
-    if all([(process is not None) or (i.q < 0) for i, process in inputs]):
-        yield inputs
-        #yield all_raw3(x, inputs)
-
-        #for i, process in inputs:
-            
-
-class Process:
-    def __init__(self, name, inputs, t):
-        self.name = name
-        self.inputs = inputs
-        self.t = t
-
-    def all_inputs(self, x):
-        return all_inputs2(x, [(i, None) for i in self.inputs if i.q > 0])
-
-
-    def raw(self, x):
-        return all_raw2(x, [(i, None) for i in self.inputs])
-
-        """
-        inputs = []
-
-        for i in self.inputs:
-
-            inputs.append(i)
-
-            for r in i.product.all_inputs(1.0):
-                inputs.append(r.mul(i.q))
-
-        inputs = sorted(inputs, key=lambda i: id(i.product))
-        
-        for k, g in itertools.groupby(inputs, key=lambda i: i.product):
-            s = sum([i.q for i in g]) * x
-            #print(k.name, s)
-
-            yield ProductInput(k, s)
-        """
-
 mine_water = Process(
         "mine_water",
         [
@@ -147,7 +44,7 @@ basic_oil_processing = Process(
         )
 
 mine_coal = Process(
-        "coal",
+        "mine coal",
         [
             ProductInput(coal, -0.525),
             ],
@@ -155,7 +52,7 @@ mine_coal = Process(
         )
 
 produce_plastic_bar = Process(
-        "plastic bar",
+        "produce plastic bar",
         [
             ProductInput(coal, 1),
             ProductInput(petroleum, 20),
@@ -164,156 +61,9 @@ produce_plastic_bar = Process(
         1,
         )
 
-
-rocket_fuel = Product("rocket_fuel", [],
-        1 / 30,
-        )
-
-solar_panel = Product("solar_panel", [
-    ProductInput(copper_plate, 5),
-    ProductInput(electronic_circuit, 15),
-    ProductInput(steel_plate, 5),
-    ],
-    1 / 10,
-    )
-
-satellite = Product("satellite", [
-    ProductInput(accumulator, 100),
-    ProductInput(low_density_structure, 100),
-    ProductInput(processing_unit, 100),
-    ProductInput(radar, 5),
-    ProductInput(rocket_fuel, 50),
-    ProductInput(solar_panel, 100),
-    ],
-    1 / 5,
-    )
-
-rocket_control_unit = Product("rocket_control_unit", [
-    ProductInput(processing_unit, 1),
-    ProductInput(speed_module_1, 1),
-    ],
-    1 / 30,
-    )
-
-rocket_part = Product("rocket_part", [
-    ProductInput(low_density_structure, 10),
-    ProductInput(rocket_control_unit, 10),
-    ProductInput(rocket_fuel, 10),
-    ],
-    1 / 3,
-    )
-
-launch_satellite = Product("launch_satellite", [
-    ProductInput(rocket_part, 100),
-    ProductInput(satellite, 1),
-    ],
-    )
-    
-science_pack_1 = Product("science pack 1",
-        [
-            ProductInput(copper_plate, 1, 0.5),
-            ProductInput(iron_gear_wheel, 1, 0.5),
-            ],
-        1 / 5,
-        )
-
-inserter = Product("inserter",
-        [
-            ProductInput(electronic_circuit, 1, 1),
-            ProductInput(iron_gear_wheel, 1, 1),
-            ProductInput(iron_plate, 1, 1),
-            ],
-        1 / 0.5,
-        [express_belt],
-        )
-
-fast_inserter = Product("fast inserter",
-        [
-            ProductInput(electronic_circuit, 2, 1),
-            ProductInput(inserter, 1, 1),
-            ProductInput(iron_plate, 2, 1),
-            ],
-        1 / 0.5,
-        [express_belt],
-        )
-
-stack_inserter = Product("stack inserter",
-        [
-            ProductInput(advanced_circuit, 1, 1),
-            ProductInput(electronic_circuit, 15, 1),
-            ProductInput(fast_inserter, 1, 1),
-            ProductInput(iron_gear_wheel, 15, 1),
-            ],
-        1 / 0.5,
-        [express_belt],
-        )
-
-transport_belt = Product("transport_belt",
-        [
-            ProductInput(iron_gear_wheel, 1, 1),
-            ProductInput(iron_plate, 1, 1),
-            ],
-        1 / 0.5,
-        [express_belt],
-        )
-
-science_pack_2 = Product("science pack 2",
-        [
-            ProductInput(inserter, 1, 0.5),
-            ProductInput(transport_belt, 1, 0.5),
-            ],
-        1 / 6,
-        )
-
-firearm_magazine = Product(
-        "firearm magazine",
-        [
-            ProductInput(iron_plate, 4, 1),
-            ],
-        1,
-        )
-
-piercing_rounds_magazine = Product(
-        "piercing rounds magazine",
-        [
-            ProductInput(copper_plate, 5, 1),
-            ProductInput(firearm_magazine, 1, 1),
-            ProductInput(steel_plate, 1, 1),
-            ],
-        1 / 3,
-        )
-
-defender_capsule = Product(
-        "defender capsule",
-        [
-            ProductInput(electronic_circuit, 2, 1),
-            ProductInput(iron_gear_wheel, 3, 1),
-            ProductInput(piercing_rounds_magazine, 1, 1),
-            ],
-        1 / 8,
-        )
-
-distractor_capsule = Product(
-        "distractor capsule",
-        [
-            ProductInput(advanced_circuit, 3, 1),
-            ProductInput(defender_capsule, 4, 1),
-            ],
-        1 / 15,
-        )
-
-destroyer_capsule = Product(
-        "destroyer capsule",
-        [
-            ProductInput(distractor_capsule, 4, 1),
-            ProductInput(speed_module_1, 1, 1),
-            ],
-        1 / 15,
-        )
-
 tiers = []
 
-processes = [p for p in globals().values() if isinstance(p, Process)]
+Process.processes = [p for p in globals().values() if isinstance(p, Process)]
 
 def tier_index(product):
     for i in range(len(tiers)):
@@ -360,8 +110,6 @@ def print_raw(p, x):
     print(p.name)
     for r in p.raw(x):
         print("\t{:24} {:8.2f}".format(r.product.name, r.q))
-
-
 
 def print_all(p, x):
     print(p.name)
@@ -465,11 +213,15 @@ x = produce_plastic_bar.raw(1)
 print()
 for y in x:
     print("option")
-    for i, p in y:
+    for i, p in y.final:
         if p is not None:
-            print("\t{:32} {:32}".format(i.product.name, p.name))
+            print("\t{:32} {:8.2f} {:32}".format(i.product.name, i.q, p.name))
         else:
-            print("\t{:32} {:32}".format(i.product.name, ""))
+            print("\t{:32} {:8.2f} {:32}".format(i.product.name, i.q, ""))
+
+    print("group")
+    for i in y.group():
+        print("\t{:32} {:8.2f}".format(i.product.name, i.q))
 
 
 

@@ -2,6 +2,8 @@ import math
 import itertools
 import crayons
 
+from process import *
+
 class Transport:
     def __init__(self, name, rate):
         self.name = name
@@ -35,7 +37,7 @@ class Product:
         #for p in processes:
         #    print(p.name)
         
-        for p in processes:
+        for p in Process.processes:
             for i in p.inputs:
                 if i.product == self:
                     if i.q < 0:
