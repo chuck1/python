@@ -1,85 +1,94 @@
 import math
 import itertools
+import crayons
 
-class Transport:
-    def __init__(self, name, rate):
-        self.name = name
-        self.rate = rate
+from products import *
 
-express_belt = Transport("express belt", 40)
+def insert_process(l, product, process):
+    for i, p in l:
+        if i.product == product:
+            yield i, process
 
-class ProductInput:
-    def __init__(self, product, q=None):
-        self.product = product
-        # qantity
-        self.q = q
+            for i1 in process.inputs:
+                if i1.q > 0:
+                    yield i1, None
 
-    def mul(self, x):
-        return ProductInput(self.product, self.q * x)
+        else:
+            yield i, p
 
-class Product:
-    def __init__(self, name, inputs, rate=None, transport=[]):
+def insert_process_raw(l, product, process):
+    for i, p in l:
+        if i.product == product:
+            for i1 in process.inputs:
+                if i1.q < 0:
+                    yield i1, process
+                else:
+                    yield i1, None
+
+        else:
+            yield i, p
+
+def all_inputs3(x, inputs):
+    for i, process in inputs:
+        yield i, process
+    
+        #for i1 in process.inputs:
+        #    print(i1.product.name)
+        
+def all_inputs2(x, inputs):
+    if False:
+        print("all_inputs2")
+        for i, process in inputs:
+            print(i.product.name, process)
+    
+    for i, process in inputs:
+        if process is None:
+            for p in i.product.processes():
+                yield from all_inputs2(x, list(insert_process(inputs, i.product, p)))
+            break
+    
+    if all([process is not None for i, process in inputs]):
+        #yield inputs
+        yield all_inputs3(x, inputs)
+
+        #for i, process in inputs:
+
+def all_raw2(x, inputs):
+    if True:
+        print("all_raw2")
+        for i, process in inputs:
+            print(i.product.name, process)
+    
+    for i, process in inputs:
+        if i.q < 0:
+            continue
+
+        if process is None:
+            for p in i.product.processes():
+                yield from all_raw2(x, list(insert_process_raw(inputs, i.product, p)))
+            break
+    
+    if all([(process is not None) or (i.q < 0) for i, process in inputs]):
+        yield inputs
+        #yield all_raw3(x, inputs)
+
+        #for i, process in inputs:
+            
+
+class Process:
+    def __init__(self, name, inputs, t):
         self.name = name
         self.inputs = inputs
-        # the rate at which one production building will produce this
-        self.rate = rate
-        # methods that can transport this
-        self.transport = transport
-    
-    def production_building_row_length(self):
-
-        inputs = list(self.inputs)
-
-        inputs = [ProductInput(i.product, i.q * self.rate) for i in inputs if express_belt in i.product.transport]
-
-        for i in inputs:
-            print(i.product.name, i.q)
-        
-        x = [10 / i.q for i in inputs]
-        
-        # if number of inputs is odd
-        if len(self.inputs) % 2 == 1:
-            x_min = min(x)
-            i = x.index(x_min)
-            del x[i]
-            x.append(x_min * 2)
-
-        # buildings per row based on output on one belt side
-        x.append(20 / self.rate)
-
-        print(x)
-
-        y = min(x)
-
-        y = math.floor(y)
-
-        print(y)
-
-    def raw(self, x):
-
-        inputs = list(self.inputs)
-
-        while True:
-            intermediates = [i for i in inputs if i.product.inputs]
-            if not intermediates: break
-
-            i = intermediates[0]
-
-            inputs.remove(i)
-
-            for r in i.product.raw(1.0):
-                inputs.append(r.mul(i.q))
-
-        inputs = sorted(inputs, key=lambda i: id(i.product))
-
-        for k, g in itertools.groupby(inputs, key=lambda i: i.product):
-            s = sum([i.q for i in g]) * x
-            #print(k.name, s)
-
-            yield ProductInput(k, s)
+        self.t = t
 
     def all_inputs(self, x):
+        return all_inputs2(x, [(i, None) for i in self.inputs if i.q > 0])
 
+
+    def raw(self, x):
+        return all_raw2(x, [(i, None) for i in self.inputs])
+
+        """
         inputs = []
 
         for i in self.inputs:
@@ -96,141 +105,77 @@ class Product:
             #print(k.name, s)
 
             yield ProductInput(k, s)
+        """
 
-coal = Product("coal", [])
-
-petroleum = Product("petroleum", [],
-        55 / 5)
-
-iron_ore = Product("iron ore", [],
-        0.525,
-        [express_belt],
-        )
-
-copper_ore = Product("copper ore", [])
-
-plastic_bar = Product("plastic bar",
+mine_water = Process(
+        "mine_water",
         [
-            ProductInput(coal, 1 / 2),
-            ProductInput(petroleum, 20 / 2),
+            ProductInput(water, -1200),
             ],
-        2 / 1,
-        [express_belt],
+        1,
         )
 
-sulfur = Product("sulfur", [])
+mine_crude_oil = Process(
+        "mine_crude_oil",
+        [
+            ProductInput(crude_oil, -50),
+            ],
+        1,
+        )
 
-copper_plate = Product("copper plate",
-    [
-        ProductInput(copper_ore, 1.0)
-    ],
-    0.57,
-    [
-        express_belt,
-    ])
+advanced_oil_processing = Process(
+        "advanced_oil_processing",
+        [
+            ProductInput(crude_oil, 100),
+            ProductInput(water, 50),
+            ProductInput(heavy_oil, -10),
+            ProductInput(light_oil, -45),
+            ProductInput(petroleum, -55),
+            ],
+        5,
+        )
 
-copper_cable = Product("copper cable", [
-    ProductInput(copper_plate, 0.5)
-    ],
-    2 / 0.5,
-    [express_belt],
-    )
+basic_oil_processing = Process(
+        "basic oil processing",
+        [
+            ProductInput(crude_oil, 100),
+            ProductInput(heavy_oil, -30),
+            ProductInput(light_oil, -30),
+            ProductInput(petroleum, -40),
+            ],
+        5,
+        )
 
-iron_plate = Product("iron plate",
-    [
-        ProductInput(iron_ore, 1.0),
-    ],
-    0.57,
-    [
-        express_belt,
-    ])
+mine_coal = Process(
+        "coal",
+        [
+            ProductInput(coal, -0.525),
+            ],
+        1,
+        )
 
-steel_plate = Product("steel plate", [
-    ProductInput(iron_plate, 5.0)
-    ])
+produce_plastic_bar = Process(
+        "plastic bar",
+        [
+            ProductInput(coal, 1),
+            ProductInput(petroleum, 20),
+            ProductInput(plastic_bar, -2),
+            ],
+        1,
+        )
 
-sulfuric_acid = Product("sulfuric acid", [
-    ProductInput(iron_plate, 1/50),
-    ProductInput(sulfur, 5/50),
-    ])
 
-electronic_circuit = Product("electronic circuit", [
-    ProductInput(iron_plate, 1.0),
-    ProductInput(copper_cable, 3.0),
-    ],
-    1 / 0.5,
-    [express_belt],
-    )
-
-advanced_circuit = Product("advanced circuit", [
-    ProductInput(copper_cable, 4.0),
-    ProductInput(electronic_circuit, 2.0),
-    ProductInput(plastic_bar, 2.0),
-    ],
-    1 / 6,
-    [express_belt],
-    )
-
-processing_unit = Product("processing unit", [
-    ProductInput(electronic_circuit, 20.0), 
-    ProductInput(advanced_circuit, 2.0), 
-    ProductInput(sulfuric_acid, 5.0),
-    ],
-    1 / 10,
-    [express_belt],
-    )
-
-speed_module_1 = Product("speed module 1", [
-    ProductInput(electronic_circuit, 5.0),
-    ProductInput(advanced_circuit, 5.0),
-    ])
-
-speed_module_2 = Product("speed module 2", [
-    ProductInput(advanced_circuit, 5.0),
-    ProductInput(processing_unit, 5.0),
-    ProductInput(speed_module_1, 4.0),
-    ])
-
-speed_module_3 = Product("speed module 3", [
-    ProductInput(advanced_circuit, 5.0),
-    ProductInput(processing_unit, 5.0),
-    ProductInput(speed_module_2, 5.0),
-    ])
-
-battery = Product("battery", [
-    ProductInput(iron_plate, 1),
-    ProductInput(copper_plate, 1),
-    ProductInput(sulfuric_acid, 20),
-    ])
-
-accumulator = Product("accumulator", [
-    ProductInput(iron_plate, 2),
-    ProductInput(battery, 5)
-    ])
-  
-low_density_structure = Product("low_density_structure", [
-    ProductInput(copper_plate, 5),
-    ProductInput(plastic_bar, 5),
-    ProductInput(steel_plate, 10),
-    ])
-
-iron_gear_wheel = Product("iron_gear_wheel", [
-    ProductInput(iron_plate, 2),
-    ])
-
-radar = Product("radar", [
-    ProductInput(electronic_circuit, 5),
-    ProductInput(iron_gear_wheel, 5),
-    ProductInput(iron_plate, 10),
-    ])
-
-rocket_fuel = Product("rocket_fuel", [])
+rocket_fuel = Product("rocket_fuel", [],
+        1 / 30,
+        )
 
 solar_panel = Product("solar_panel", [
     ProductInput(copper_plate, 5),
     ProductInput(electronic_circuit, 15),
     ProductInput(steel_plate, 5),
-    ])
+    ],
+    1 / 10,
+    )
 
 satellite = Product("satellite", [
     ProductInput(accumulator, 100),
@@ -239,26 +184,136 @@ satellite = Product("satellite", [
     ProductInput(radar, 5),
     ProductInput(rocket_fuel, 50),
     ProductInput(solar_panel, 100),
-    ])
+    ],
+    1 / 5,
+    )
 
 rocket_control_unit = Product("rocket_control_unit", [
     ProductInput(processing_unit, 1),
     ProductInput(speed_module_1, 1),
-    ])
+    ],
+    1 / 30,
+    )
 
 rocket_part = Product("rocket_part", [
     ProductInput(low_density_structure, 10),
     ProductInput(rocket_control_unit, 10),
     ProductInput(rocket_fuel, 10),
-    ])
+    ],
+    1 / 3,
+    )
 
 launch_satellite = Product("launch_satellite", [
     ProductInput(rocket_part, 100),
     ProductInput(satellite, 1),
-    ])
+    ],
+    )
     
+science_pack_1 = Product("science pack 1",
+        [
+            ProductInput(copper_plate, 1, 0.5),
+            ProductInput(iron_gear_wheel, 1, 0.5),
+            ],
+        1 / 5,
+        )
+
+inserter = Product("inserter",
+        [
+            ProductInput(electronic_circuit, 1, 1),
+            ProductInput(iron_gear_wheel, 1, 1),
+            ProductInput(iron_plate, 1, 1),
+            ],
+        1 / 0.5,
+        [express_belt],
+        )
+
+fast_inserter = Product("fast inserter",
+        [
+            ProductInput(electronic_circuit, 2, 1),
+            ProductInput(inserter, 1, 1),
+            ProductInput(iron_plate, 2, 1),
+            ],
+        1 / 0.5,
+        [express_belt],
+        )
+
+stack_inserter = Product("stack inserter",
+        [
+            ProductInput(advanced_circuit, 1, 1),
+            ProductInput(electronic_circuit, 15, 1),
+            ProductInput(fast_inserter, 1, 1),
+            ProductInput(iron_gear_wheel, 15, 1),
+            ],
+        1 / 0.5,
+        [express_belt],
+        )
+
+transport_belt = Product("transport_belt",
+        [
+            ProductInput(iron_gear_wheel, 1, 1),
+            ProductInput(iron_plate, 1, 1),
+            ],
+        1 / 0.5,
+        [express_belt],
+        )
+
+science_pack_2 = Product("science pack 2",
+        [
+            ProductInput(inserter, 1, 0.5),
+            ProductInput(transport_belt, 1, 0.5),
+            ],
+        1 / 6,
+        )
+
+firearm_magazine = Product(
+        "firearm magazine",
+        [
+            ProductInput(iron_plate, 4, 1),
+            ],
+        1,
+        )
+
+piercing_rounds_magazine = Product(
+        "piercing rounds magazine",
+        [
+            ProductInput(copper_plate, 5, 1),
+            ProductInput(firearm_magazine, 1, 1),
+            ProductInput(steel_plate, 1, 1),
+            ],
+        1 / 3,
+        )
+
+defender_capsule = Product(
+        "defender capsule",
+        [
+            ProductInput(electronic_circuit, 2, 1),
+            ProductInput(iron_gear_wheel, 3, 1),
+            ProductInput(piercing_rounds_magazine, 1, 1),
+            ],
+        1 / 8,
+        )
+
+distractor_capsule = Product(
+        "distractor capsule",
+        [
+            ProductInput(advanced_circuit, 3, 1),
+            ProductInput(defender_capsule, 4, 1),
+            ],
+        1 / 15,
+        )
+
+destroyer_capsule = Product(
+        "destroyer capsule",
+        [
+            ProductInput(distractor_capsule, 4, 1),
+            ProductInput(speed_module_1, 1, 1),
+            ],
+        1 / 15,
+        )
 
 tiers = []
+
+processes = [p for p in globals().values() if isinstance(p, Process)]
 
 def tier_index(product):
     for i in range(len(tiers)):
@@ -306,39 +361,58 @@ def print_raw(p, x):
     for r in p.raw(x):
         print("\t{:24} {:8.2f}".format(r.product.name, r.q))
 
+
+
 def print_all(p, x):
     print(p.name)
     inputs = list(p.all_inputs(x))
     inputs = sorted(inputs, key=lambda x: x.product.tier)
     for r in inputs:
-        print("\t{:24} {:8.2f}".format(r.product.name, r.q))
 
-        b = None
-        if r.product.rate is not None:
-            b = r.q / r.product.rate
-            print("\t\tproduction buildings: {:8.2f}".format(b))
         
-        if r.product.transport:
-            print("\t\ttransport")
-            for t in r.product.transport:
-                x = r.q / t.rate
-                print("\t\t\t{:24} {:8.2f}".format(t.name, x))
+        if r.product.rate is not None:
+            print("\t{:24} {:12.4f} {:8.2f}".format(r.product.name, r.q, r.q / r.product.rate))
+        else:
+            print("\t{:24} {:12.4f}".format(r.product.name, r.q))
 
-                if b is not None:
-                    print("\t\t\t\t{:8.2f} production buildings per transport".format(b / math.ceil(x)))
+        #if r.product.rate is not None:
+        #    b = r.q / r.product.rate
+        #    print("\t\tproduction buildings: {:8.2f}".format(b))
+        
+        #if r.product.transport:
+        #    print("\t\ttransport")
+        #    for t in r.product.transport:
+        #        x = r.q / t.rate
+        #        print("\t\t\t{:24} {:8.2f}".format(t.name, x))
 
+
+new_base_supplies = Product(
+        "new base supplier",
+        [
+            ProductInput(stack_inserter, 48),
+            ],
+        )
 
 production = Product("production", [
     ProductInput(speed_module_3, 1 / 3 / 60),
     ProductInput(speed_module_3, 1 / 3 / 60),
     ProductInput(speed_module_3, 1 / 3 / 60),
-    ProductInput(launch_satellite, 1 / 10/ 60),
+    ProductInput(launch_satellite, 1 / 10 / 60),
+    ProductInput(destroyer_capsule, 1 / 1 / 60),
+    ProductInput(piercing_rounds_magazine, 1 / 1 / 60),
+    ProductInput(science_pack_1, 10 / 60),
+    ProductInput(science_pack_2, 10 / 60),
+    ProductInput(new_base_supplies, 1 / 30 / 60),
     ])
+
+
 
 tiers_insert(production)
 
 #print_all(electronic_circuit, 1)
-print_all(production, 1)
+#print_all(production, 1)
+
+#print_all2(petroleum, 1)
 
 
 
@@ -372,11 +446,30 @@ def train_rate():
 
 #train_rate()
 
-
-#iron_plate.production_building_row_length()
-#advanced_circuit.production_building_row_length()
-#processing_unit.production_building_row_length()
-
+if False:
+    iron_plate.production_building_row_length()
+    copper_plate.production_building_row_length()
+    copper_cable.production_building_row_length()
+    
+    #iron_plate.production_building_row_length()
+    advanced_circuit.production_building_row_length()
+    #processing_unit.production_building_row_length()
+    
+    inserter.production_building_row_length()
+    
+    science_pack_1.production_building_row_length()
+    science_pack_2.production_building_row_length()
+    
+#x = advanced_oil_processing.all_inputs(1)
+x = produce_plastic_bar.raw(1)
+print()
+for y in x:
+    print("option")
+    for i, p in y:
+        if p is not None:
+            print("\t{:32} {:32}".format(i.product.name, p.name))
+        else:
+            print("\t{:32} {:32}".format(i.product.name, ""))
 
 
 
