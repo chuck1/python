@@ -1,8 +1,11 @@
 import math
 import itertools
 import crayons
-
+import numpy as np
+import scipy.optimize
 from products import *
+
+Process.electrical_energy = electrical_energy
 
 mine_water = Process(
         "mine_water",
@@ -30,6 +33,7 @@ advanced_oil_processing = Process(
             ProductInput(petroleum, -55),
             ],
         5,
+        420,
         )
 
 basic_oil_processing = Process(
@@ -41,6 +45,7 @@ basic_oil_processing = Process(
             ProductInput(petroleum, -40),
             ],
         5,
+        420,
         )
 
 mine_coal = Process(
@@ -207,21 +212,65 @@ if False:
     
     science_pack_1.production_building_row_length()
     science_pack_2.production_building_row_length()
-    
-#x = advanced_oil_processing.all_inputs(1)
-x = produce_plastic_bar.raw(1)
-print()
-for y in x:
-    print("option")
-    for i, p in y.final:
-        if p is not None:
-            print("\t{:32} {:8.2f} {:32}".format(i.product.name, i.q, p.name))
-        else:
-            print("\t{:32} {:8.2f} {:32}".format(i.product.name, i.q, ""))
 
-    print("group")
-    for i in y.group():
-        print("\t{:32} {:8.2f}".format(i.product.name, i.q))
+if False:
+    #x = advanced_oil_processing.all_inputs(1)
+    x = produce_plastic_bar.raw(1)
+    print()
+    for y in x:
+        print("option")
+        for i, p in y.final:
+            if p is not None:
+                print("\t{:32} {:8.2f} {:32}".format(i.product.name, i.q, p.name))
+            else:
+                print("\t{:32} {:8.2f} {:32}".format(i.product.name, i.q, ""))
+    
+        print("group")
+        for i in y.group():
+            print("\t{:32} {:8.2f}".format(i.product.name, i.q))
+
+
+def fun(X, process, product, rate):
+
+    ing = list(process.ingredients_grouped(X))
+    
+    i = next(i for i in ing if i.product == product)
+    
+    #print(i.product.name, i.q)
+    #print(i.product.name, rate)
+
+    c = rate / i.q
+    
+    #print('c',c)
+    
+    e = next(i for i in ing if i.product == electrical_energy)
+    #print(e.product.name, e.q)
+    #print(e.product.name, e.q * c)
+    
+    #ing = [i.mul(c) for i in ing]
+    
+    return e.q * c
+
+def optimizer(process, product, rate, X):
+    
+    #X = np.ones(process.process_count())
+
+    return scipy.optimize.minimize(fun, X, (process, product, rate))
+
+v = VirtualProcess(petroleum, [basic_oil_processing, advanced_oil_processing])
+
+ret = optimizer(v, petroleum, -1, [1, 100])
+print(ret)
+
+#for i in v.ingredients_grouped([1,1]):
+#    print("\t{:32} {:8.2f}".format(i.product.name, i.q))
+
+if True:
+    print(fun([1,1], v, petroleum, -1))
+    print(fun([1,2], v, petroleum, -1))
+    print(fun([1,3], v, petroleum, -1))
+    print(fun([1,10], v, petroleum, -1))
+    print(fun([1,100], v, petroleum, -1))
 
 
 

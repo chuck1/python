@@ -100,11 +100,65 @@ def all_raw2(x, raw):
 
         #for i, process in inputs:
 
+class VirtualProcess:
+    def __init__(self, product, processes):
+        self.product = product
+        self.processes = processes
+
+    def ingredients(self, X):
+        # X - process cycles per process cycle
+        # returns items per process cycle
+
+        if len(X) != self.process_count():
+            raise RuntimeError("length of X must equal the process count")
+
+        for p in self.processes:
+
+            X1 = X[:(p.process_count() + 1)]
+            X = X[(p.process_count() + 1):]
+            
+            x = X1[0]
+            
+            #print(p)
+            #print(X1[1:])
+            for i in p.ingredients(X1[1:]):
+                yield i.mul(x)
+    
+    def ingredients_grouped(self, X):
+        
+        l = list(self.ingredients(X))
+        
+        l = sorted(l, key=lambda i: id(i.product))
+
+        for k, g in itertools.groupby(l, key=lambda i: i.product):
+            s = sum([i.q for i in g])
+            yield ProductInput(k, s)
+
+    def process_count(self):
+        c = len(self.processes)
+        for p in self.processes:
+            c += p.process_count()
+        return c
+        
 class Process:
-    def __init__(self, name, inputs, t):
+    def __init__(self, name, inputs, t, power=None):
         self.name = name
         self.inputs = inputs
         self.t = t
+        
+        if power is not None:
+            self.inputs.append(ProductInput(self.electrical_energy, power * t))
+    
+    def process_count(self):
+        return 0
+
+    def ingredients(self, X):
+        # returns items per process cycle
+        if X:
+            raise RuntimeError()
+
+        for i in self.inputs:
+            yield i
 
     def all_inputs(self, x):
         return all_inputs2(x, [(i, None) for i in self.inputs if i.q > 0])

@@ -126,6 +126,10 @@ class Product:
 
             yield ProductInput(k, s)
 
+electrical_energy = Product(
+        "electrical energy",
+        [],
+        )
 
 water = Product(
         "water",
