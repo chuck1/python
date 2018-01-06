@@ -2,8 +2,8 @@ import math
 import itertools
 import crayons
 
-from products import *
-from product import *
+#from products import *
+from ingredient import *
 
 def insert_process(l, product, process):
     for i, p in l:
@@ -166,23 +166,102 @@ class Process:
     def raw(self, x):
         return all_raw2(x, Raw([(i, None) for i in self.inputs]))
 
-        """
+    def items_per_cycle(self, product):
+        try:
+            i = next(i for i in self.inputs if i.product == product)
+        except StopIteration:
+            raise RuntimeError("{} not found in {}".format(product.name, self.name))
+        return i.q
+
+    def buildings(self, product, rate):
+        i = self.items_per_cycle(product)
+        c = rate / i
+        return c * self.t
+
+    def excess_default(self, c0, track=None):
+        # c0 - cycles per second
+        # returns list of input items in items per second
+        
         inputs = []
 
         for i in self.inputs:
+            i1 = i.mul(c0)
 
-            inputs.append(i)
+            if track is not None:
+                if not i1.product in track:
+                    track[i1.product] = []
+                track[i1.product].append((self, i1))
+            
+            inputs.append(i1)
+ 
+            if i.q < 0:
+                continue
+           
+            p = i.product.process_default
 
-            for r in i.product.all_inputs(1.0):
-                inputs.append(r.mul(i.q))
+            c1 = i1.q / -p.items_per_cycle(i.product)
+
+            for i2 in p.excess_default(c1, track):
+                inputs.append(i2)
 
         inputs = sorted(inputs, key=lambda i: id(i.product))
-        
-        for k, g in itertools.groupby(inputs, key=lambda i: i.product):
-            s = sum([i.q for i in g]) * x
-            #print(k.name, s)
 
+        for k, g in itertools.groupby(inputs, key=lambda i1: i1.product):
+            g = list(g)
+            
+            s = sum([i.q for i in g])
+            
             yield ProductInput(k, s)
-        """
+
+
+    def all_inputs_default(self, c0, track=None):
+        # c0 - cycles per second
+        # returns list of input items in items per second
+        
+        inputs = []
+        
+        for i in self.inputs:
+           
+            i1 = i.mul(c0)
+
+            if track is not None:
+                if not i1.product in track:
+                    track[i1.product] = []
+                track[i1.product].append((self, i1))
+            
+            inputs.append(i1)
+
+            if i.q < 0:
+                continue
+            
+            p = i.product.default_process()
+            
+            # use excess available
+
+            rate = i1.q
+
+            c1 = rate / -p.items_per_cycle(i.product)
+           
+            g = p.all_inputs_default(c1, track)
+
+            for i2 in g:
+                inputs.append(i2)
+
+        inputs = sorted(inputs, key=lambda i: id(i.product))
+
+        for k, g in itertools.groupby(inputs, key=lambda i1: i1.product):
+            g = list(g)
+            
+            s = sum([i.q for i in g if i.q > 0])
+            
+            yield ProductInput(k, s)
+
+    def count_outputs(self):
+        return len(i for i in p.inputs if i.q < 0)
+
+def excess_in(inputs, product):
+    #inputs = [i for i in inputs if i.product == product]
+    return sum(i.q for i in inputs if i.product == product)
+
 
 

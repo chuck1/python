@@ -3,68 +3,11 @@ import itertools
 import crayons
 import numpy as np
 import scipy.optimize
+
 from products import *
+from processes import *
 
-Process.electrical_energy = electrical_energy
 
-mine_water = Process(
-        "mine_water",
-        [
-            ProductInput(water, -1200),
-            ],
-        1,
-        )
-
-mine_crude_oil = Process(
-        "mine_crude_oil",
-        [
-            ProductInput(crude_oil, -50),
-            ],
-        1,
-        )
-
-advanced_oil_processing = Process(
-        "advanced_oil_processing",
-        [
-            ProductInput(crude_oil, 100),
-            ProductInput(water, 50),
-            ProductInput(heavy_oil, -10),
-            ProductInput(light_oil, -45),
-            ProductInput(petroleum, -55),
-            ],
-        5,
-        420,
-        )
-
-basic_oil_processing = Process(
-        "basic oil processing",
-        [
-            ProductInput(crude_oil, 100),
-            ProductInput(heavy_oil, -30),
-            ProductInput(light_oil, -30),
-            ProductInput(petroleum, -40),
-            ],
-        5,
-        420,
-        )
-
-mine_coal = Process(
-        "mine coal",
-        [
-            ProductInput(coal, -0.525),
-            ],
-        1,
-        )
-
-produce_plastic_bar = Process(
-        "produce plastic bar",
-        [
-            ProductInput(coal, 1),
-            ProductInput(petroleum, 20),
-            ProductInput(plastic_bar, -2),
-            ],
-        1,
-        )
 
 tiers = []
 
@@ -85,7 +28,12 @@ def tiers_insert(product):
     
     i_max = -1
 
-    for product_input in product.inputs:
+    print(product.name)
+
+    for product_input in product.process_default.inputs:
+        if product_input.q < 0:
+            continue
+
         p = product_input.product
         i = tier_index(p)
         #print("index of", p.name, "is", i)
@@ -139,28 +87,11 @@ def print_all(p, x):
         #        print("\t\t\t{:24} {:8.2f}".format(t.name, x))
 
 
-new_base_supplies = Product(
-        "new base supplier",
-        [
-            ProductInput(stack_inserter, 48),
-            ],
-        )
 
-production = Product("production", [
-    ProductInput(speed_module_3, 1 / 3 / 60),
-    ProductInput(speed_module_3, 1 / 3 / 60),
-    ProductInput(speed_module_3, 1 / 3 / 60),
-    ProductInput(launch_satellite, 1 / 10 / 60),
-    ProductInput(destroyer_capsule, 1 / 1 / 60),
-    ProductInput(piercing_rounds_magazine, 1 / 1 / 60),
-    ProductInput(science_pack_1, 10 / 60),
-    ProductInput(science_pack_2, 10 / 60),
-    ProductInput(new_base_supplies, 1 / 30 / 60),
-    ])
-
-
-
-tiers_insert(production)
+tiers_insert(satellite)
+tiers_insert(stack_inserter)
+tiers_insert(science_pack_1)
+tiers_insert(science_pack_2)
 
 #print_all(electronic_circuit, 1)
 #print_all(production, 1)
@@ -199,7 +130,7 @@ def train_rate():
 
 #train_rate()
 
-if False:
+if True:
     iron_plate.production_building_row_length()
     copper_plate.production_building_row_length()
     copper_cable.production_building_row_length()
@@ -209,9 +140,12 @@ if False:
     #processing_unit.production_building_row_length()
     
     inserter.production_building_row_length()
+
+    processing_unit.production_building_row_length()
     
     science_pack_1.production_building_row_length()
     science_pack_2.production_building_row_length()
+    science_pack_3.production_building_row_length()
 
 if False:
     #x = advanced_oil_processing.all_inputs(1)
@@ -257,20 +191,67 @@ def optimizer(process, product, rate, X):
 
     return scipy.optimize.minimize(fun, X, (process, product, rate))
 
-v = VirtualProcess(petroleum, [basic_oil_processing, advanced_oil_processing])
+if False:
+    v = VirtualProcess(petroleum, [basic_oil_processing, advanced_oil_processing])
 
-ret = optimizer(v, petroleum, -1, [1, 100])
-print(ret)
+    ret = optimizer(v, petroleum, -1, [1, 100])
+    print(ret)
 
-#for i in v.ingredients_grouped([1,1]):
-#    print("\t{:32} {:8.2f}".format(i.product.name, i.q))
+    #for i in v.ingredients_grouped([1,1]):
+    #    print("\t{:32} {:8.2f}".format(i.product.name, i.q))
 
-if True:
-    print(fun([1,1], v, petroleum, -1))
-    print(fun([1,2], v, petroleum, -1))
-    print(fun([1,3], v, petroleum, -1))
-    print(fun([1,10], v, petroleum, -1))
-    print(fun([1,100], v, petroleum, -1))
+    if True:
+        print(fun([1,1], v, petroleum, -1))
+        print(fun([1,2], v, petroleum, -1))
+        print(fun([1,3], v, petroleum, -1))
+        print(fun([1,10], v, petroleum, -1))
+        print(fun([1,100], v, petroleum, -1))
+
+def process_track_list(l):
+
+    l = sorted(l, key=lambda t: id(t[0]))
+
+    for k, g in itertools.groupby(l, key=lambda t: t[0]):
+        g = list(g)
+        
+        #if any(i.q < 0 for p, i in g):
+        #    raise RuntimeError()
+
+        s = sum([i.q for p, i in g])
+        yield k, s
+
+def process_track(track):
+    return dict((p, process_track_list(l)) for p, l in track.items())
+
+def all_inputs_default(process):
+    track = {}
+    
+    print("inputs")
+    for i in process.all_inputs_default(1 / process.t, track):
+        if i.product.process_default.t is None:
+            print("\t{:32} {:12.2f}".format(i.product.name, i.q))
+        else:
+            b = -i.product.process_default.buildings(i.product, i.q)
+            print("\t{:32} {:12.2f} {:12.2f}".format(i.product.name, i.q, b))
+    
+    track = process_track(track)
+
+    print()
+    for p, l in track.items():
+        print(p.name)
+        for process1, r in l:
+            print("\t{:32} {:12.2f}".format(process1.name, r))
+    
+    track = {}
+
+    print()
+    for i in process.excess_default(1 / process.t, track):
+        print("\t{:32} {:12.2f}".format(i.product.name, i.q))
+
+
+all_inputs_default(production) 
+#all_inputs_default(produce_science_pack_3)
+#all_inputs_default(produce_satellite) 
 
 
 
