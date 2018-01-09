@@ -61,12 +61,22 @@ mine_stone = Process(
         has_site=True,
         )
 
+produce_stone_brick = Process(
+        "stone brick",
+        [
+            ProductInput(stone, 2, 1),
+            ProductInput(stone_brick, -1, 1),
+            ],
+        3.5,
+        has_site=True,
+        )
+
 mine_iron_ore = Process(
         "mine iron ore",
         [
-            ProductInput(iron_ore, -0.525),
+            ProductInput(iron_ore, -1),
             ],
-        1,
+        1.905,
         90,
         has_site=True,
         )
@@ -88,6 +98,47 @@ mine_coal = Process(
             ],
         1,
         90,
+        has_site=True,
+        )
+
+mine_uranium_ore = Process(
+        "uranium_ore",
+        [
+            ProductInput(sulfuric_acid, 1),
+            ProductInput(uranium_ore, -1),
+            ],
+        1.905,
+        has_site=True,
+        )
+
+uranium_processing = Process(
+        "uranium processing",
+        [
+            ProductInput(uranium_ore, 10),
+            ProductInput(uranium_235, -0.007),
+            ProductInput(uranium_238, -0.993),
+            ],
+        10,
+        )
+
+uranium_enrichment = Process(
+        "uranium enrichment",
+        [
+            ProductInput(uranium_238, 3),
+            ProductInput(uranium_235, -1),
+            ],
+        50,
+        )
+
+produce_uranium_fuel_cell = Process(
+        "uranium fuel cell",
+        [
+            ProductInput(iron_plate, 10),
+            ProductInput(uranium_235, 1),
+            ProductInput(uranium_238, 19),
+            ProductInput(uranium_fuel_cell, -10),
+            ],
+        10,
         )
 
 produce_plastic_bar = Process(
@@ -109,6 +160,7 @@ produce_sulfur = Process(
             ProductInput(sulfur, -2, 1),
             ],
         1,
+        has_site=True,
         )
 
 produce_iron_plate = Process(
@@ -160,6 +212,7 @@ produce_lubricant = Process(
             ProductInput(lubricant, -10),
             ],
         1,
+        has_site=True,
         )
 
 produce_sulfuric_acid = Process(
@@ -170,6 +223,7 @@ produce_sulfuric_acid = Process(
             ProductInput(sulfuric_acid, -50),
             ],
         1,
+        has_site=True,
         )
 
 produce_electronic_circuit = Process("electronic circuit", 
@@ -202,6 +256,7 @@ produce_processing_unit = Process("processing unit",
             ProductInput(processing_unit, -1, 1),
             ],
         10,
+        has_site=True,
         )
 
 produce_speed_module_1 = Process("speed module 1", 
@@ -211,6 +266,7 @@ produce_speed_module_1 = Process("speed module 1",
             ProductInput(speed_module_1, -1, 1),
             ],
         15,
+        has_site=True,
         )
 
 produce_speed_module_2 = Process("speed module 2", [
@@ -240,6 +296,7 @@ produce_battery = Process("battery",
             ProductInput(battery, -1, 1)
             ],
         5,
+        has_site=True,
         )
 
 produce_accumulator = Process("accumulator", 
@@ -350,6 +407,7 @@ produce_rocket_part = Process("rocket_part",
             ProductInput(rocket_part, -1),
             ],
         3,
+        4000,
         )
 
 produce_satellite_launch = Process(
@@ -358,6 +416,7 @@ produce_satellite_launch = Process(
             ProductInput(rocket_part, 100),
             ProductInput(satellite, 1),
             ProductInput(satellite_launch, -1, 1),
+            ProductInput(space_science_pack, -1000, 1),
             ],
         0,
         )
@@ -404,6 +463,7 @@ produce_transport_belt = Process(
             ProductInput(transport_belt, -1, 1),
             ],
         0.5,
+        has_site=True,
         )
 
 produce_fast_transport_belt = Process(
@@ -427,6 +487,18 @@ produce_express_transport_belt = Process(
         0.5,
         )
 
+produce_electric_furnace = Process(
+        "electric furnace",
+        [
+            ProductInput(advanced_circuit, 5, 1),
+            ProductInput(steel_plate, 10, 1),
+            ProductInput(stone_brick, 10, 1),
+            ProductInput(electric_furnace, -1, 1),
+            ],
+        5,
+        has_site=True,
+        )
+
 produce_electric_mining_drill = Process(
         "electric mining drill",
         [
@@ -436,6 +508,7 @@ produce_electric_mining_drill = Process(
             ProductInput(electric_mining_drill, -1, 1),
             ],
         2,
+        has_site=True,
         )
 
 produce_science_pack_1 = Process("science pack 1",
@@ -470,6 +543,42 @@ produce_science_pack_3 = Process(
         has_site=True,
         )
 
+produce_military_science_pack = Process(
+        "military science pack",
+        [
+            ProductInput(grenade, 1, 1),
+            ProductInput(gun_turret, 1, 1),
+            ProductInput(piercing_rounds_magazine, 1, 1),
+            ProductInput(military_science_pack, -2, 1),
+            ],
+        10,
+        has_site=True,
+        )
+
+produce_production_science_pack = Process(
+        "production science pack",
+        [
+            ProductInput(electric_engine_unit, 1, 1),
+            ProductInput(electric_furnace, 1, 1),
+            ProductInput(production_science_pack, -2, 1),
+            ],
+        14,
+        has_site=True,
+        )
+
+produce_high_tech_science_pack = Process(
+        "high tech science pack",
+        [
+            ProductInput(battery, 1, 1),
+            ProductInput(copper_cable, 30, 1),
+            ProductInput(processing_unit, 3, 1),
+            ProductInput(speed_module_1, 1, 1),
+            ProductInput(high_tech_science_pack, -2, 1),
+            ],
+        14,
+        has_site=True,
+        )
+
 produce_firearm_magazine = Process(
         "firearm magazine",
         [
@@ -477,6 +586,7 @@ produce_firearm_magazine = Process(
             ProductInput(firearm_magazine, -1, 1),
             ],
         1,
+        has_site=True,
         )
 
 produce_piercing_rounds_magazine = Process(
@@ -488,6 +598,7 @@ produce_piercing_rounds_magazine = Process(
             ProductInput(piercing_rounds_magazine, -1, 1),
             ],
         3,
+        has_site=True,
         )
 
 produce_defender_capsule = Process(
@@ -521,12 +632,37 @@ produce_destroyer_capsule = Process(
         15,
         )
 
-solar_panel_power = Process(
-        "solar panel power",
+solar_power = Process(
+        "solar power",
         [
             ProductInput(electrical_energy, -42),
             ],
         1,
+        )
+
+#includes 300% neighbor bonus
+nuclear_power = Process(
+        "nuclear power",
+        [
+            ProductInput(uranium_fuel_cell, 1),
+            ProductInput(electrical_energy, -8000000 * 4),
+            ],
+        200,
+        )
+
+research = Process(
+        "research",
+        [
+            ProductInput(science_pack_1, 1),
+            ProductInput(science_pack_2, 1),
+            ProductInput(science_pack_3, 1),
+            ProductInput(military_science_pack, 1),
+            ProductInput(production_science_pack, 1),
+            ProductInput(high_tech_science_pack, 1),
+            ProductInput(space_science_pack, 1),
+            ],
+        1,
+        has_site=True,
         )
 
 produce_engine_unit = Process(
@@ -538,6 +674,19 @@ produce_engine_unit = Process(
             ProductInput(engine_unit, -1, 1),
             ],
         10,
+        has_site=True,
+        )
+
+produce_electric_engine_unit = Process(
+        "electric engine unit",
+        [
+            ProductInput(electronic_circuit, 2, 1),
+            ProductInput(engine_unit, 1, 1),
+            ProductInput(lubricant, 15),
+            ProductInput(electric_engine_unit, -1, 1),
+            ],
+        10,
+        has_site=True,
         )
 
 produce_pipe = Process(
@@ -547,6 +696,7 @@ produce_pipe = Process(
             ProductInput(pipe, -1, 1),
             ],
         0.5,
+        has_site=True,
         )
 
 produce_explosives = Process(
@@ -582,6 +732,18 @@ produce_artillery_shell = Process(
         15,
         )
 
+produce_gun_turret = Process(
+        "gun turret",
+        [
+            ProductInput(copper_plate, 10, 1),
+            ProductInput(iron_gear_wheel, 10, 1),
+            ProductInput(iron_plate, 20, 1),
+            ProductInput(gun_turret, -1, 1),
+            ],
+        8,
+        has_site=True,
+        )
+
 produce_rail = Process(
         "rail",
         [
@@ -602,6 +764,17 @@ produce_iron_stick = Process(
         0.5,
         )
 
+produce_grenade = Process(
+        "grenade",
+        [
+            ProductInput(coal, 10, 1),
+            ProductInput(iron_plate, 5, 1),
+            ProductInput(grenade, -1, 1),
+            ],
+        8,
+        has_site=True,
+        )
+
 produce_new_base_supplies = Process(
         "new base supplies",
         [
@@ -618,12 +791,16 @@ production = Process("production",
             ProductInput(speed_module_3, 1 / 3),
             ProductInput(speed_module_3, 1 / 3),
             ProductInput(speed_module_3, 1 / 3),
-            ProductInput(satellite_launch, 1 / 10),
+            ProductInput(satellite_launch, 60),
             ProductInput(destroyer_capsule, 1 / 1),
             ProductInput(piercing_rounds_magazine, 1 / 1),
             ProductInput(science_pack_1, 10),
             ProductInput(science_pack_2, 10),
             ProductInput(science_pack_3, 10),
+            ProductInput(military_science_pack, 10),
+            ProductInput(production_science_pack, 10),
+            ProductInput(high_tech_science_pack, 10),
+            ProductInput(space_science_pack, 10),
             ProductInput(new_base_supplies, 1 / 30),
             ProductInput(artillery_shell, 10),
             ],
@@ -634,8 +811,19 @@ production = Process("production",
 #x.process_default = produce_x
 #x.process_default = produce_x
 #x.process_default = produce_x
-#x.process_default = produce_x
-#x.process_default = produce_x
+uranium_235.process_default = uranium_enrichment
+uranium_238.process_default = uranium_processing
+uranium_ore.process_default = mine_uranium_ore
+uranium_fuel_cell.process_default = produce_uranium_fuel_cell
+space_science_pack.process_default = produce_satellite_launch
+high_tech_science_pack.process_default = produce_high_tech_science_pack
+stone_brick.process_default = produce_stone_brick
+production_science_pack.process_default = produce_production_science_pack
+gun_turret.process_default = produce_gun_turret
+grenade.process_default = produce_grenade
+electric_furnace.process_default = produce_electric_furnace
+electric_engine_unit.process_default = produce_electric_engine_unit
+military_science_pack.process_default = produce_military_science_pack
 iron_stick.process_default = produce_iron_stick
 rail.process_default = produce_rail
 lubricant.process_default = produce_lubricant
@@ -680,7 +868,7 @@ coal.process_default = mine_coal
 plastic_bar.process_default = produce_plastic_bar
 low_density_structure.process_default = produce_low_density_structure
 
-electrical_energy.process_default = solar_panel_power
+electrical_energy.process_default = nuclear_power
 
 water.process_default = mine_water
 crude_oil.process_default = mine_crude_oil
@@ -702,4 +890,8 @@ satellite.process_default = produce_satellite
 solid_fuel.process_default = light_oil_to_solid_fuel
 light_oil.process_default = advanced_oil_processing
 heavy_oil.process_default = advanced_oil_processing
+
+
+
+
 

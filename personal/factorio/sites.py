@@ -28,15 +28,16 @@ def tiers_insert(product):
     
     i_max = -1
 
-    print(product.name)
-
-    for product_input in product.process_default.inputs:
+    for product_input in product.default_process().inputs:
         if product_input.q < 0:
             continue
+
+        if product_input.product == electrical_energy: continue
 
         p = product_input.product
         i = tier_index(p)
         #print("index of", p.name, "is", i)
+
         if i is None:
             i = tiers_insert(product_input.product)
 
@@ -223,17 +224,24 @@ def process_track_list(l):
 def process_track(track):
     return dict((p, process_track_list(l)) for p, l in track.items())
 
-def all_inputs_default(process):
+def all_inputs_default(process, product, rate):
     track = {}
+
+    #c = 1 / process.t
     
+    c = rate / process.items_per_cycle(product)
+
     print("inputs")
-    for i in process.all_inputs_default(1 / process.t, track):
+    inputs = list(process.all_inputs_default(c, track))
+    for i in inputs:
         if i.product.process_default.t is None:
             print("\t{:32} {:12.2f}".format(i.product.name, i.q))
         else:
             b = -i.product.process_default.buildings(i.product, i.q)
             print("\t{:32} {:12.2f} {:12.2f}".format(i.product.name, i.q, b))
-    
+
+    return dict((i.product, i) for i in inputs)
+
     track = process_track(track)
 
     print()
@@ -241,7 +249,9 @@ def all_inputs_default(process):
         print(p.name)
         for process1, r in l:
             print("\t{:32} {:12.2f}".format(process1.name, r))
-    
+
+    return
+
     track = {}
 
     print()
@@ -274,6 +284,8 @@ def graph():
 
                 if process1.has_site:
                     g.edge(process1.name.replace(' ', '_'), name)
+                else:
+                    print('need site for {}'.format(i.product.name))
             
 
     print()
@@ -281,9 +293,56 @@ def graph():
     g.view()
     g.render('items.svg')
 
-graph()
+#graph()
+
+#mine_iron_ore.print_()
+
+rockets_per_minute = 10
+
+rate = 100 * rockets_per_minute / 60
+
+mine_iron_ore.print_()
+#produce_rocket_part.print_()
+all_inputs_default(produce_rocket_part, rocket_part, rate)
+
+##########
+
+mine_iron_ore.modules = [ProductivityModule3()]*3 + [SpeedModule3(3)]
+
+mine_copper_ore.modules = [ProductivityModule3()]*3
+
+produce_iron_plate.modules = [ProductivityModule3()]*2 + [SpeedModule3(3)]
+produce_copper_plate.modules = [ProductivityModule3()]*2
+produce_steel_plate.modules = [ProductivityModule3()]*2
+
+produce_copper_cable.modules = [ProductivityModule3()]*4
+produce_electronic_circuit.modules = [ProductivityModule3()]*4
+produce_advanced_circuit.modules = [ProductivityModule3()]*4
+produce_processing_unit.modules = [ProductivityModule3()]*4
+produce_speed_module_1.modules = [ProductivityModule3()]*4
+produce_low_density_structure.modules = [ProductivityModule3()]*4
+produce_rocket_control_unit.modules = [ProductivityModule3()]*4
+
+produce_rocket_part.modules = [ProductivityModule3()]*4
+
+mine_iron_ore.print_()
+#produce_rocket_part.print_()
+inputs = all_inputs_default(produce_rocket_part, rocket_part, rate)
 
 
+
+iron_deposit_size = 20000000
+iron_per_tile = 45000
+tiles_per_deposit = iron_deposit_size / iron_per_tile
+miners_per_tile = 6 / (9*12)
+miners_per_deposit = tiles_per_deposit * miners_per_tile
+
+i = inputs[iron_ore]
+
+print('tiles_per_deposit ', tiles_per_deposit)
+print('miners_per_deposit', miners_per_deposit)
+print('miners            ', -i.buildings())
+print('mines             ', -i.buildings() / miners_per_deposit)
 
 
 

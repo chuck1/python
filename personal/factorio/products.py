@@ -180,8 +180,53 @@ science_pack_3 = Product(
         [express_belt],
         )
 
+military_science_pack = Product(
+        "military science pack",
+        [express_belt],
+        )
+
+production_science_pack = Product(
+        "production science pack",
+        [express_belt],
+        )
+
+high_tech_science_pack = Product(
+        "high tech science pack",
+        [express_belt],
+        )
+
+space_science_pack = Product(
+        "space science pack",
+        [express_belt],
+        )
+
 firearm_magazine = Product(
         "firearm magazine",
+        [express_belt],
+        )
+
+grenade = Product(
+        "grenade",
+        [express_belt],
+        )
+
+gun_turret = Product(
+        "gun turret",
+        [express_belt],
+        )
+
+electric_engine_unit = Product(
+        "electric engine unit",
+        [express_belt],
+        )
+
+electric_furnace = Product(
+        "electric furnace",
+        [express_belt],
+        )
+
+stone_brick = Product(
+        "stone brick",
         [express_belt],
         )
 
@@ -255,5 +300,26 @@ iron_stick = Product(
         "iron stick",
         [express_belt],
         )
+
+uranium_ore = Product(
+        "uranium ore",
+        [express_belt],
+        )
+
+uranium_235 = Product(
+        "uranium 235",
+        [express_belt],
+        )
+
+uranium_238 = Product(
+        "uranium 238",
+        [express_belt],
+        )
+
+uranium_fuel_cell = Product(
+        "uranium fuel cell",
+        [express_belt],
+        )
+
 
 

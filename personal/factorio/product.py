@@ -90,7 +90,6 @@ class Product:
 
         for k, g in itertools.groupby(inputs, key=lambda i: i.product):
             s = sum([i.q for i in g]) * x
-            #print(k.name, s)
 
             yield ProductInput(k, s)
 
@@ -109,7 +108,6 @@ class Product:
         
         for k, g in itertools.groupby(inputs, key=lambda i: i.product):
             s = sum([i.q for i in g]) * x
-            #print(k.name, s)
 
             yield ProductInput(k, s)
 

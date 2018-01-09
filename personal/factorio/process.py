@@ -1,9 +1,25 @@
 import math
 import itertools
+import contextlib
 import crayons
 
 #from products import *
 from ingredient import *
+
+@contextlib.contextmanager
+def stack_context(stack, product):
+
+    if product in stack:
+        b = True
+    else:
+        b = False
+    
+    stack.append(product)
+
+    yield b
+    
+    stack.pop()
+
 
 def insert_process(l, product, process):
     for i, p in l:
@@ -139,17 +155,85 @@ class VirtualProcess:
         for p in self.processes:
             c += p.process_count()
         return c
-        
+
+class SpeedModule3:
+    def __init__(self, s = 1):
+        self.speed = 0.5 * s
+        self.power = 0.7 * s
+        self.productivity = 0 * s
+
+class ProductivityModule3:
+    def __init__(self, s = 1):
+        self.speed = -0.15 * s
+        self.power = 0.80 * s
+        self.productivity = 0.10 * s
+
 class Process:
     def __init__(self, name, inputs, t, power=None, has_site=False):
         self.name = name
-        self.inputs = inputs
+        self._inputs = inputs
         self.t = t
         self.has_site = has_site
         
-        if power is not None:
-            self.inputs.append(ProductInput(self.electrical_energy, power * t))
-    
+        self.power = power
+        #if power is not None:
+        #    self.inputs.append(ProductInput(self.electrical_energy, power * t))
+        
+        self.modules = []
+
+    @property
+    def speed_modifier(self):
+        x = 1
+        for m in self.modules:
+            x += m.speed
+        return x
+
+    @property
+    def power_modifier(self):
+        x = 1
+        for m in self.modules:
+            x += m.power
+        return x
+
+    @property
+    def productivity_modifier(self):
+        x = 1
+        for m in self.modules:
+            x += m.productivity
+        return x
+
+    @property
+    def power_input(self):
+        if self.power is not None:
+            p = self.power * self.t * self.power_modifier
+            return ProductInput(self.electrical_energy, p)
+
+    @property
+    def inputs(self):
+        s = self.speed_modifier
+        p = self.productivity_modifier
+
+        for i in self._inputs:
+            
+            m = s
+
+            if i.q < 0:
+                m *= p
+            
+            yield i.mul(m)
+
+        if self.power is not None:
+            yield self.power_input
+
+    def print_(self):
+        print(self.name)
+        
+        for i in self.inputs:
+            print("{:32} {:10.3f}".format(i.product.name, i.q / self.t))
+
+        #i = self.power_input
+        #print("{:32} {:10.3f}".format(i.product.name, i.q / self.t))
+
     def process_count(self):
         return 0
 
@@ -197,6 +281,9 @@ class Process:
  
             if i.q < 0:
                 continue
+
+            if i.product == self.electrical_energy:
+                continue
            
             p = i.product.process_default
 
@@ -215,46 +302,52 @@ class Process:
             yield ProductInput(k, s)
 
 
-    def all_inputs_default(self, c0, track=None):
+    def all_inputs_default(self, c0, track=None, stack=[]):
         # c0 - cycles per second
         # returns list of input items in items per second
-        
+            
         inputs = []
-        
+            
         for i in self.inputs:
-           
-            i1 = i.mul(c0)
+            with stack_context(stack, i.product) as b:
+                i1 = i.mul(c0)
+    
+                if track is not None:
+                    if not i1.product in track:
+                        track[i1.product] = []
+                    track[i1.product].append((self, i1))
+                
+                inputs.append(i1)
+    
+                if i.q < 0:
+                    continue
 
-            if track is not None:
-                if not i1.product in track:
-                    track[i1.product] = []
-                track[i1.product].append((self, i1))
-            
-            inputs.append(i1)
-
-            if i.q < 0:
-                continue
-            
-            p = i.product.default_process()
-            
-            # use excess available
-
-            rate = i1.q
-
-            c1 = rate / -p.items_per_cycle(i.product)
-           
-            g = p.all_inputs_default(c1, track)
-
-            for i2 in g:
-                inputs.append(i2)
-
+                if b: 
+                    continue
+               
+                #if i.product == self.electrical_energy:
+                #    continue
+    
+                p = i.product.default_process()
+                
+                # use excess available
+    
+                rate = i1.q
+    
+                c1 = rate / -p.items_per_cycle(i.product)
+               
+                g = p.all_inputs_default(c1, track, stack)
+                
+                for i2 in g:
+                    inputs.append(i2)
+    
         inputs = sorted(inputs, key=lambda i: id(i.product))
-
+    
         for k, g in itertools.groupby(inputs, key=lambda i1: i1.product):
             g = list(g)
-            
+                
             s = sum([i.q for i in g if i.q > 0])
-            
+                
             yield ProductInput(k, s)
 
     def count_outputs(self):
