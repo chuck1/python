@@ -130,7 +130,7 @@ def train_rate():
 
 #train_rate()
 
-if True:
+if False:
     iron_plate.production_building_row_length()
     copper_plate.production_building_row_length()
     copper_cable.production_building_row_length()
@@ -249,9 +249,42 @@ def all_inputs_default(process):
         print("\t{:32} {:12.2f}".format(i.product.name, i.q))
 
 
-all_inputs_default(production) 
-#all_inputs_default(produce_science_pack_3)
-#all_inputs_default(produce_satellite) 
+if False:
+    all_inputs_default(production) 
+    #all_inputs_default(produce_science_pack_3)
+    #all_inputs_default(produce_satellite) 
+
+def graph():
+    print()
+
+    from graphviz import Digraph
+    
+    g = Digraph()
+
+    for process in Process.processes:
+        if process.has_site:
+            name = process.name.replace(' ', '_')
+            g.node(name, process.name)
+
+            for i in process.inputs:
+                if i.q < 0:
+                    continue
+                
+                process1 = i.product.default_process()
+
+                if process1.has_site:
+                    g.edge(process1.name.replace(' ', '_'), name)
+            
+
+    print()
+    print(g.source)
+    g.view()
+    g.render('items.svg')
+
+graph()
+
+
+
 
 
 

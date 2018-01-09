@@ -141,10 +141,11 @@ class VirtualProcess:
         return c
         
 class Process:
-    def __init__(self, name, inputs, t, power=None):
+    def __init__(self, name, inputs, t, power=None, has_site=False):
         self.name = name
         self.inputs = inputs
         self.t = t
+        self.has_site = has_site
         
         if power is not None:
             self.inputs.append(ProductInput(self.electrical_energy, power * t))

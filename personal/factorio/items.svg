@@ -1,0 +1,47 @@
+digraph {
+	iron_gear_wheel [label=iron_gear_wheel]
+		iron_plate -> iron_gear_wheel
+	copper_plate [label="copper plate"]
+		mine_copper_ore -> copper_plate
+	advanced_oil_processing [label=advanced_oil_processing]
+		mine_crude_oil -> advanced_oil_processing
+	science_pack_1 [label="science pack 1"]
+		copper_plate -> science_pack_1
+		iron_gear_wheel -> science_pack_1
+	inserter [label=inserter]
+		electronic_circuit -> inserter
+		iron_gear_wheel -> inserter
+		iron_plate -> inserter
+	iron_plate [label="iron plate"]
+		mine_iron_ore -> iron_plate
+	electronic_circuit [label="electronic circuit"]
+		iron_plate -> electronic_circuit
+		copper_cable -> electronic_circuit
+	fast_inserter [label="fast inserter"]
+		electronic_circuit -> fast_inserter
+		inserter -> fast_inserter
+		iron_plate -> fast_inserter
+	copper_cable [label="copper cable"]
+		copper_plate -> copper_cable
+	science_pack_3 [label="science pack 3"]
+		advanced_circuit -> science_pack_3
+	stack_inserter [label="stack inserter"]
+		advanced_circuit -> stack_inserter
+		electronic_circuit -> stack_inserter
+		fast_inserter -> stack_inserter
+		iron_gear_wheel -> stack_inserter
+	mine_iron_ore [label="mine iron ore"]
+	advanced_circuit [label="advanced circuit"]
+		copper_cable -> advanced_circuit
+		electronic_circuit -> advanced_circuit
+		plastic_bar -> advanced_circuit
+	mine_stone [label="mine stone"]
+	steel_plate [label="steel plate"]
+		iron_plate -> steel_plate
+	science_pack_2 [label="science pack 2"]
+		inserter -> science_pack_2
+	mine_crude_oil [label=mine_crude_oil]
+	mine_copper_ore [label="mine copper ore"]
+	plastic_bar [label="plastic bar"]
+		advanced_oil_processing -> plastic_bar
+}

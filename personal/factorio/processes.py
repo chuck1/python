@@ -22,6 +22,7 @@ mine_crude_oil = Process(
             ProductInput(crude_oil, -50),
             ],
         1,
+        has_site=True,
         )
 
 advanced_oil_processing = Process(
@@ -35,6 +36,7 @@ advanced_oil_processing = Process(
             ],
         5,
         420,
+        has_site=True,
         )
 
 basic_oil_processing = Process(
@@ -56,6 +58,7 @@ mine_stone = Process(
             ],
         1,
         90,
+        has_site=True,
         )
 
 mine_iron_ore = Process(
@@ -65,6 +68,7 @@ mine_iron_ore = Process(
             ],
         1,
         90,
+        has_site=True,
         )
 
 mine_copper_ore = Process(
@@ -74,6 +78,7 @@ mine_copper_ore = Process(
             ],
         1,
         90,
+        has_site=True,
         )
 
 mine_coal = Process(
@@ -93,6 +98,7 @@ produce_plastic_bar = Process(
             ProductInput(plastic_bar, -2, 1),
             ],
         1,
+        has_site=True,
         )
 
 produce_sulfur = Process(
@@ -113,6 +119,7 @@ produce_iron_plate = Process(
             ],
         1,
         180,
+        has_site=True,
         )
 
 produce_copper_plate = Process(
@@ -123,6 +130,7 @@ produce_copper_plate = Process(
             ],
         1,
         180,
+        has_site=True,
         )
 
 produce_copper_cable = Process(
@@ -132,6 +140,7 @@ produce_copper_cable = Process(
             ProductInput(copper_cable, -2, 2),
             ],
         0.5,
+        has_site=True,
         )
 
 produce_steel_plate = Process("steel plate", 
@@ -141,6 +150,7 @@ produce_steel_plate = Process("steel plate",
         ],
         8.772,
         180,
+        has_site=True,
         )
 
 produce_lubricant = Process(
@@ -169,6 +179,7 @@ produce_electronic_circuit = Process("electronic circuit",
             ProductInput(electronic_circuit, -1, 1),
             ],
         0.5,
+        has_site=True,
         )
 
 produce_advanced_circuit = Process(
@@ -180,6 +191,7 @@ produce_advanced_circuit = Process(
             ProductInput(advanced_circuit, -1, 1),
             ],
         6,
+        has_site=True,
         )
 
 produce_processing_unit = Process("processing unit", 
@@ -256,6 +268,7 @@ produce_iron_gear_wheel = Process(
             ProductInput(iron_gear_wheel, -1, 1),
             ],
         0.5,
+        has_site=True,
         )
 
 produce_radar = Process("radar", 
@@ -357,6 +370,7 @@ produce_inserter = Process("inserter",
             ProductInput(inserter, -1, 1),
             ],
         0.5,
+        has_site=True,
         )
 
 produce_fast_inserter = Process("fast inserter",
@@ -367,6 +381,7 @@ produce_fast_inserter = Process("fast inserter",
             ProductInput(fast_inserter, -1, 1),
             ],
         0.5,
+        has_site=True,
         )
 
 produce_stack_inserter = Process("stack inserter",
@@ -378,6 +393,7 @@ produce_stack_inserter = Process("stack inserter",
             ProductInput(stack_inserter, -1, 1),
             ],
         0.5,
+        has_site=True,
         )
 
 produce_transport_belt = Process(
@@ -429,6 +445,7 @@ produce_science_pack_1 = Process("science pack 1",
             ProductInput(science_pack_1, -1, 1),
             ],
         5,
+        has_site=True,
         )
 
 produce_science_pack_2 = Process("science pack 2",
@@ -438,6 +455,7 @@ produce_science_pack_2 = Process("science pack 2",
             ProductInput(science_pack_2, -1, 1),
             ],
         6,
+        has_site=True,
         )
 
 produce_science_pack_3 = Process(
@@ -449,6 +467,7 @@ produce_science_pack_3 = Process(
             ProductInput(science_pack_3, -1, 1),
             ],
         12,
+        has_site=True,
         )
 
 produce_firearm_magazine = Process(
