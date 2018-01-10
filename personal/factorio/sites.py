@@ -307,9 +307,11 @@ all_inputs_default(produce_rocket_part, rocket_part, rate)
 
 ##########
 
-mine_iron_ore.modules = [ProductivityModule3()]*3 + [SpeedModule3(3)]
+mine_iron_ore.modules = [ProductivityModule3(3), SpeedModule3(3)]
+# miners on circumference
+#mine_iron_ore.modules.append(SpeedModule3(3 * 0.58))
 
-mine_copper_ore.modules = [ProductivityModule3()]*3
+mine_copper_ore.modules = [ProductivityModule3(3), SpeedModule3(3)]
 
 produce_iron_plate.modules = [ProductivityModule3()]*2 + [SpeedModule3(3)]
 produce_copper_plate.modules = [ProductivityModule3()]*2
@@ -329,21 +331,57 @@ mine_iron_ore.print_()
 #produce_rocket_part.print_()
 inputs = all_inputs_default(produce_rocket_part, rocket_part, rate)
 
+beacons = 3
 
+def mine_calcs(deposit_size, i):
 
-iron_deposit_size = 20000000
-iron_per_tile = 45000
-tiles_per_deposit = iron_deposit_size / iron_per_tile
-miners_per_tile = 6 / (9*12)
-miners_per_deposit = tiles_per_deposit * miners_per_tile
+    #deposit_size = 20000000
+    ore_per_tile = 45000
 
-i = inputs[iron_ore]
+    tiles_per_deposit = deposit_size / ore_per_tile
+    
+    miners_per_tile = (9 - beacons) / (9*12)
+    
+    miners_per_deposit = tiles_per_deposit * miners_per_tile
+    
+    #i = inputs[iron_ore]
+    
+   
+    area = tiles_per_deposit / 12
+    
+    radius = math.sqrt(area / math.pi)
+    
+    circ = 2 * radius * math.pi
+    
+    #print('radius       ', radius)
+    #print('circumference', circ)
+    
+    circ_miners = circ * ((9 - beacons) / 9)
+    
+    #print('miners on circumference', circ_miners)
+    
+    #print('fraction on circumference', circ_miners / miners_per_deposit)
+    
+    usable_ore = deposit_size * (9 * 12 - 3 * beacons) / (9 * 12)
+    
+    period_s = usable_ore / i.q
+    
+    print('tiles_per_deposit ', tiles_per_deposit)
+    print('miners_per_deposit', miners_per_deposit)
+    print('miners            ', -i.buildings())
+    print('mines             ', -i.buildings() / miners_per_deposit)
+    print('seconds           ', period_s)
+    print('minutes           ', period_s / 60)
 
-print('tiles_per_deposit ', tiles_per_deposit)
-print('miners_per_deposit', miners_per_deposit)
-print('miners            ', -i.buildings())
-print('mines             ', -i.buildings() / miners_per_deposit)
+    return period_s
 
+period_iron = mine_calcs(20E6, inputs[iron_ore])
+period_copper = mine_calcs(20E6, inputs[copper_ore])
+
+period = 1 / (1 / period_iron + 1 / period_copper)
+
+print()
+print('period {:8.2f} minutes'.format(period / 60))
 
 
 
