@@ -297,39 +297,47 @@ def graph():
 
 #mine_iron_ore.print_()
 
-rockets_per_minute = 10
+def apply_modules():
+    mine_iron_ore.modules = [ProductivityModule3(3), SpeedModule3(3)]
+    # miners on circumference
+    #mine_iron_ore.modules.append(SpeedModule3(3 * 0.58))
+    
+    mine_copper_ore.modules = [ProductivityModule3(3), SpeedModule3(3)]
+    
+    produce_iron_plate.modules = [ProductivityModule3()]*2 + [SpeedModule3(3)]
+    produce_copper_plate.modules = [ProductivityModule3()]*2
+    produce_steel_plate.modules = [ProductivityModule3()]*2
+    
+    produce_copper_cable.modules = [ProductivityModule3()]*4
+    produce_electronic_circuit.modules = [ProductivityModule3()]*4
+    produce_advanced_circuit.modules = [ProductivityModule3()]*4
+    produce_processing_unit.modules = [ProductivityModule3()]*4
+    produce_speed_module_1.modules = [ProductivityModule3()]*4
+    produce_low_density_structure.modules = [ProductivityModule3()]*4
+    produce_rocket_control_unit.modules = [ProductivityModule3()]*4
+    
+    produce_rocket_part.modules = [ProductivityModule3()]*4
 
-rate = 100 * rockets_per_minute / 60
+rockets_per_minute = 1
+    
+rocket_part_rate = 100 * rockets_per_minute / 60
 
-mine_iron_ore.print_()
-#produce_rocket_part.print_()
-all_inputs_default(produce_rocket_part, rocket_part, rate)
+apply_modules()
 
-##########
+if False:
 
-mine_iron_ore.modules = [ProductivityModule3(3), SpeedModule3(3)]
-# miners on circumference
-#mine_iron_ore.modules.append(SpeedModule3(3 * 0.58))
+    
+    mine_iron_ore.print_()
+    #produce_rocket_part.print_()
+    all_inputs_default(produce_rocket_part, rocket_part, rate)
+    
+    ##########
 
-mine_copper_ore.modules = [ProductivityModule3(3), SpeedModule3(3)]
-
-produce_iron_plate.modules = [ProductivityModule3()]*2 + [SpeedModule3(3)]
-produce_copper_plate.modules = [ProductivityModule3()]*2
-produce_steel_plate.modules = [ProductivityModule3()]*2
-
-produce_copper_cable.modules = [ProductivityModule3()]*4
-produce_electronic_circuit.modules = [ProductivityModule3()]*4
-produce_advanced_circuit.modules = [ProductivityModule3()]*4
-produce_processing_unit.modules = [ProductivityModule3()]*4
-produce_speed_module_1.modules = [ProductivityModule3()]*4
-produce_low_density_structure.modules = [ProductivityModule3()]*4
-produce_rocket_control_unit.modules = [ProductivityModule3()]*4
-
-produce_rocket_part.modules = [ProductivityModule3()]*4
-
-mine_iron_ore.print_()
-#produce_rocket_part.print_()
-inputs = all_inputs_default(produce_rocket_part, rocket_part, rate)
+    apply_modules()
+    
+    mine_iron_ore.print_()
+    #produce_rocket_part.print_()
+    inputs = all_inputs_default(produce_rocket_part, rocket_part, rate)
 
 beacons = 3
 
@@ -375,13 +383,21 @@ def mine_calcs(deposit_size, i):
 
     return period_s
 
-period_iron = mine_calcs(20E6, inputs[iron_ore])
-period_copper = mine_calcs(20E6, inputs[copper_ore])
+if False:
+    period_iron = mine_calcs(20E6, inputs[iron_ore])
+    period_copper = mine_calcs(20E6, inputs[copper_ore])
 
-period = 1 / (1 / period_iron + 1 / period_copper)
+    period = 1 / (1 / period_iron + 1 / period_copper)
 
-print()
-print('period {:8.2f} minutes'.format(period / 60))
+    print()
+    print('period {:8.2f} minutes'.format(period / 60))
 
+
+
+inputs = all_inputs_default(produce_rocket_part, rocket_part, rocket_part_rate)
+
+inputs[iron_plate].site_analysis()
+
+#iron_plate.production_building_row_length()
 
 

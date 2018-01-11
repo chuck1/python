@@ -29,6 +29,13 @@ class Product:
                         yield p
                         break
 
+    def belt_lanes(self):
+        p = self.process_default
+        inputs = list(p.inputs)
+        inputs = [i.mul(1 / p.t) for i in inputs if express_belt in i.product.transport]
+        lanes = sum(i.lanes for i in inputs)
+        return lanes
+
     def production_building_row_length(self):
         print()
         print(crayons.blue(self.name, bold=True))
@@ -43,6 +50,10 @@ class Product:
         inputs = [ProductInput(i.product, i.q / p.t, i.lanes) for i in inputs if express_belt in i.product.transport]
 
         #inputs.append(ProductInput(self, self.rate, 1))
+        
+        for i in inputs:
+            if i.lanes is None:
+                print(i.product.name, "lanes is none")
 
         x = [(i.lanes * 18) / abs(i.q) for i in inputs]
 
@@ -70,6 +81,8 @@ class Product:
         #    print("buildings for max 18 output rate:", y2)
         
         print()
+
+        return y
 
     def raw(self, x):
 
@@ -115,4 +128,10 @@ class Product:
         if not hasattr(self, "process_default"):
             raise RuntimeError("{} does not have a default process".format(self.name))
         return self.process_default
+
+class IntermediateProduct(Product):
+    def __init__(self, name, stack_size):
+        super(IntermediateProduct, self).__init__(name, [express_belt])
+        self.stack_size = stack_size
+
 

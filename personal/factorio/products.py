@@ -67,9 +67,9 @@ copper_cable = Product(
         [express_belt],
         )
 
-iron_plate = Product(
+iron_plate = IntermediateProduct(
         "iron plate",
-        [express_belt],
+        100,
         )
 
 steel_plate = Product("steel plate", 
