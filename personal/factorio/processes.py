@@ -59,6 +59,7 @@ mine_stone = Process(
         1,
         90,
         has_site=True,
+        building=electric_mining_drill,
         )
 
 produce_stone_brick = Process(
@@ -79,6 +80,7 @@ mine_iron_ore = Process(
         1.905,
         90,
         has_site=True,
+        building=electric_mining_drill,
         )
 
 mine_copper_ore = Process(
@@ -89,6 +91,7 @@ mine_copper_ore = Process(
         1,
         90,
         has_site=True,
+        building=electric_mining_drill,
         )
 
 mine_coal = Process(
@@ -99,6 +102,7 @@ mine_coal = Process(
         1,
         90,
         has_site=True,
+        building=electric_mining_drill,
         )
 
 mine_uranium_ore = Process(
@@ -109,6 +113,7 @@ mine_uranium_ore = Process(
             ],
         1.905,
         has_site=True,
+        building=electric_mining_drill,
         )
 
 uranium_processing = Process(
@@ -354,6 +359,20 @@ light_oil_to_solid_fuel = Process(
             ProductInput(solid_fuel, -1, 1),
             ],
         3,
+        building=chemical_plant
+        )
+
+produce_chemical_plant = Process(
+        "chemical plant",
+        [
+            ProductInput(electronic_circuit, 5, 1),
+            ProductInput(iron_gear_wheel, 5, 1),
+            ProductInput(pipe, 5, 1),
+            ProductInput(steel_plate, 5, 1),
+            ProductInput(chemical_plant, -1, 1),
+            ],
+        5,
+        210,
         )
 
 produce_rocket_fuel = Process(
@@ -450,6 +469,17 @@ produce_stack_inserter = Process("stack inserter",
             ProductInput(fast_inserter, 1, 1),
             ProductInput(iron_gear_wheel, 15, 1),
             ProductInput(stack_inserter, -1, 1),
+            ],
+        0.5,
+        has_site=True,
+        )
+
+produce_stack_filter_inserter = Process(
+        "stack filter inserter",
+        [
+            ProductInput(electronic_circuit, 5, 1),
+            ProductInput(stack_inserter, 1, 1),
+            ProductInput(stack_filter_inserter, -1, 1),
             ],
         0.5,
         has_site=True,
@@ -645,10 +675,32 @@ nuclear_power = Process(
         "nuclear power",
         [
             ProductInput(uranium_fuel_cell, 1),
-            ProductInput(electrical_energy, -8000000 * 4),
+            ProductInput(heat_energy, -8000000 * 4),
             ],
         200,
+        building=nuclear_reactor
         )
+
+heat_exchanger_process = Process(
+        "heat exchanger process",
+        [
+            ProductInput(heat_energy, 10000),
+            ProductInput(steam_500, -10000 / 97),
+            ],
+        1,
+        )
+
+steam_turbine_process = Process(
+        "steam turbine process",
+        [
+            ProductInput(steam_500, 60),
+            ProductInput(electrical_energy, -60 * steam_500.energy),
+            ],
+        1,
+        building=steam_turbine
+        )
+
+
 
 research = Process(
         "research",
@@ -775,23 +827,130 @@ produce_grenade = Process(
         has_site=True,
         )
 
+produce_nuclear_reactor = Process(
+        "nuclear reactor",
+        [
+           ProductInput(advanced_circuit, 500),
+           ProductInput(concrete, 500),
+           ProductInput(copper_plate, 500),
+           ProductInput(steel_plate, 500),
+           ProductInput(nuclear_reactor, -1),
+           ],
+        3,
+        )
+
+produce_concrete = Process(
+        "concrete",
+        [
+           ProductInput(iron_ore, 1),
+           ProductInput(stone_brick, 5),
+           ProductInput(water, 100),
+           ProductInput(concrete, -10),
+           ],
+        10,
+        )
+
+produce_heat_exchanger = Process(
+        "heat exchanger",
+        [
+           ProductInput(copper_plate, 100),
+           ProductInput(pipe, 10),
+           ProductInput(steel_plate, 10),
+           ProductInput(heat_exchanger, -1),
+           ],
+        3,
+        )
+
+produce_steam_turbine = Process(
+        "steam turbine",
+        [
+           ProductInput(copper_plate, 50),
+           ProductInput(iron_gear_wheel, 50),
+           ProductInput(pipe, 20),
+           ProductInput(steam_turbine, -1),
+           ],
+        3,
+        )
+
+produce_assembling_machine_1 = Process(
+        "assembling machine 1",
+        [
+            ProductInput(electronic_circuit, 3),
+            ProductInput(iron_gear_wheel, 5),
+            ProductInput(iron_plate, 9),
+            ProductInput(assembling_machine_1, -1),
+            ],
+        0.5,
+        building=assembling_machine_3
+        )
+
+produce_assembling_machine_2 = Process(
+        "assembling machine 2",
+        [
+            ProductInput(assembling_machine_1, 1),
+            ProductInput(electronic_circuit, 3),
+            ProductInput(iron_gear_wheel, 5),
+            ProductInput(iron_plate, 9),
+            ProductInput(assembling_machine_2, -1),
+            ],
+        0.5,
+        building=assembling_machine_3
+        )
+
+produce_assembling_machine_3 = Process(
+        "assembling machine 3",
+        [
+            ProductInput(assembling_machine_2, 2),
+            ProductInput(speed_module_1, 4),
+            ProductInput(assembling_machine_3, -1),
+            ],
+        0.5,
+        building=assembling_machine_3
+        )
+
+produce_rail_signal = Process(
+        "rail signal",
+        [
+            ProductInput(electronic_circuit, 1),
+            ProductInput(iron_plate, 5),
+            ProductInput(rail_signal, -1),
+            ],
+        0.5,
+        building=assembling_machine_3
+        )
+
+produce_rail_chain_signal = Process(
+        "rail chain signal",
+        [
+            ProductInput(electronic_circuit, 1),
+            ProductInput(iron_plate, 5),
+            ProductInput(rail_chain_signal, -1),
+            ],
+        0.5,
+        building=assembling_machine_3
+        )
+
+
 produce_new_base_supplies = Process(
         "new base supplies",
         [
-            ProductInput(stack_inserter, 48),
+            ProductInput(stack_filter_inserter, 48),
             ProductInput(express_transport_belt, 200),
             ProductInput(rail, 100),
+            ProductInput(rail_signal, 20),
+            ProductInput(rail_chain_signal, 20),
             ProductInput(new_base_supplies, -1),
             ],
         0,
         )
+
 
 production = Process("production", 
         [
             ProductInput(speed_module_3, 1 / 3),
             ProductInput(speed_module_3, 1 / 3),
             ProductInput(speed_module_3, 1 / 3),
-            ProductInput(satellite_launch, 60),
+            ProductInput(satellite_launch, 1),
             ProductInput(destroyer_capsule, 1 / 1),
             ProductInput(piercing_rounds_magazine, 1 / 1),
             ProductInput(science_pack_1, 10),
@@ -811,6 +970,19 @@ production = Process("production",
 #x.process_default = produce_x
 #x.process_default = produce_x
 #x.process_default = produce_x
+
+rail_signal.process_default = produce_rail_signal
+rail_chain_signal.process_default = produce_rail_chain_signal
+
+assembling_machine_1.process_default = produce_assembling_machine_1
+assembling_machine_2.process_default = produce_assembling_machine_2
+assembling_machine_3.process_default = produce_assembling_machine_3
+concrete.process_default = produce_concrete
+nuclear_reactor.process_default = produce_nuclear_reactor
+heat_exchanger.process_default = produce_heat_exchanger
+steam_turbine.process_default = produce_steam_turbine
+heat_energy.process_default = nuclear_power
+steam_500.process_default = heat_exchanger_process
 uranium_235.process_default = uranium_enrichment
 uranium_238.process_default = uranium_processing
 uranium_ore.process_default = mine_uranium_ore
@@ -852,9 +1024,12 @@ transport_belt.process_default = produce_transport_belt
 science_pack_1.process_default = produce_science_pack_1
 science_pack_2.process_default = produce_science_pack_2
 science_pack_3.process_default = produce_science_pack_3
+
 inserter.process_default = produce_inserter
 fast_inserter.process_default = produce_fast_inserter
 stack_inserter.process_default = produce_stack_inserter
+stack_filter_inserter.process_default = produce_stack_filter_inserter
+
 solar_panel.process_default = produce_solar_panel
 rocket_fuel.process_default = produce_rocket_fuel
 iron_gear_wheel.process_default = produce_iron_gear_wheel
@@ -868,7 +1043,7 @@ coal.process_default = mine_coal
 plastic_bar.process_default = produce_plastic_bar
 low_density_structure.process_default = produce_low_density_structure
 
-electrical_energy.process_default = nuclear_power
+electrical_energy.process_default = steam_turbine_process
 
 water.process_default = mine_water
 crude_oil.process_default = mine_crude_oil
@@ -891,7 +1066,6 @@ solid_fuel.process_default = light_oil_to_solid_fuel
 light_oil.process_default = advanced_oil_processing
 heavy_oil.process_default = advanced_oil_processing
 
-
-
+chemical_plant.process_default = produce_chemical_plant
 
 

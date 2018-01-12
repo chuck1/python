@@ -6,12 +6,30 @@ from process import *
 from product import *
 
 
-
+concrete = Product(
+        "concrete",
+        )
 
 electrical_energy = Product(
         "electrical energy",
-        [],
         )
+
+nuclear_reactor = Product(
+        "nuclear reactor",
+        )
+
+heat_exchanger = Product(
+        "heat exchanger",
+        )
+
+heat_energy = Product(
+        "heat energy",
+        )
+
+steam_500 = Product(
+        "steam 500 C",
+        )
+steam_500.energy = 97 # kJ
 
 water = Product(
         "water",
@@ -62,9 +80,9 @@ copper_plate = Product("copper plate",
     [express_belt],
     )
 
-copper_cable = Product(
+copper_cable = IntermediateProduct(
         "copper cable", 
-        [express_belt],
+        200,
         )
 
 iron_plate = IntermediateProduct(
@@ -319,6 +337,39 @@ uranium_238 = Product(
 uranium_fuel_cell = Product(
         "uranium fuel cell",
         [express_belt],
+        )
+
+chemical_plant = Product(
+        "chemical plant",
+        [express_belt],
+        )
+
+steam_turbine = Product(
+        "steam turbine",
+        )
+
+stack_filter_inserter = Product(
+        "stack filter inserter",
+        )
+
+assembling_machine_1 = Product(
+        "assembling machine 1",
+        )
+
+assembling_machine_2 = Product(
+        "assembling machine 2",
+        )
+
+assembling_machine_3 = Product(
+        "assembling machine 3",
+        )
+
+rail_signal = Product(
+        "rail signal",
+        )
+
+rail_chain_signal = Product(
+        "rail chain signal",
         )
 
 

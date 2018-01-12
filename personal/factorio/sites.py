@@ -89,10 +89,7 @@ def print_all(p, x):
 
 
 
-tiers_insert(satellite)
-tiers_insert(stack_inserter)
-tiers_insert(science_pack_1)
-tiers_insert(science_pack_2)
+[tiers_insert(p) for p in globals().values() if isinstance(p, Product)]
 
 #print_all(electronic_circuit, 1)
 #print_all(production, 1)
@@ -224,39 +221,54 @@ def process_track_list(l):
 def process_track(track):
     return dict((p, process_track_list(l)) for p, l in track.items())
 
-def all_inputs_default(process, product, rate):
-    track = {}
+def all_inputs_default(process, product, rate, show=False):
 
     #c = 1 / process.t
-    
+
     c = rate / process.items_per_cycle(product)
 
-    print("inputs")
-    inputs = list(process.all_inputs_default(c, track))
-    for i in inputs:
-        if i.product.process_default.t is None:
-            print("\t{:32} {:12.2f}".format(i.product.name, i.q))
-        else:
-            b = -i.product.process_default.buildings(i.product, i.q)
-            print("\t{:32} {:12.2f} {:12.2f}".format(i.product.name, i.q, b))
+    all_inputs_default2(process, c, show)
 
-    return dict((i.product, i) for i in inputs)
+def all_inputs_default2(process, c, show=False):
+
+    track = {}
+
+    if show: 
+        print("inputs")
+        print("process          ", process.name)
+        print("cycles per second", c)
+
+    inputs = list(process.all_inputs_default(c, track))
+
+    inputs = sorted(inputs, key=lambda i: i.product.name)
+    
+    if show:
+        for i in inputs:
+            if i.product.process_default.t is None:
+                print("\t{:32} {:12.2f}".format(i.product.name, i.q))
+            else:
+                b = -i.product.process_default.buildings(i.product, i.q)
+                print("\t{:32} {:12.2f} {:12.2f}".format(i.product.name, i.q, b))
+
 
     track = process_track(track)
+    
+    if show:
+        print()
+        for p, l in sorted(track.items(), key=lambda t: t[0].tier):
+            print(p.name)
+            for process1, r in l:
+                print("\t{:32} {:12.2f}".format(process1.name, r))
 
-    print()
-    for p, l in track.items():
-        print(p.name)
-        for process1, r in l:
-            print("\t{:32} {:12.2f}".format(process1.name, r))
-
-    return
+    return dict((i.product, i) for i in inputs)
 
     track = {}
 
     print()
     for i in process.excess_default(1 / process.t, track):
         print("\t{:32} {:12.2f}".format(i.product.name, i.q))
+
+
 
 
 if False:
@@ -304,17 +316,23 @@ def apply_modules():
     
     mine_copper_ore.modules = [ProductivityModule3(3), SpeedModule3(3)]
     
-    produce_iron_plate.modules = [ProductivityModule3()]*2 + [SpeedModule3(3)]
-    produce_copper_plate.modules = [ProductivityModule3()]*2
-    produce_steel_plate.modules = [ProductivityModule3()]*2
+    produce_iron_plate.modules = [ProductivityModule3(2), SpeedModule3(3)]
+    produce_copper_plate.modules = [ProductivityModule3(2), SpeedModule3(3)]
+    produce_steel_plate.modules = [ProductivityModule3(2), SpeedModule3(3)]
     
-    produce_copper_cable.modules = [ProductivityModule3()]*4
-    produce_electronic_circuit.modules = [ProductivityModule3()]*4
-    produce_advanced_circuit.modules = [ProductivityModule3()]*4
-    produce_processing_unit.modules = [ProductivityModule3()]*4
-    produce_speed_module_1.modules = [ProductivityModule3()]*4
-    produce_low_density_structure.modules = [ProductivityModule3()]*4
-    produce_rocket_control_unit.modules = [ProductivityModule3()]*4
+    advanced_oil_processing.modules = [ProductivityModule3(3), SpeedModule3(10)]
+
+    light_oil_to_solid_fuel.modules = [ProductivityModule3(3), SpeedModule3(6)]
+
+    produce_copper_cable.modules = [ProductivityModule3(4)]#, SpeedModule3(3)]
+    produce_electronic_circuit.modules = [ProductivityModule3(4)]
+    produce_advanced_circuit.modules = [ProductivityModule3(4), SpeedModule3(3)]
+    produce_processing_unit.modules = [ProductivityModule3(4), SpeedModule3(3)]
+    produce_speed_module_1.modules = [ProductivityModule3(4), SpeedModule3(3)]
+    produce_low_density_structure.modules = [ProductivityModule3(4), SpeedModule3(3)]
+    produce_rocket_fuel.modules = [ProductivityModule3(4), SpeedModule3(3)]
+
+    produce_rocket_control_unit.modules = [ProductivityModule3(4), SpeedModule3(3)]
     
     produce_rocket_part.modules = [ProductivityModule3()]*4
 
@@ -393,11 +411,53 @@ if False:
     print('period {:8.2f} minutes'.format(period / 60))
 
 
+def building_cost(inputs):
+    
+    inputs1 = []
+    
+    for product, i in inputs.items():
+        process = product.default_process()
+        
+        b = math.ceil(-i.buildings())
 
-inputs = all_inputs_default(produce_rocket_part, rocket_part, rocket_part_rate)
+        if process.building is not None:
+            print(process.building.name, b)
 
-inputs[iron_plate].site_analysis()
+            inputs1 += all_inputs_default(process.building.default_process(), process.building, -b, True).values()
+        else:
+            print('NOT BUILDING FOR PROCESS:', process.name, b)
+    
+    inputs1 = sorted(inputs1, key=lambda i: id(i.product))
+
+    groups = itertools.groupby(inputs1, key=lambda i: i.product)
+
+    inputs1 = [ProductInput(k, sum([i.q for i in g])) for k, g in groups]
+
+    inputs1 = sorted(inputs1, key=lambda i: i.product.tier)
+
+    print()
+    for i in inputs1:
+        print(i)
+
+        
+#inputs = all_inputs_default(produce_rocket_part, rocket_part, rocket_part_rate)
+inputs = all_inputs_default2(production, 1 / 60, True)
+
+#inputs[copper_cable].site_analysis()
+#inputs[iron_plate].site_analysis()
 
 #iron_plate.production_building_row_length()
+
+#building_cost(inputs)
+#building_cost({solid_fuel:inputs[solid_fuel]})
+
+
+
+
+
+
+
+
+
 
 

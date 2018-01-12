@@ -169,11 +169,12 @@ class ProductivityModule3:
         self.productivity = 0.10 * s
 
 class Process:
-    def __init__(self, name, inputs, t, power=None, has_site=False):
+    def __init__(self, name, inputs, t, power=None, has_site=False, building=None):
         self.name = name
         self._inputs = inputs
         self.t = t
         self.has_site = has_site
+        self.building = building
         
         self.power = power
         #if power is not None:

@@ -135,3 +135,4 @@ class IntermediateProduct(Product):
         self.stack_size = stack_size
 
 
+
