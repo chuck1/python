@@ -171,8 +171,8 @@ produce_sulfur = Process(
 produce_iron_plate = Process(
         "iron plate",
         [
-            ProductInput(iron_ore, 0.57, 1),
-            ProductInput(iron_plate, -0.57, 1),
+            ProductInput(iron_ore, 0.57, 2),
+            ProductInput(iron_plate, -0.57, 2),
             ],
         1,
         180,
@@ -182,8 +182,8 @@ produce_iron_plate = Process(
 produce_copper_plate = Process(
         "copper plate",
         [
-            ProductInput(copper_ore, 0.57, 1),
-            ProductInput(copper_plate, -0.57, 1),
+            ProductInput(copper_ore, 0.57, 2),
+            ProductInput(copper_plate, -0.57, 2),
             ],
         1,
         180,

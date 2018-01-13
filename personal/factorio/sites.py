@@ -324,8 +324,8 @@ def apply_modules():
 
     light_oil_to_solid_fuel.modules = [ProductivityModule3(3), SpeedModule3(6)]
 
-    produce_copper_cable.modules = [ProductivityModule3(4)]#, SpeedModule3(3)]
-    produce_electronic_circuit.modules = [ProductivityModule3(4)]
+    produce_copper_cable.modules = [ProductivityModule3(4), SpeedModule3(3)]
+    produce_electronic_circuit.modules = [ProductivityModule3(4), SpeedModule3(3)]
     produce_advanced_circuit.modules = [ProductivityModule3(4), SpeedModule3(3)]
     produce_processing_unit.modules = [ProductivityModule3(4), SpeedModule3(3)]
     produce_speed_module_1.modules = [ProductivityModule3(4), SpeedModule3(3)]
@@ -441,7 +441,7 @@ def building_cost(inputs):
 
         
 #inputs = all_inputs_default(produce_rocket_part, rocket_part, rocket_part_rate)
-inputs = all_inputs_default2(production, 1 / 60, True)
+#inputs = all_inputs_default2(production, 1 / 60, True)
 
 #inputs[copper_cable].site_analysis()
 #inputs[iron_plate].site_analysis()
@@ -452,9 +452,17 @@ inputs = all_inputs_default2(production, 1 / 60, True)
 #building_cost({solid_fuel:inputs[solid_fuel]})
 
 
+products = [p for p in globals().values() if isinstance(p, Product)]
 
-
-
+for p in [
+        iron_plate,
+        copper_plate,
+        steel_plate,
+        copper_cable,
+        electronic_circuit,
+        advanced_circuit,]:
+    print('---------------------------------------------------')
+    p.production_building_row_length()
 
 
 

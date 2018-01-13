@@ -37,12 +37,14 @@ class Product:
         return lanes
 
     def production_building_row_length(self):
+        p = self.process_default
+
         print()
         print(crayons.blue(self.name, bold=True))
         print("production building row length")
+        print("modules", [str(m) for m in p.modules])
         print()
         
-        p = self.process_default
         inputs = list(p.inputs)
 
         # get inputs delivered on belts

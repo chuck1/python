@@ -158,15 +158,23 @@ class VirtualProcess:
 
 class SpeedModule3:
     def __init__(self, s = 1):
+        self.s = s
         self.speed = 0.5 * s
         self.power = 0.7 * s
         self.productivity = 0 * s
+    
+    def __str__(self):
+        return 'Speed Module 3 ({})'.format(self.s)
 
 class ProductivityModule3:
     def __init__(self, s = 1):
+        self.s = s
         self.speed = -0.15 * s
         self.power = 0.80 * s
         self.productivity = 0.10 * s
+
+    def __str__(self):
+        return 'Productivity Module 3 ({})'.format(self.s)
 
 class Process:
     def __init__(self, name, inputs, t, power=None, has_site=False, building=None):
