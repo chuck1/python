@@ -1,96 +1,59 @@
 digraph {
-	uranium_ore [label=uranium_ore]
-		sulfuric_acid -> uranium_ore
-	grenade [label=grenade]
-		mine_coal -> grenade
-		iron_plate -> grenade
-	inserter [label=inserter]
-		electronic_circuit -> inserter
-		iron_gear_wheel -> inserter
-		iron_plate -> inserter
-	mine_iron_ore [label="mine iron ore"]
-	electric_engine_unit [label="electric engine unit"]
-		electronic_circuit -> electric_engine_unit
-		engine_unit -> electric_engine_unit
-		lubricant -> electric_engine_unit
-	mine_crude_oil [label=mine_crude_oil]
-	engine_unit [label="engine unit"]
-		iron_gear_wheel -> engine_unit
-		pipe -> engine_unit
-		steel_plate -> engine_unit
-	mine_stone [label="mine stone"]
-	steel_plate [label="steel plate"]
-		iron_plate -> steel_plate
-	sulfur [label=sulfur]
-		advanced_oil_processing -> sulfur
-	iron_plate [label="iron plate"]
-		mine_iron_ore -> iron_plate
-	advanced_oil_processing [label=advanced_oil_processing]
-		mine_crude_oil -> advanced_oil_processing
-	production_science_pack [label="production science pack"]
-		electric_engine_unit -> production_science_pack
-		electric_furnace -> production_science_pack
-	electronic_circuit [label="electronic circuit"]
-		iron_plate -> electronic_circuit
-		copper_cable -> electronic_circuit
-	electric_furnace [label="electric furnace"]
-		advanced_circuit -> electric_furnace
-		steel_plate -> electric_furnace
-		stone_brick -> electric_furnace
+	pipe [label=pipe]
+		iron_plate -> pipe
 	high_tech_science_pack [label="high tech science pack"]
 		battery -> high_tech_science_pack
 		copper_cable -> high_tech_science_pack
 		processing_unit -> high_tech_science_pack
 		speed_module_1 -> high_tech_science_pack
-	battery [label=battery]
-		iron_plate -> battery
-		copper_plate -> battery
-		sulfuric_acid -> battery
+	lubricant [label=lubricant]
+		advanced_oil_processing -> lubricant
+	fast_inserter [label="fast inserter"]
+		electronic_circuit -> fast_inserter
+		inserter -> fast_inserter
+		iron_plate -> fast_inserter
+	plastic_bar [label="plastic bar"]
+		mine_coal -> plastic_bar
+		advanced_oil_processing -> plastic_bar
+	piercing_rounds_magazine [label="piercing rounds magazine"]
+		copper_plate -> piercing_rounds_magazine
+		firearm_magazine -> piercing_rounds_magazine
+		steel_plate -> piercing_rounds_magazine
+	iron_gear_wheel [label=iron_gear_wheel]
+		iron_plate -> iron_gear_wheel
+	military_science_pack [label="military science pack"]
+		grenade -> military_science_pack
+		gun_turret -> military_science_pack
+		piercing_rounds_magazine -> military_science_pack
+	electric_furnace [label="electric furnace"]
+		advanced_circuit -> electric_furnace
+		steel_plate -> electric_furnace
+		stone_brick -> electric_furnace
+	firearm_magazine [label="firearm magazine"]
+		iron_plate -> firearm_magazine
+	electronic_circuit [label="electronic circuit"]
+		iron_plate -> electronic_circuit
+		copper_cable -> electronic_circuit
+	engine_unit [label="engine unit"]
+		iron_gear_wheel -> engine_unit
+		pipe -> engine_unit
+		steel_plate -> engine_unit
 	mine_copper_ore [label="mine copper ore"]
-	processing_unit [label="processing unit"]
-		electronic_circuit -> processing_unit
-		advanced_circuit -> processing_unit
-		sulfuric_acid -> processing_unit
-	electric_mining_drill [label="electric mining drill"]
-		electronic_circuit -> electric_mining_drill
-		iron_gear_wheel -> electric_mining_drill
-		iron_plate -> electric_mining_drill
+	uranium_ore [label=uranium_ore]
+		sulfuric_acid -> uranium_ore
+	speed_module_1 [label="speed module 1"]
+		electronic_circuit -> speed_module_1
+		advanced_circuit -> speed_module_1
+	rocket_fuel [label=rocket_fuel]
 	stack_inserter [label="stack inserter"]
 		advanced_circuit -> stack_inserter
 		electronic_circuit -> stack_inserter
 		fast_inserter -> stack_inserter
 		iron_gear_wheel -> stack_inserter
-	mine_coal [label="mine coal"]
-	military_science_pack [label="military science pack"]
-		grenade -> military_science_pack
-		gun_turret -> military_science_pack
-		piercing_rounds_magazine -> military_science_pack
-	advanced_circuit [label="advanced circuit"]
-		copper_cable -> advanced_circuit
-		electronic_circuit -> advanced_circuit
-		plastic_bar -> advanced_circuit
-	science_pack_2 [label="science pack 2"]
-		inserter -> science_pack_2
-		transport_belt -> science_pack_2
-	sulfuric_acid [label="sulfuric acid"]
-		iron_plate -> sulfuric_acid
-		sulfur -> sulfuric_acid
-	gun_turret [label="gun turret"]
-		copper_plate -> gun_turret
-		iron_gear_wheel -> gun_turret
-		iron_plate -> gun_turret
-	plastic_bar [label="plastic bar"]
-		mine_coal -> plastic_bar
-		advanced_oil_processing -> plastic_bar
-	speed_module_1 [label="speed module 1"]
-		electronic_circuit -> speed_module_1
-		advanced_circuit -> speed_module_1
-	fast_inserter [label="fast inserter"]
-		electronic_circuit -> fast_inserter
-		inserter -> fast_inserter
-		iron_plate -> fast_inserter
-	iron_gear_wheel [label=iron_gear_wheel]
-		iron_plate -> iron_gear_wheel
+	copper_cable [label="copper cable"]
+		copper_plate -> copper_cable
+	sulfur [label=sulfur]
+		advanced_oil_processing -> sulfur
 	research [label=research]
 		science_pack_1 -> research
 		science_pack_2 -> research
@@ -98,30 +61,80 @@ digraph {
 		military_science_pack -> research
 		production_science_pack -> research
 		high_tech_science_pack -> research
-	piercing_rounds_magazine [label="piercing rounds magazine"]
-		copper_plate -> piercing_rounds_magazine
-		firearm_magazine -> piercing_rounds_magazine
-		steel_plate -> piercing_rounds_magazine
-	copper_plate [label="copper plate"]
-		mine_copper_ore -> copper_plate
-	copper_cable [label="copper cable"]
-		copper_plate -> copper_cable
-	pipe [label=pipe]
-		iron_plate -> pipe
+		satellite_launch -> research
+	advanced_oil_processing [label=advanced_oil_processing]
+		mine_crude_oil -> advanced_oil_processing
+	steel_plate [label="steel plate"]
+		iron_plate -> steel_plate
+	mine_crude_oil [label=mine_crude_oil]
+	mine_stone [label="mine stone"]
+	stone_brick [label="stone brick"]
+		mine_stone -> stone_brick
+	production_science_pack [label="production science pack"]
+		electric_engine_unit -> production_science_pack
+		electric_furnace -> production_science_pack
+	mine_iron_ore [label="mine iron ore"]
 	transport_belt [label=transport_belt]
 		iron_gear_wheel -> transport_belt
 		iron_plate -> transport_belt
-	science_pack_1 [label="science pack 1"]
-		copper_plate -> science_pack_1
-		iron_gear_wheel -> science_pack_1
+	grenade [label=grenade]
+		mine_coal -> grenade
+		iron_plate -> grenade
+	stack_filter_inserter [label="stack filter inserter"]
+		electronic_circuit -> stack_filter_inserter
+		stack_inserter -> stack_filter_inserter
+	sulfuric_acid [label="sulfuric acid"]
+		iron_plate -> sulfuric_acid
+		sulfur -> sulfuric_acid
+	accumulator [label=accumulator]
+		iron_plate -> accumulator
+		battery -> accumulator
 	science_pack_3 [label="science pack 3"]
 		advanced_circuit -> science_pack_3
 		electric_mining_drill -> science_pack_3
 		engine_unit -> science_pack_3
-	firearm_magazine [label="firearm magazine"]
-		iron_plate -> firearm_magazine
-	stone_brick [label="stone brick"]
-		mine_stone -> stone_brick
-	lubricant [label=lubricant]
-		advanced_oil_processing -> lubricant
+	science_pack_2 [label="science pack 2"]
+		inserter -> science_pack_2
+		transport_belt -> science_pack_2
+	mine_coal [label="mine coal"]
+	battery [label=battery]
+		iron_plate -> battery
+		copper_plate -> battery
+		sulfuric_acid -> battery
+	electric_engine_unit [label="electric engine unit"]
+		electronic_circuit -> electric_engine_unit
+		engine_unit -> electric_engine_unit
+		lubricant -> electric_engine_unit
+	science_pack_1 [label="science pack 1"]
+		copper_plate -> science_pack_1
+		iron_gear_wheel -> science_pack_1
+	electric_mining_drill [label="electric mining drill"]
+		electronic_circuit -> electric_mining_drill
+		iron_gear_wheel -> electric_mining_drill
+		iron_plate -> electric_mining_drill
+	gun_turret [label="gun turret"]
+		copper_plate -> gun_turret
+		iron_gear_wheel -> gun_turret
+		iron_plate -> gun_turret
+	copper_plate [label="copper plate"]
+		mine_copper_ore -> copper_plate
+	inserter [label=inserter]
+		electronic_circuit -> inserter
+		iron_gear_wheel -> inserter
+		iron_plate -> inserter
+	low_density_structure [label=low_density_structure]
+		copper_plate -> low_density_structure
+		plastic_bar -> low_density_structure
+		steel_plate -> low_density_structure
+	advanced_circuit [label="advanced circuit"]
+		copper_cable -> advanced_circuit
+		electronic_circuit -> advanced_circuit
+		plastic_bar -> advanced_circuit
+	iron_plate [label="iron plate"]
+		mine_iron_ore -> iron_plate
+	processing_unit [label="processing unit"]
+		electronic_circuit -> processing_unit
+		advanced_circuit -> processing_unit
+		sulfuric_acid -> processing_unit
+	satellite_launch [label=satellite_launch]
 }

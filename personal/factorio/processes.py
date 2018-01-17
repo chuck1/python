@@ -311,6 +311,7 @@ produce_accumulator = Process("accumulator",
             ProductInput(accumulator, -1, 1),
             ],
         10,
+        has_site=True,
         )
   
 produce_low_density_structure = Process("low_density_structure", 
@@ -321,6 +322,7 @@ produce_low_density_structure = Process("low_density_structure",
             ProductInput(low_density_structure, -1, 1),
             ],
         30,
+        has_site=True,
         )
 
 produce_iron_gear_wheel = Process(
@@ -382,6 +384,7 @@ produce_rocket_fuel = Process(
             ProductInput(rocket_fuel, -1, 1),
             ],
         30,
+        has_site=True,
         )
 
 produce_solar_panel = Process("solar_panel", 
@@ -438,6 +441,7 @@ produce_satellite_launch = Process(
             ProductInput(space_science_pack, -1000, 1),
             ],
         0,
+        has_site=True,
         )
 
 produce_inserter = Process("inserter",

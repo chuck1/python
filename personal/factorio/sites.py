@@ -298,6 +298,10 @@ def graph():
                     g.edge(process1.name.replace(' ', '_'), name)
                 else:
                     print('need site for {}'.format(i.product.name))
+                    for i1 in process1.inputs:
+                        if i1.q < 0: continue
+                        if i1.product == Process.electrical_energy: continue
+                        print('\t{}'.format(i1.product.name))
             
 
     print()
@@ -305,7 +309,6 @@ def graph():
     g.view()
     g.render('items.svg')
 
-#graph()
 
 #mine_iron_ore.print_()
 
@@ -454,17 +457,22 @@ def building_cost(inputs):
 
 products = [p for p in globals().values() if isinstance(p, Product)]
 
-for p in [
-        iron_plate,
-        copper_plate,
-        steel_plate,
-        copper_cable,
-        electronic_circuit,
-        advanced_circuit,]:
-    print('---------------------------------------------------')
-    p.production_building_row_length()
+if False:
+
+    for p in [
+            iron_plate,
+            copper_plate,
+            steel_plate,
+            copper_cable,
+            electronic_circuit,
+            advanced_circuit,]:
+        print('---------------------------------------------------')
+        p.production_building_row_length()
 
 
+#####################################################################
+
+graph()
 
 
 
