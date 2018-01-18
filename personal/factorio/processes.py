@@ -437,7 +437,7 @@ produce_satellite_launch = Process(
         [
             ProductInput(rocket_part, 100),
             ProductInput(satellite, 1),
-            ProductInput(satellite_launch, -1, 1),
+            #ProductInput(satellite_launch, -1, 1),
             ProductInput(space_science_pack, -1000, 1),
             ],
         0,

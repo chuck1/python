@@ -260,12 +260,24 @@ class Process:
     def raw(self, x):
         return all_raw2(x, Raw([(i, None) for i in self.inputs]))
 
+    def ingredient(self, product):
+        try:
+            i = next(i for i in self.inputs if i.product == product)
+        except StopIteration:
+            raise RuntimeError("{} not found in {}".format(product.name, self.name))
+        return i
+
     def items_per_cycle(self, product):
         try:
             i = next(i for i in self.inputs if i.product == product)
         except StopIteration:
             raise RuntimeError("{} not found in {}".format(product.name, self.name))
         return i.q
+
+    def cycles_per_second(self, i):
+        r = self.items_per_cycle(i.product)
+        c = i.q / r
+        return c
 
     def buildings(self, product, rate):
         i = self.items_per_cycle(product)

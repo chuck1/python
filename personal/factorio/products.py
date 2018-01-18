@@ -77,8 +77,8 @@ sulfur = Product(
         )
 
 copper_plate = Product("copper plate",
-    [express_belt],
-    )
+        [express_belt],
+        )
 
 copper_cable = IntermediateProduct(
         "copper cable", 
@@ -95,35 +95,37 @@ steel_plate = Product("steel plate",
         )
 
 sulfuric_acid = Product("sulfuric acid", 
-    )
+        )
 
 lubricant = Product(
         "lubricant",
         )
 
-electronic_circuit = Product("electronic circuit",
-        [express_belt],
+electronic_circuit = IntermediateProduct("electronic circuit",
+        200,
         )
 
-advanced_circuit = Product("advanced circuit", 
-        [express_belt],
+advanced_circuit = IntermediateProduct("advanced circuit", 
+        200,
         )
 
-processing_unit = Product("processing unit",
-    [express_belt],
-    )
+processing_unit = IntermediateProduct("processing unit",
+        100,
+        )
 
-speed_module_1 = Product("speed module 1",
-    )
+speed_module_1 = IntermediateProduct("speed module 1",
+        50,
+        )
 
 speed_module_2 = Product("speed module 2",
-    )
+        )
 
 speed_module_3 = Product("speed module 3",
-    )
+        )
 
-battery = Product("battery",
-    )
+battery = IntermediateProduct("battery",
+        200,
+        )
 
 accumulator = Product("accumulator",
     )

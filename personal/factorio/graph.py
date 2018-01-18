@@ -68,11 +68,13 @@ class MyGraph:
         self.nodes[name] = n
         return n
 
-    def edge(self, n0, n1):
+    def edge(self, n0, n1, products):
         for e in self.edges:
-            if e.src == n0 and e.dst == n1: return e
+            if e.src == n0 and e.dst == n1:
+                e.add_products(products)
+                return e
 
-        e = Edge(n0, n1)
+        e = Edge(n0, n1, products)
         self.edges.append(e)
         return e
 
@@ -109,31 +111,54 @@ class MyGraph:
             g.node(n.name.replace(' ','_'), pos=pos_string)
 
         for e in self.edges:
-            g.edge(e.src.name.replace(' ','_'), e.dst.name.replace(' ','_'))
+            l = '\n'.join(['{} {:.0f} -> {}'.format(k[1].name, r, k[0].name) for k, r in e.products] + ['{} wagons/sec'.format(cargo_wagons_per_second(e.products))])
+            g.edge(e.src.name.replace(' ','_'), e.dst.name.replace(' ','_'), label=l)
 
         #print(g.source)
 
         #g.render('layout.svg')
         g.view()
 
-def connect_to(process, i):
+def cargo_wagons_per_second(products):
+    w = 0
+    for k, r in products:
+        process, product = k
+        if not isinstance(product, IntermediateProduct): continue
+        w += r / product.stack_size / 40
+    return w
+
+def connect_to(process, i, i0, c, r):
     if i.q < 0: return
     if i.product == Process.electrical_energy: return
 
     process1 = i.product.default_process()
 
+    #c = r / process.items_per_cycle(i.product)
+    c1 = -r / process1.items_per_cycle(i.product)
+
+    # items per second of i.product
+    #r = c * process.items_per_cycle(i.product)
+
+    #c1 = -process1.cycles_per_second(i)
+
+    print('{:24} {:8.1f} items/sec produced by {:24} {:8.1f} cycles/sec'.format(process1.name, c1, i.product.name, r))
+    
     if process1 in factories:
 
         src = process1.name
         dst = process.name
         
-        g2.edge(g2.node(src, process1), g2.node(dst, process))
+        g2.edge(g2.node(src, process1), g2.node(dst, process), [((process, i.product), r)])
 
     else:
         print('no factory for {}'.format(i.product.name))
         for i1 in process1.inputs:
             #print('\t{}'.format(i1.product.name))
-            connect_to(process, i1)
+
+            #how much i1?
+            r1 = c1 * process1.items_per_cycle(i1.product)
+
+            connect_to(process, i1, None, None, r1)
     
 def try_move_neighbor_center(n):
     if len(list(n.neighbors())) < 2: return False
@@ -156,23 +181,6 @@ def try_move_neighbor_center(n):
         n.position = p0
         return False
 
-
-g2 = MyGraph()
-
-for process in factories:
-    for i in process.inputs:
-        connect_to(process, i)
-
-print('edges', len(g2.edges))
-
-print(g2.crossings())
-
-repeat = False
-while repeat:
-    repeat = False
-    for n in g2.nodes.values():
-        try_move_neighbor_center(n)
-
 def try_move(n, e, k):
         c0 = n.g.crossings()
 
@@ -188,6 +196,114 @@ def try_move(n, e, k):
         else:
             n.position = p0
             return False
+
+def remove_edges_to_older_ancestors():
+    c = 0
+
+    for n in g2.nodes.values():
+        # each edge pointing at n
+        edges = [e for e in g2.edges if e.dst == n]
+        
+        edges_to_remove = []
+    
+        for e in edges:
+            for e1 in edges:
+                if e == e1: continue
+                
+                if e1.src.is_ancestor(e.src):
+                    edges_to_remove.append(e)
+
+                    # move products from removed route
+                    e1.add_products(e.products)
+                
+                    # get path from e.src to n
+                    for e2 in e1.src.path(e.src):
+                        e2.add_products(e.products)
+
+                    print('removing edge {} -> {}'.format(e.src.name, e.dst.name))
+                    print('\tbecause {} is ancestor of {}'.format(e.src.name, e1.src.name))
+    
+        #print('removing {} edges'.format(len(edges_to_remove)))
+    
+        for e in edges_to_remove:
+            if e in g2.edges:
+                g2.edges.remove(e)
+                c += 1
+    
+    return c > 0
+
+def reroute_through_highest_rank_ancestor():
+    c = 0
+
+    print('ancestor rank')
+    for n in g2.nodes.values():
+        if n.process in exclude: continue
+
+        ancestors = list(n.ancestors())
+        
+        if len(ancestors) < 2: continue
+    
+        ancestor_rank = [e.src.rank() for e in ancestors]
+        print(n.name, ancestor_rank)
+        
+        ancestor_rank_max = max(ancestor_rank)
+        
+        lowest = next(a for a in ancestors if a.src.rank() == ancestor_rank_max)
+    
+        if len([r for r in ancestor_rank if r == ancestor_rank_max]) > 1: continue
+        
+        ancestors_remove = [a for a in ancestors if a.src.rank() < ancestor_rank_max]
+        
+        for a in ancestors_remove:
+            g2.edges.remove(a)
+            g2.edge(a.src, lowest.src, list(a.products))
+            c += 1
+    
+            print('remove edge {} -> {}'.format(a.src.name, a.dst.name))
+            print('add edge {} -> {}'.format(a.src.name, lowest.src.name))
+        
+    return c > 0
+
+###################################################################33
+###################################################################33
+###################################################################33
+
+g2 = MyGraph()
+
+
+inputs = research.all_inputs_default(1000)
+
+for i0 in inputs:
+    process = i0.product.default_process()
+    
+    if process not in factories:
+        continue
+    
+    #print(process.name, 'c =', process.cycles_per_second(i0))
+    
+    c = -process.cycles_per_second(i0)
+
+
+    for i in process.inputs:
+        r = c * process.items_per_cycle(i.product)
+        connect_to(process, i, i0, c, r)
+
+#for i in research.inputs:
+#    connect_to(research, i, None, None, 1000)
+
+
+
+
+print('edges', len(g2.edges))
+
+print(g2.crossings())
+
+repeat = False
+while repeat:
+    repeat = False
+    for n in g2.nodes.values():
+        try_move_neighbor_center(n)
+
 
 print('try move')
 
@@ -221,67 +337,6 @@ for n in g2.nodes.values():
                 else:
                     n.position = e.x(x0 / d)
 
-
-def remove_edges_to_older_ancestors():
-    c = 0
-
-    for n in g2.nodes.values():
-        # each edge pointing at n
-        edges = [e for e in g2.edges if e.dst == n]
-        
-        edges_to_remove = []
-    
-        for e in edges:
-            for e1 in edges:
-                if e == e1: continue
-                
-                if e1.src.is_ancestor(e.src):
-                    edges_to_remove.append(e)
-                    print('removing edge {} -> {}'.format(e.src.name, e.dst.name))
-                    print('\tbecause {} is ancestor of {}'.format(e.src.name, e1.src.name))
-    
-        #print('removing {} edges'.format(len(edges_to_remove)))
-    
-        for e in edges_to_remove:
-            if e in g2.edges:
-                g2.edges.remove(e)
-                c += 1
-    
-    return c > 0
-
-def reroute_through_highest_rank_ancestor():
-    
-    c = 0
-
-    print('ancestor rank')
-    for n in g2.nodes.values():
-        if n.process in exclude: continue
-
-        ancestors = list(n.ancestors())
-        
-        if len(ancestors) < 2: continue
-    
-        ancestor_rank = [e.src.rank() for e in ancestors]
-        print(n.name, ancestor_rank)
-        
-        ancestor_rank_max = max(ancestor_rank)
-        
-        lowest = next(a for a in ancestors if a.src.rank() == ancestor_rank_max)
-    
-        if len([r for r in ancestor_rank if r == ancestor_rank_max]) > 1: continue
-        
-        ancestors_remove = [a for a in ancestors if a.src.rank() < ancestor_rank_max]
-        
-        for a in ancestors_remove:
-            g2.edges.remove(a)
-            g2.edge(a.src, lowest.src)
-            c += 1
-    
-            print('remove edge {} -> {}'.format(a.src.name, a.dst.name))
-            print('add edge {} -> {}'.format(a.src.name, lowest.src.name))
-        
-    return c > 0
-
 if False:
     n, bins, patches = plt.hist(x, 50, normed=1, facecolor='green', alpha=0.75)
     plt.show()
@@ -294,7 +349,7 @@ repeat = True
 while repeat:
     repeat = False
     if remove_edges_to_older_ancestors(): repeat = True
-    if reroute_through_highest_rank_ancestor(): repeat = True
+    #if reroute_through_highest_rank_ancestor(): repeat = True
 
 g2.graphviz()
 

@@ -1,9 +1,11 @@
+import itertools
 import numpy as np
 
 class Edge:
-    def __init__(self, src, dst):
+    def __init__(self, src, dst, products):
         self.src = src
         self.dst = dst
+        self.products = products
 
     def start(self):
         return self.src.position
@@ -16,6 +18,13 @@ class Edge:
 
     def length(self):
         return np.linalg.norm(self.v())
+
+    def add_products(self, products):
+        self.products += products
+
+        groups = itertools.groupby(self.products, key=lambda t: t[0])
+
+        self.products = [(k, sum(rate for _, rate in g)) for k, g in groups]
 
 class Node:
     def __init__(self, g, name, process, position):
@@ -49,6 +58,18 @@ class Node:
                     return True
                 if e.src.is_ancestor(n): return True
         return False
+
+    def path(self, n):
+        for e in self.g.edges:
+            if e.dst == self:
+                if e.src == n:
+                    yield e
+                    return
+                elif e.src.is_ancestor(n):
+                    yield from e.src.path(n)
+                    yield e
+                    return
+       
 
     def neighbor_center(self):
         p = np.array([0.,0.])

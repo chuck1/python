@@ -1,115 +1,240 @@
 digraph {
 	graph [ranksep=2.0]
 	graph [rankdir=LR]
-	sulfur [pos="17.93104695570853,4.181002769357528!"]
-	science_pack_1 [pos="1.6071338497152716,6.5941559131846335!"]
-	grenade [pos="10.979434280144261,5.093815050539425!"]
-	rocket_fuel [pos="0.6745086767284824,6.035688469948235!"]
-	high_tech_science_pack [pos="5.8251046214824145,10.85988546176244!"]
-	electronic_circuit [pos="7.331674337281498,18.18473094233139!"]
-	copper_plate [pos="1.849088395454855,16.627861991293027!"]
-	production_science_pack [pos="2.685240845352622,17.0439096913055!"]
-	mine_iron_ore [pos="7.21295667800085,19.87981141981912!"]
-	iron_gear_wheel [pos="14.11354350374375,4.716942086644796!"]
-	mine_crude_oil [pos="5.825117823150462,13.731497999161794!"]
-	sulfuric_acid [pos="14.562154902600547,1.5677541117376486!"]
-	solar_panel [pos="2.265560658376246,8.204634010946123!"]
-	research [pos="1.963593804925092,3.7776123201586693!"]
-	iron_plate [pos="13.745371087376654,14.782371211023499!"]
-	gun_turret [pos="2.0368743073268747,2.0611783886018102!"]
-	light_oil_to_solid_fuel [pos="18.003516772560832,14.368285516559638!"]
-	battery [pos="4.793014221111307,6.074618887064306!"]
-	mine_stone [pos="9.724499413514792,16.267373655562512!"]
-	engine_unit [pos="1.9911215137498361,9.351544449204782!"]
-	plastic_bar [pos="8.564531537302704,16.26576581984312!"]
-	piercing_rounds_magazine [pos="1.0602542852207597,2.5512763680248156!"]
-	electric_engine_unit [pos="16.683141352358444,17.646563279190197!"]
-	advanced_oil_processing [pos="7.744143557855697,19.959474863831115!"]
-	electric_mining_drill [pos="2.553107161772157,9.386026423420333!"]
-	mine_copper_ore [pos="0.5884227455894415,12.73949556132243!"]
-	stone_brick [pos="13.319425970140118,8.295366069890987!"]
-	rocket_control_unit [pos="6.950589943680503,11.560049313802407!"]
-	speed_module_1 [pos="5.418180602739754,10.248188978829244!"]
-	processing_unit [pos="15.777828823005809,13.693681559878916!"]
-	advanced_circuit [pos="13.850838093242945,18.586110471264167!"]
-	science_pack_2 [pos="2.6574381917976932,9.398559579820803!"]
-	steel_plate [pos="9.80954294754545,18.060875268752266!"]
-	low_density_structure [pos="9.722438273275314,2.7609557124551074!"]
-	mine_coal [pos="18.035867959854002,3.201320150812443!"]
-	accumulator [pos="3.9731610459213194,0.27053424711320756!"]
-	science_pack_3 [pos="11.27427810869341,17.702432539931895!"]
-	satellite_launch [pos="14.777780111294119,3.195198187098128!"]
-	electric_furnace [pos="15.964036546564873,11.100398170516542!"]
-	copper_cable [pos="9.641242897459435,13.188495500918343!"]
-	military_science_pack [pos="12.288297282160181,10.65938932557764!"]
-		iron_plate -> grenade
-		iron_gear_wheel -> gun_turret
-		battery -> accumulator
-		electronic_circuit -> solar_panel
-		steel_plate -> piercing_rounds_magazine
-		mine_iron_ore -> iron_plate
-		mine_copper_ore -> copper_plate
-		iron_plate -> steel_plate
-		copper_plate -> copper_cable
-		copper_cable -> electronic_circuit
-		mine_crude_oil -> advanced_oil_processing
-		iron_plate -> iron_gear_wheel
-		advanced_oil_processing -> sulfur
-		sulfur -> sulfuric_acid
-		iron_gear_wheel -> engine_unit
-		steel_plate -> engine_unit
-		advanced_oil_processing -> light_oil_to_solid_fuel
-		electronic_circuit -> electric_mining_drill
-		advanced_oil_processing -> plastic_bar
-		electronic_circuit -> advanced_circuit
-		plastic_bar -> advanced_circuit
-		advanced_circuit -> processing_unit
-		processing_unit -> rocket_control_unit
-		speed_module_1 -> rocket_control_unit
-		plastic_bar -> low_density_structure
-		steel_plate -> low_density_structure
-		light_oil_to_solid_fuel -> rocket_fuel
-		sulfuric_acid -> battery
-		advanced_circuit -> speed_module_1
-		electronic_circuit -> electric_engine_unit
-		engine_unit -> electric_engine_unit
-		advanced_oil_processing -> electric_engine_unit
-		advanced_circuit -> electric_furnace
-		stone_brick -> electric_furnace
-		mine_stone -> stone_brick
-		iron_gear_wheel -> science_pack_1
-		electronic_circuit -> science_pack_2
-		advanced_circuit -> science_pack_3
-		electric_mining_drill -> science_pack_3
-		engine_unit -> science_pack_3
-		grenade -> military_science_pack
-		gun_turret -> military_science_pack
-		piercing_rounds_magazine -> military_science_pack
-		electric_furnace -> production_science_pack
-		battery -> high_tech_science_pack
-		processing_unit -> high_tech_science_pack
-		speed_module_1 -> high_tech_science_pack
-		rocket_control_unit -> satellite_launch
-		science_pack_1 -> research
-		science_pack_2 -> research
-		science_pack_3 -> research
-		military_science_pack -> research
-		production_science_pack -> research
-		high_tech_science_pack -> research
-		satellite_launch -> research
-		copper_plate -> iron_gear_wheel
-		mine_coal -> iron_plate
-		iron_plate -> copper_cable
-		electric_engine_unit -> electric_furnace
-		iron_plate -> sulfur
-		steel_plate -> electronic_circuit
-		mine_coal -> advanced_oil_processing
-		copper_plate -> steel_plate
-		iron_gear_wheel -> electronic_circuit
-		sulfuric_acid -> advanced_circuit
-		low_density_structure -> rocket_control_unit
-		rocket_fuel -> rocket_control_unit
-		accumulator -> rocket_control_unit
-		solar_panel -> rocket_control_unit
-		copper_plate -> sulfur
+	iron_plate [pos="12.464566663965714,1.7225058693462834!"]
+	mine_iron_ore [pos="15.217452622400291,7.823835858152453!"]
+	electric_furnace [pos="19.037268100325505,15.965612975307073!"]
+	iron_gear_wheel [pos="8.973968226608816,13.353863772306218!"]
+	steel_plate [pos="2.9247393272053723,14.498213561566237!"]
+	grenade [pos="3.699053486305241,17.590459345450867!"]
+	plastic_bar [pos="4.89384511038137,6.32970417643348!"]
+	accumulator [pos="8.490219017903609,16.126399159798005!"]
+	science_pack_3 [pos="5.526496684995916,5.111873097711384!"]
+	copper_plate [pos="18.14956738649877,12.977625753591441!"]
+	satellite_launch [pos="8.889330293426868,3.427012399674919!"]
+	science_pack_1 [pos="20.37080692542164,19.879331926540644!"]
+	advanced_circuit [pos="9.221660816137447,12.337188716238895!"]
+	advanced_oil_processing [pos="13.371252003802507,20.177313186680916!"]
+	mine_coal [pos="18.66979693092189,8.828956497493646!"]
+	military_science_pack [pos="0.3939022140590821,4.450438121438326!"]
+	rocket_control_unit [pos="10.15339601933031,10.3773848385174!"]
+	engine_unit [pos="7.540096751852506,2.791128515551014!"]
+	rocket_fuel [pos="19.890914107968264,1.3346939739414547!"]
+	sulfuric_acid [pos="10.116874188276325,17.711778883936383!"]
+	electronic_circuit [pos="14.636524489911043,5.113365052097282!"]
+	science_pack_2 [pos="16.010747622407976,20.258402929120436!"]
+	processing_unit [pos="0.1530451946582559,6.967694153649724!"]
+	light_oil_to_solid_fuel [pos="8.507725604783174,10.275114056572532!"]
+	mine_crude_oil [pos="14.43608161856339,9.888012073796116!"]
+	speed_module_1 [pos="14.586923481525261,11.694187565139416!"]
+	high_tech_science_pack [pos="6.971746717163695,12.55261021192341!"]
+	battery [pos="10.513320705906152,9.708759454922252!"]
+	electric_mining_drill [pos="10.814663277147835,15.44328676986163!"]
+	copper_cable [pos="18.55490249267461,9.479314931091693!"]
+	solar_panel [pos="9.61060407146257,14.860595825113627!"]
+	mine_copper_ore [pos="8.759466888369275,8.63831795912556!"]
+	piercing_rounds_magazine [pos="8.827523183899144,10.180805390983888!"]
+	sulfur [pos="15.958796563423126,18.35320396083383!"]
+	gun_turret [pos="3.5545886184146345,5.359008314778963!"]
+	stone_brick [pos="0.04180357999184797,0.5816349027018782!"]
+	low_density_structure [pos="9.847720144934666,1.5836910259718742!"]
+	mine_stone [pos="9.575488868364921,4.595663343351365!"]
+	production_science_pack [pos="18.596757034484174,8.170065024496624!"]
+	electric_engine_unit [pos="10.97907712998737,2.201519408765489!"]
+		mine_crude_oil -> advanced_oil_processing [label="crude_oil 430540 -> advanced_oil_processing
+0 wagons/sec"]
+		mine_coal -> plastic_bar [label="coal 8684 -> plastic bar
+0 wagons/sec"]
+		advanced_oil_processing -> plastic_bar [label="petroleum 173688 -> plastic bar
+0 wagons/sec"]
+		advanced_oil_processing -> sulfur [label="petroleum 41572 -> sulfur
+0 wagons/sec"]
+		mine_copper_ore -> copper_plate [label="copper ore 58739 -> copper plate
+0 wagons/sec"]
+		copper_plate -> copper_cable [label="copper plate 57578 -> copper cable
+copper plate 500 -> solar_panel
+0 wagons/sec"]
+		mine_iron_ore -> iron_plate [label="iron ore 129122 -> iron plate
+0 wagons/sec"]
+		iron_plate -> steel_plate [label="iron plate 55485 -> steel plate
+iron plate 50 -> satellite_launch
+iron plate 3000 -> engine unit
+iron plate 2000 -> piercing rounds magazine
+15.133673469387755 wagons/sec"]
+		iron_plate -> sulfuric_acid [label="iron plate 554 -> sulfuric acid
+iron plate 1000 -> battery
+iron plate 200 -> accumulator
+iron plate 50 -> satellite_launch
+0.45108326647257774 wagons/sec"]
+		sulfur -> sulfuric_acid [label="sulfur 2772 -> sulfuric acid
+0 wagons/sec"]
+		iron_plate -> electronic_circuit [label="iron plate 39099 -> electronic circuit
+iron plate 200 -> satellite_launch
+iron plate 2000 -> science pack 2
+iron plate 10000 -> electric mining drill
+12.824872448979596 wagons/sec"]
+		copper_cable -> electronic_circuit [label="copper cable 117298 -> electronic circuit
+copper cable 28921 -> advanced circuit
+copper cable 30000 -> high tech science pack
+copper plate 500 -> solar_panel
+22.02746902332362 wagons/sec"]
+		electronic_circuit -> advanced_circuit [label="electronic circuit 14461 -> advanced circuit
+copper cable 28921 -> advanced circuit
+electronic circuit 30146 -> processing unit
+electronic circuit 50 -> satellite_launch
+iron plate 100 -> satellite_launch
+electronic circuit 3608 -> speed module 1
+copper cable 30000 -> high tech science pack
+13.423196064139942 wagons/sec"]
+		plastic_bar -> advanced_circuit [label="plastic bar 14461 -> advanced circuit
+0 wagons/sec"]
+		advanced_circuit -> processing_unit [label="advanced circuit 3015 -> processing unit
+electronic circuit 30146 -> processing unit
+electronic circuit 50 -> satellite_launch
+iron plate 100 -> satellite_launch
+copper cable 15000 -> high tech science pack
+6.0512937317784266 wagons/sec"]
+		sulfuric_acid -> processing_unit [label="sulfuric acid 7536 -> processing unit
+0 wagons/sec"]
+		advanced_circuit -> speed_module_1 [label="advanced circuit 3608 -> speed module 1
+electronic circuit 3608 -> speed module 1
+copper cable 15000 -> high tech science pack
+2.7769679300291545 wagons/sec"]
+		copper_plate -> battery [label="copper plate 1000 -> battery
+0 wagons/sec"]
+		sulfuric_acid -> battery [label="sulfuric acid 20000 -> battery
+iron plate 1000 -> battery
+iron plate 200 -> accumulator
+iron plate 50 -> satellite_launch
+0.3125 wagons/sec"]
+		battery -> accumulator [label="battery 500 -> accumulator
+iron plate 200 -> accumulator
+iron plate 50 -> satellite_launch
+0.125 wagons/sec"]
+		copper_plate -> low_density_structure [label="copper plate 2908 -> low_density_structure
+0 wagons/sec"]
+		plastic_bar -> low_density_structure [label="plastic bar 2908 -> low_density_structure
+0 wagons/sec"]
+		steel_plate -> low_density_structure [label="steel plate 5816 -> low_density_structure
+iron plate 50 -> satellite_launch
+0.0125 wagons/sec"]
+		iron_plate -> iron_gear_wheel [label="iron plate 29050 -> iron_gear_wheel
+iron plate 50 -> satellite_launch
+iron plate 3000 -> engine unit
+iron plate 2000 -> science pack 2
+iron plate 10000 -> electric mining drill
+iron plate 10000 -> gun turret
+13.525 wagons/sec"]
+		light_oil_to_solid_fuel -> rocket_fuel [label="solid fuel 5459 -> rocket_fuel
+0 wagons/sec"]
+		electronic_circuit -> solar_panel [label="electronic circuit 1500 -> solar_panel
+electronic circuit 25 -> satellite_launch
+iron plate 50 -> satellite_launch
+copper plate 500 -> solar_panel
+0.203125 wagons/sec"]
+		steel_plate -> solar_panel [label="steel plate 500 -> solar_panel
+0 wagons/sec"]
+		processing_unit -> rocket_control_unit [label="processing unit 510 -> rocket control unit
+processing unit 100 -> satellite_launch
+electronic circuit 25 -> satellite_launch
+iron plate 50 -> satellite_launch
+0.16817602040816326 wagons/sec"]
+		speed_module_1 -> rocket_control_unit [label="speed module 1 510 -> rocket control unit
+0.25510204081632654 wagons/sec"]
+		copper_plate -> science_pack_1 [label="copper plate 1000 -> science pack 1
+0 wagons/sec"]
+		iron_gear_wheel -> science_pack_1 [label="iron_gear_wheel 1000 -> science pack 1
+0 wagons/sec"]
+		electronic_circuit -> science_pack_2 [label="electronic circuit 1000 -> science pack 2
+iron plate 2000 -> science pack 2
+0.625 wagons/sec"]
+		iron_gear_wheel -> science_pack_2 [label="iron_gear_wheel 2000 -> science pack 2
+iron plate 2000 -> science pack 2
+0.5 wagons/sec"]
+		advanced_circuit -> science_pack_3 [label="advanced circuit 1000 -> science pack 3
+0.125 wagons/sec"]
+		electric_mining_drill -> science_pack_3 [label="electric_mining_drill 1000 -> science pack 3
+0 wagons/sec"]
+		engine_unit -> science_pack_3 [label="engine unit 1000 -> science pack 3
+0 wagons/sec"]
+		grenade -> military_science_pack [label="grenade 500 -> military science pack
+0 wagons/sec"]
+		gun_turret -> military_science_pack [label="gun turret 500 -> military science pack
+0 wagons/sec"]
+		piercing_rounds_magazine -> military_science_pack [label="piercing rounds magazine 500 -> military science pack
+0 wagons/sec"]
+		electric_engine_unit -> production_science_pack [label="electric engine unit 500 -> production science pack
+0 wagons/sec"]
+		electric_furnace -> production_science_pack [label="electric furnace 500 -> production science pack
+0 wagons/sec"]
+		battery -> high_tech_science_pack [label="battery 500 -> high tech science pack
+0.0625 wagons/sec"]
+		processing_unit -> high_tech_science_pack [label="processing unit 1500 -> high tech science pack
+copper cable 15000 -> high tech science pack
+2.25 wagons/sec"]
+		speed_module_1 -> high_tech_science_pack [label="speed module 1 500 -> high tech science pack
+copper cable 15000 -> high tech science pack
+2.125 wagons/sec"]
+		low_density_structure -> satellite_launch [label="low_density_structure 814 -> satellite_launch
+iron plate 50 -> satellite_launch
+0.0125 wagons/sec"]
+		rocket_control_unit -> satellite_launch [label="rocket_control_unit 714 -> satellite_launch
+processing unit 100 -> satellite_launch
+electronic circuit 25 -> satellite_launch
+iron plate 50 -> satellite_launch
+0.040625 wagons/sec"]
+		rocket_fuel -> satellite_launch [label="rocket_fuel 764 -> satellite_launch
+0 wagons/sec"]
+		accumulator -> satellite_launch [label="accumulator 100 -> satellite_launch
+iron plate 50 -> satellite_launch
+0.0125 wagons/sec"]
+		iron_gear_wheel -> satellite_launch [label="iron_gear_wheel 25 -> satellite_launch
+iron plate 50 -> satellite_launch
+0.0125 wagons/sec"]
+		solar_panel -> satellite_launch [label="solar_panel 100 -> satellite_launch
+electronic circuit 25 -> satellite_launch
+iron plate 50 -> satellite_launch
+0.015625 wagons/sec"]
+		mine_coal -> grenade [label="coal 5000 -> grenade
+0 wagons/sec"]
+		iron_plate -> grenade [label="iron plate 2500 -> grenade
+0.625 wagons/sec"]
+		copper_plate -> gun_turret [label="copper plate 5000 -> gun turret
+0 wagons/sec"]
+		iron_gear_wheel -> gun_turret [label="iron_gear_wheel 5000 -> gun turret
+iron plate 10000 -> gun turret
+2.5 wagons/sec"]
+		electronic_circuit -> electric_engine_unit [label="electronic circuit 1000 -> electric engine unit
+0.125 wagons/sec"]
+		engine_unit -> electric_engine_unit [label="engine unit 500 -> electric engine unit
+0 wagons/sec"]
+		advanced_oil_processing -> electric_engine_unit [label="heavy oil 7500 -> electric engine unit
+0 wagons/sec"]
+		advanced_circuit -> electric_furnace [label="advanced circuit 2500 -> electric furnace
+0.3125 wagons/sec"]
+		steel_plate -> electric_furnace [label="steel plate 5000 -> electric furnace
+0 wagons/sec"]
+		stone_brick -> electric_furnace [label="stone brick 5000 -> electric furnace
+0 wagons/sec"]
+		mine_stone -> stone_brick [label="stone 10000 -> stone brick
+0 wagons/sec"]
+		copper_plate -> piercing_rounds_magazine [label="copper plate 2500 -> piercing rounds magazine
+0 wagons/sec"]
+		steel_plate -> piercing_rounds_magazine [label="steel plate 500 -> piercing rounds magazine
+iron plate 2000 -> piercing rounds magazine
+0.5 wagons/sec"]
+		electronic_circuit -> electric_mining_drill [label="electronic circuit 3000 -> electric mining drill
+iron plate 10000 -> electric mining drill
+2.875 wagons/sec"]
+		iron_gear_wheel -> electric_mining_drill [label="iron_gear_wheel 5000 -> electric mining drill
+iron plate 10000 -> electric mining drill
+2.5 wagons/sec"]
+		iron_gear_wheel -> engine_unit [label="iron_gear_wheel 1500 -> engine unit
+iron plate 3000 -> engine unit
+0.75 wagons/sec"]
+		steel_plate -> engine_unit [label="steel plate 1500 -> engine unit
+iron plate 3000 -> engine unit
+0.75 wagons/sec"]
+		advanced_oil_processing -> light_oil_to_solid_fuel [label="light oil 41994 -> light oil to solid fuel
+0 wagons/sec"]
 }
