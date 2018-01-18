@@ -1,3 +1,4 @@
+import os
 
 from sites import *
 from graphviz import Digraph
@@ -60,11 +61,11 @@ class MyGraph:
         self.nodes = {}
         self.edges = []
 
-    def node(self, name, process):
+    def node(self, name, process, product):
         if name in self.nodes:
             return self.nodes[name]
 
-        n = Node(self, name, process, np.random.rand(2))
+        n = Node(self, name, process, product, np.random.rand(2))
         self.nodes[name] = n
         return n
 
@@ -94,6 +95,8 @@ class MyGraph:
     def mean_length(self):
         return np.mean([e.length() for e in self.edges])
     
+    
+
     def graphviz(self):
         g = Digraph()
 
@@ -102,16 +105,23 @@ class MyGraph:
         #g.attr('graph', overlap='scalexy')
         g.attr('graph', ranksep='2.0')
         g.attr('graph', rankdir='LR')
+        g.attr('node', fontname='courier')
+        g.attr('edge', fontname='courier')
     
         for n in self.nodes.values():
             scale = 10 / self.mean_length()
             p = n.position * scale
             pos_string = '{},{}!'.format(p[0], p[1])
             #print(pos_string)
-            g.node(n.name.replace(' ','_'), pos=pos_string)
+            
+            if n.product.image is not None:
+                g.node(n.name.replace(' ','_'), "", pos=pos_string, image=n.product.image)
+            else:
+                g.node(n.name.replace(' ','_'), pos=pos_string)
 
         for e in self.edges:
-            l = '\n'.join(['{} {:.0f} -> {}'.format(k[1].name, r, k[0].name) for k, r in e.products] + ['{} wagons/sec'.format(cargo_wagons_per_second(e.products))])
+            l = '\l'.join(list(e.label_lines()) + ['{} wagons/sec'.format(cargo_wagons_per_second(e.products))])
+
             g.edge(e.src.name.replace(' ','_'), e.dst.name.replace(' ','_'), label=l)
 
         #print(g.source)
@@ -119,15 +129,7 @@ class MyGraph:
         #g.render('layout.svg')
         g.view()
 
-def cargo_wagons_per_second(products):
-    w = 0
-    for k, r in products:
-        process, product = k
-        if not isinstance(product, IntermediateProduct): continue
-        w += r / product.stack_size / 40
-    return w
-
-def connect_to(process, i, i0, c, r):
+def connect_to(process, product0, i, i0, c, r):
     if i.q < 0: return
     if i.product == Process.electrical_energy: return
 
@@ -148,7 +150,7 @@ def connect_to(process, i, i0, c, r):
         src = process1.name
         dst = process.name
         
-        g2.edge(g2.node(src, process1), g2.node(dst, process), [((process, i.product), r)])
+        g2.edge(g2.node(src, process1, i.product), g2.node(dst, process, product0), [((process, i.product), r)])
 
     else:
         print('no factory for {}'.format(i.product.name))
@@ -158,7 +160,7 @@ def connect_to(process, i, i0, c, r):
             #how much i1?
             r1 = c1 * process1.items_per_cycle(i1.product)
 
-            connect_to(process, i1, None, None, r1)
+            connect_to(process, product0, i1, None, None, r1)
     
 def try_move_neighbor_center(n):
     if len(list(n.neighbors())) < 2: return False
@@ -209,16 +211,19 @@ def remove_edges_to_older_ancestors():
         for e in edges:
             for e1 in edges:
                 if e == e1: continue
+                if e in edges_to_remove: continue
                 
                 if e1.src.is_ancestor(e.src):
                     edges_to_remove.append(e)
 
                     # move products from removed route
+                    #print('adding products ', e.products, 'to', e1.src.name, '->', e1.dst.name)
                     e1.add_products(e.products)
                 
                     # get path from e.src to n
                     for e2 in e1.src.path(e.src):
                         e2.add_products(e.products)
+                        #print('adding products ', e.products, 'to', e2.src.name, '->', e2.dst.name)
 
                     print('removing edge {} -> {}'.format(e.src.name, e.dst.name))
                     print('\tbecause {} is ancestor of {}'.format(e.src.name, e1.src.name))
@@ -286,7 +291,7 @@ for i0 in inputs:
 
     for i in process.inputs:
         r = c * process.items_per_cycle(i.product)
-        connect_to(process, i, i0, c, r)
+        connect_to(process, i0.product, i, i0, c, r)
 
 #for i in research.inputs:
 #    connect_to(research, i, None, None, 1000)

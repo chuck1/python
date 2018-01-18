@@ -1,3 +1,4 @@
+import os
 import math
 import itertools
 import crayons
@@ -12,9 +13,18 @@ class Transport:
 express_belt = Transport("express belt", 40)
 
 class Product:
-    def __init__(self, name, transport=[]):
+    def __init__(self, name, transport=[], image=None):
         self.name = name
         self.transport = transport
+        self.image = image
+
+        if image is None:
+            name2 = (name[0].upper() + name[1:]).replace(' ','_')
+            image = os.path.join("image", name2 + ".png")
+            if os.path.exists(image):
+                self.image = image
+            else:
+                print(repr(image), 'does not exist')
 
     def processes(self):
         #processes = [p for p in globals().values() if isinstance(p, Process)]

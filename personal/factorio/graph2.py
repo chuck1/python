@@ -1,6 +1,16 @@
 import itertools
 import numpy as np
 
+from product import *
+
+def cargo_wagons_per_second(products):
+    w = 0
+    for k, r in products:
+        process, product = k
+        if not isinstance(product, IntermediateProduct): continue
+        w += r / product.stack_size / 40
+    return w
+
 class Edge:
     def __init__(self, src, dst, products):
         self.src = src
@@ -26,11 +36,17 @@ class Edge:
 
         self.products = [(k, sum(rate for _, rate in g)) for k, g in groups]
 
+    def label_lines(self):
+        for k, r in self.products:
+            w = cargo_wagons_per_second([(k, r)])
+            yield '{:18} {:6.0f} -> {:22} {:4.1f} wag/sec'.format(k[1].name, r, k[0].name, w) 
+
 class Node:
-    def __init__(self, g, name, process, position):
+    def __init__(self, g, name, process, product, position):
         self.g = g
         self.name = name
         self.process = process
+        self.product = product
         self.position = position
 
     def ancestors(self):

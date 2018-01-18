@@ -51,24 +51,24 @@ petroleum = Product(
         "petroleum", 
         )
 
-coal = Product(
+coal = IntermediateProduct(
         "coal", 
-        [express_belt],
+        50,
         )
 
-iron_ore = Product(
+iron_ore = IntermediateProduct(
         "iron ore", 
-        [express_belt],
+        50,
         )
 
-copper_ore = Product(
+copper_ore = IntermediateProduct(
         "copper ore", 
-        [express_belt],
+        50,
         )
 
-plastic_bar = Product(
+plastic_bar = IntermediateProduct(
         "plastic bar",
-        [express_belt],
+        100,
         )
 
 sulfur = Product(
@@ -76,8 +76,9 @@ sulfur = Product(
         [express_belt],
         )
 
-copper_plate = Product("copper plate",
-        [express_belt],
+copper_plate = IntermediateProduct(
+        "copper plate",
+        100,
         )
 
 copper_cable = IntermediateProduct(
@@ -90,8 +91,9 @@ iron_plate = IntermediateProduct(
         100,
         )
 
-steel_plate = Product("steel plate", 
-        [express_belt],
+steel_plate = IntermediateProduct(
+        "steel plate", 
+        100,
         )
 
 sulfuric_acid = Product("sulfuric acid", 
@@ -113,7 +115,7 @@ processing_unit = IntermediateProduct("processing unit",
         100,
         )
 
-speed_module_1 = IntermediateProduct("speed module 1",
+speed_module_1 = IntermediateProduct("speed module",
         50,
         )
 
