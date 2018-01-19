@@ -72,10 +72,9 @@ class MyGraph:
     def edge(self, n0, n1, products):
         for e in self.edges:
             if e.src == n0 and e.dst == n1:
-                e.add_products(products)
                 return e
 
-        e = Edge(n0, n1, products)
+        e = Edge(n0, n1)
         self.edges.append(e)
         return e
 
@@ -97,7 +96,7 @@ class MyGraph:
     
     
 
-    def graphviz(self):
+    def graphviz(self, label_edges=False):
         g = Digraph()
 
         #g = Digraph(engine='neato')
@@ -120,37 +119,47 @@ class MyGraph:
                 g.node(n.name.replace(' ','_'), pos=pos_string)
 
         for e in self.edges:
-            l = '\l'.join(list(e.label_lines()) + ['{} wagons/sec'.format(cargo_wagons_per_second(e.products))])
-
-            g.edge(e.src.name.replace(' ','_'), e.dst.name.replace(' ','_'), label=l)
+            if label_edges:
+                #l = '\l'.join(list(e.label_lines()) + ['{} wagons/sec'.format(cargo_wagons_per_second(e.products))])
+                l = '\l'.join(list(e.label_lines()))
+                g.edge(e.src.name.replace(' ','_'), e.dst.name.replace(' ','_'), label=l)
+            else:
+                g.edge(e.src.name.replace(' ','_'), e.dst.name.replace(' ','_'))
 
         #print(g.source)
 
         #g.render('layout.svg')
         g.view()
 
-def connect_to(process, product0, i, i0, c, r):
+def connect_to(process, product0, i, rate):
     if i.q < 0: return
     if i.product == Process.electrical_energy: return
 
     process1 = i.product.default_process()
 
     #c = r / process.items_per_cycle(i.product)
-    c1 = -r / process1.items_per_cycle(i.product)
+    c1 = -rate / process1.items_per_cycle(i.product)
 
     # items per second of i.product
     #r = c * process.items_per_cycle(i.product)
 
     #c1 = -process1.cycles_per_second(i)
 
-    print('{:24} {:8.1f} items/sec produced by {:24} {:8.1f} cycles/sec'.format(process1.name, c1, i.product.name, r))
+    print('{:24} {:8.1f} items/sec produced by {:24} {:8.1f} cycles/sec'.format(process1.name, c1, i.product.name, rate))
     
     if process1 in factories:
 
         src = process1.name
         dst = process.name
         
-        g2.edge(g2.node(src, process1, i.product), g2.node(dst, process, product0), [((process, i.product), r)])
+        n0 = g2.node(src, process1, i.product)
+        n1 = g2.node(dst, process, product0)
+
+        e = g2.edge(n0, n1, [((process, i.product), rate)])
+        
+        r = Route(n1, [])
+        r.leg(e, [RouteLegProduct(i.product, rate)])
+        Routes.add_route(r)
 
     else:
         print('no factory for {}'.format(i.product.name))
@@ -160,7 +169,7 @@ def connect_to(process, product0, i, i0, c, r):
             #how much i1?
             r1 = c1 * process1.items_per_cycle(i1.product)
 
-            connect_to(process, product0, i1, None, None, r1)
+            connect_to(process, product0, i1, r1)
     
 def try_move_neighbor_center(n):
     if len(list(n.neighbors())) < 2: return False
@@ -200,6 +209,14 @@ def try_move(n, e, k):
             return False
 
 def remove_edges_to_older_ancestors():
+    """
+    A -> B -> C
+    A -> C
+
+    remove A -> C
+
+    find route for B -> C
+    """
     c = 0
 
     for n in g2.nodes.values():
@@ -216,18 +233,28 @@ def remove_edges_to_older_ancestors():
                 if e1.src.is_ancestor(e.src):
                     edges_to_remove.append(e)
 
-                    # move products from removed route
-                    #print('adding products ', e.products, 'to', e1.src.name, '->', e1.dst.name)
-                    e1.add_products(e.products)
-                
+                    # route associated with e
+                    route_AC = list(Routes.find_route(n.process, e))[0]
+                    leg_AC = route_AC.find_leg(e)
+                    Routes.routes.remove(route_AC)
+
+                    # route associated with e1
+                    r = list(Routes.find_route(n.process, e1))[0]
+                    r.show()
+                    r.leg(e1, leg_AC.products)
+                    
                     # get path from e.src to n
                     for e2 in e1.src.path(e.src):
-                        e2.add_products(e.products)
+                        r.leg(e2, leg_AC.products)
+
                         #print('adding products ', e.products, 'to', e2.src.name, '->', e2.dst.name)
+
+                    r.show()
 
                     print('removing edge {} -> {}'.format(e.src.name, e.dst.name))
                     print('\tbecause {} is ancestor of {}'.format(e.src.name, e1.src.name))
-    
+
+
         #print('removing {} edges'.format(len(edges_to_remove)))
     
         for e in edges_to_remove:
@@ -275,8 +302,8 @@ def reroute_through_highest_rank_ancestor():
 
 g2 = MyGraph()
 
-
-inputs = research.all_inputs_default(1000)
+#inputs = research.all_inputs_default(1000)
+inputs = produce_rocket_control_unit.all_inputs_default(1000)
 
 for i0 in inputs:
     process = i0.product.default_process()
@@ -291,11 +318,18 @@ for i0 in inputs:
 
     for i in process.inputs:
         r = c * process.items_per_cycle(i.product)
-        connect_to(process, i0.product, i, i0, c, r)
+        connect_to(process, i0.product, i, r)
 
 #for i in research.inputs:
 #    connect_to(research, i, None, None, 1000)
 
+
+def build_graph(process_path, c):
+    """
+    process_path - list of tuples of process and product
+    """
+    pass
+    
 
 
 
@@ -356,7 +390,8 @@ while repeat:
     if remove_edges_to_older_ancestors(): repeat = True
     #if reroute_through_highest_rank_ancestor(): repeat = True
 
-g2.graphviz()
+#g2.graphviz(True)
+
 
 print()
 
@@ -364,7 +399,12 @@ print()
 #g.render('items.svg')
 
 
+#g2.nodes[processing_unit.name].inputs()
 
+for r in Routes.routes:
+    r.show()
 
-
+for e in g2.edges:
+    e.balance_routes()
+    #e.products()
 
