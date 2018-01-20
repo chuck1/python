@@ -94,8 +94,6 @@ class MyGraph:
     def mean_length(self):
         return np.mean([e.length() for e in self.edges])
     
-    
-
     def graphviz(self, label_edges=False):
         g = Digraph()
 
@@ -302,8 +300,8 @@ def reroute_through_highest_rank_ancestor():
 
 g2 = MyGraph()
 
-#inputs = research.all_inputs_default(1000)
-inputs = produce_rocket_control_unit.all_inputs_default(1000)
+inputs = research.all_inputs_default(1000)
+#inputs = produce_rocket_control_unit.all_inputs_default(1000)
 
 for i0 in inputs:
     process = i0.product.default_process()
@@ -390,7 +388,6 @@ while repeat:
     if remove_edges_to_older_ancestors(): repeat = True
     #if reroute_through_highest_rank_ancestor(): repeat = True
 
-#g2.graphviz(True)
 
 
 print()
@@ -407,4 +404,15 @@ for r in Routes.routes:
 for e in g2.edges:
     e.balance_routes()
     #e.products()
+
+#g2.graphviz(True)
+
+print()
+
+for n in g2.nodes.values():
+    n.factory_layout()
+#g2.nodes[advanced_circuit.name].factory_layout()
+
+
+
 
