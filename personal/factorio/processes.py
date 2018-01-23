@@ -23,6 +23,19 @@ mine_crude_oil = Process(
             ],
         1,
         has_site=True,
+        building=pumpjack,
+        )
+
+produce_pumpjack = Process(
+        "pumpjack",
+        [
+            ProductInput(electronic_circuit, 5),
+            ProductInput(iron_gear_wheel, 10),
+            ProductInput(pipe, 10),
+            ProductInput(steel_plate, 5),
+            ProductInput(pumpjack, -1),
+            ],
+        5,
         )
 
 advanced_oil_processing = Process(
@@ -37,6 +50,7 @@ advanced_oil_processing = Process(
         5,
         420,
         has_site=True,
+        building=oil_refinery,
         )
 
 basic_oil_processing = Process(
@@ -49,6 +63,7 @@ basic_oil_processing = Process(
             ],
         5,
         420,
+        building=oil_refinery,
         )
 
 mine_stone = Process(
@@ -70,6 +85,7 @@ produce_stone_brick = Process(
             ],
         3.5,
         has_site=True,
+        building=electric_furnace,
         )
 
 mine_iron_ore = Process(
@@ -155,6 +171,7 @@ produce_plastic_bar = Process(
             ],
         1,
         has_site=True,
+        building=chemical_plant,
         )
 
 produce_sulfur = Process(
@@ -166,6 +183,7 @@ produce_sulfur = Process(
             ],
         1,
         has_site=True,
+        building=chemical_plant,
         )
 
 produce_iron_plate = Process(
@@ -177,6 +195,7 @@ produce_iron_plate = Process(
         1,
         180,
         has_site=True,
+        building=electric_furnace,
         )
 
 produce_copper_plate = Process(
@@ -188,6 +207,7 @@ produce_copper_plate = Process(
         1,
         180,
         has_site=True,
+        building=electric_furnace,
         )
 
 produce_copper_cable = Process(
@@ -198,6 +218,7 @@ produce_copper_cable = Process(
             ],
         0.5,
         has_site=True,
+        building=assembling_machine_3,
         )
 
 produce_steel_plate = Process("steel plate", 
@@ -208,6 +229,7 @@ produce_steel_plate = Process("steel plate",
         8.772,
         180,
         has_site=True,
+        building=electric_furnace,
         )
 
 produce_lubricant = Process(
@@ -218,6 +240,7 @@ produce_lubricant = Process(
             ],
         1,
         has_site=True,
+        building=chemical_plant,
         )
 
 produce_sulfuric_acid = Process(
@@ -229,6 +252,7 @@ produce_sulfuric_acid = Process(
             ],
         1,
         has_site=True,
+        building=chemical_plant,
         )
 
 produce_electronic_circuit = Process("electronic circuit", 
@@ -239,6 +263,7 @@ produce_electronic_circuit = Process("electronic circuit",
             ],
         0.5,
         has_site=True,
+        building=assembling_machine_3,
         )
 
 produce_advanced_circuit = Process(
@@ -251,6 +276,7 @@ produce_advanced_circuit = Process(
             ],
         6,
         has_site=True,
+        building=assembling_machine_3,
         )
 
 produce_processing_unit = Process("processing unit", 
@@ -262,6 +288,7 @@ produce_processing_unit = Process("processing unit",
             ],
         10,
         has_site=True,
+        building=assembling_machine_3,
         )
 
 produce_speed_module_1 = Process("speed module 1", 
@@ -272,16 +299,20 @@ produce_speed_module_1 = Process("speed module 1",
             ],
         15,
         has_site=True,
+        building=assembling_machine_3,
         )
 
-produce_speed_module_2 = Process("speed module 2", [
-    ProductInput(advanced_circuit, 5.0),
-    ProductInput(processing_unit, 5.0),
-    ProductInput(speed_module_1, 4.0),
-    ProductInput(speed_module_2, -1, 1),
-    ],
-    30,
-    )
+produce_speed_module_2 = Process(
+        "speed module 2", 
+        [
+            ProductInput(advanced_circuit, 5.0),
+            ProductInput(processing_unit, 5.0),
+            ProductInput(speed_module_1, 4.0),
+            ProductInput(speed_module_2, -1, 1),
+            ],
+        30,
+        building=assembling_machine_3,
+        )
 
 produce_speed_module_3 = Process("speed module 3", 
         [
@@ -291,6 +322,7 @@ produce_speed_module_3 = Process("speed module 3",
             ProductInput(speed_module_3, -1, 1),
             ],
         60,
+        building=assembling_machine_3,
         )
 
 produce_battery = Process("battery", 
@@ -302,6 +334,7 @@ produce_battery = Process("battery",
             ],
         5,
         has_site=True,
+        building=chemical_plant,
         )
 
 produce_accumulator = Process("accumulator", 
@@ -312,6 +345,7 @@ produce_accumulator = Process("accumulator",
             ],
         10,
         has_site=True,
+        building=assembling_machine_3,
         )
   
 produce_low_density_structure = Process("low_density_structure", 
@@ -323,6 +357,7 @@ produce_low_density_structure = Process("low_density_structure",
             ],
         30,
         has_site=True,
+        building=assembling_machine_3,
         )
 
 produce_iron_gear_wheel = Process(
@@ -333,6 +368,7 @@ produce_iron_gear_wheel = Process(
             ],
         0.5,
         has_site=True,
+        building=assembling_machine_3,
         )
 
 produce_radar = Process("radar", 
@@ -343,6 +379,7 @@ produce_radar = Process("radar",
             ProductInput(radar, -1, 1),
             ],
         0.5,
+        building=assembling_machine_3,
         )
 
 heavy_oil_to_solid_fuel = Process(
@@ -352,6 +389,7 @@ heavy_oil_to_solid_fuel = Process(
             ProductInput(solid_fuel, -1, 1),
             ],
         3,
+        building=chemical_plant,
         )
 
 light_oil_to_solid_fuel = Process(
@@ -361,7 +399,7 @@ light_oil_to_solid_fuel = Process(
             ProductInput(solid_fuel, -1, 1),
             ],
         3,
-        building=chemical_plant
+        building=chemical_plant,
         )
 
 produce_chemical_plant = Process(
@@ -375,6 +413,7 @@ produce_chemical_plant = Process(
             ],
         5,
         210,
+        building=assembling_machine_3,
         )
 
 produce_rocket_fuel = Process(
@@ -385,6 +424,7 @@ produce_rocket_fuel = Process(
             ],
         30,
         has_site=True,
+        building=assembling_machine_3,
         )
 
 produce_solar_panel = Process("solar_panel", 
@@ -395,6 +435,7 @@ produce_solar_panel = Process("solar_panel",
             ProductInput(solar_panel, -1, 1),
             ],
         10,
+        building=assembling_machine_3,
         )
 
 produce_satellite = Process(
@@ -409,6 +450,7 @@ produce_satellite = Process(
             ProductInput(satellite, -1, 1),
             ],
         5,
+        building=assembling_machine_3,
         )
 
 produce_rocket_control_unit = Process(
@@ -419,6 +461,7 @@ produce_rocket_control_unit = Process(
             ProductInput(rocket_control_unit, -1, 1),
             ],
         30,
+        building=assembling_machine_3,
         )
 
 produce_rocket_part = Process("rocket_part", 
@@ -430,6 +473,7 @@ produce_rocket_part = Process("rocket_part",
             ],
         3,
         4000,
+        building=rocket_silo,
         )
 
 produce_satellite_launch = Process(
@@ -453,6 +497,7 @@ produce_inserter = Process("inserter",
             ],
         0.5,
         has_site=True,
+        building=assembling_machine_3,
         )
 
 produce_fast_inserter = Process("fast inserter",
@@ -498,6 +543,7 @@ produce_transport_belt = Process(
             ],
         0.5,
         has_site=True,
+        building=assembling_machine_3,
         )
 
 produce_fast_transport_belt = Process(
@@ -531,6 +577,7 @@ produce_electric_furnace = Process(
             ],
         5,
         has_site=True,
+        building=assembling_machine_3,
         )
 
 produce_electric_mining_drill = Process(
@@ -543,6 +590,7 @@ produce_electric_mining_drill = Process(
             ],
         2,
         has_site=True,
+        building=assembling_machine_3,
         )
 
 produce_science_pack_1 = Process("science pack 1",
@@ -553,6 +601,7 @@ produce_science_pack_1 = Process("science pack 1",
             ],
         5,
         has_site=True,
+        building=assembling_machine_3,
         )
 
 produce_science_pack_2 = Process("science pack 2",
@@ -563,6 +612,7 @@ produce_science_pack_2 = Process("science pack 2",
             ],
         6,
         has_site=True,
+        building=assembling_machine_3,
         )
 
 produce_science_pack_3 = Process(
@@ -575,6 +625,7 @@ produce_science_pack_3 = Process(
             ],
         12,
         has_site=True,
+        building=assembling_machine_3,
         )
 
 produce_military_science_pack = Process(
@@ -587,6 +638,7 @@ produce_military_science_pack = Process(
             ],
         10,
         has_site=True,
+        building=assembling_machine_3,
         )
 
 produce_production_science_pack = Process(
@@ -598,6 +650,7 @@ produce_production_science_pack = Process(
             ],
         14,
         has_site=True,
+        building=assembling_machine_3,
         )
 
 produce_high_tech_science_pack = Process(
@@ -611,6 +664,7 @@ produce_high_tech_science_pack = Process(
             ],
         14,
         has_site=True,
+        building=assembling_machine_3,
         )
 
 produce_firearm_magazine = Process(
@@ -704,8 +758,6 @@ steam_turbine_process = Process(
         building=steam_turbine
         )
 
-
-
 research = Process(
         "research",
         [
@@ -719,6 +771,7 @@ research = Process(
             ],
         1,
         has_site=True,
+        building=lab,
         )
 
 produce_engine_unit = Process(
@@ -731,6 +784,7 @@ produce_engine_unit = Process(
             ],
         10,
         has_site=True,
+        building=assembling_machine_3,
         )
 
 produce_electric_engine_unit = Process(
@@ -743,6 +797,7 @@ produce_electric_engine_unit = Process(
             ],
         10,
         has_site=True,
+        building=assembling_machine_3,
         )
 
 produce_pipe = Process(
@@ -798,6 +853,7 @@ produce_gun_turret = Process(
             ],
         8,
         has_site=True,
+        building=assembling_machine_3,
         )
 
 produce_rail = Process(
@@ -829,6 +885,7 @@ produce_grenade = Process(
             ],
         8,
         has_site=True,
+        building=assembling_machine_3,
         )
 
 produce_nuclear_reactor = Process(
@@ -934,6 +991,43 @@ produce_rail_chain_signal = Process(
         building=assembling_machine_3
         )
 
+produce_rocket_silo = Process(
+        "rocket silo",
+        [
+            ProductInput(concrete, 1000),
+            ProductInput(electric_engine_unit, 200),
+            ProductInput(pipe, 100),
+            ProductInput(processing_unit, 200),
+            ProductInput(steel_plate, 1000),
+            ProductInput(rocket_silo, -1),
+            ],
+        30,
+        building=assembling_machine_3,
+        )
+
+produce_oil_refinery = Process(
+        "oil refinery",
+        [
+            ProductInput(electronic_circuit, 10),
+            ProductInput(iron_gear_wheel, 10),
+            ProductInput(pipe, 10),
+            ProductInput(steel_plate, 15),
+            ProductInput(stone_brick, 10),
+            ProductInput(oil_refinery, -1),
+            ],
+        8,
+        )
+
+produce_lab = Process(
+        "lab",
+        [
+            ProductInput(electronic_circuit, 10),
+            ProductInput(iron_gear_wheel, 10),
+            ProductInput(transport_belt, 4),
+            ProductInput(lab, -1),
+            ],
+        2,
+        )
 
 produce_new_base_supplies = Process(
         "new base supplies",
@@ -974,6 +1068,11 @@ production = Process("production",
 #x.process_default = produce_x
 #x.process_default = produce_x
 #x.process_default = produce_x
+#x.process_default = produce_x
+pumpjack.process_default = produce_pumpjack
+lab.process_default = produce_lab
+oil_refinery.process_default = produce_oil_refinery
+rocket_silo.process_default = produce_rocket_silo
 
 rail_signal.process_default = produce_rail_signal
 rail_chain_signal.process_default = produce_rail_chain_signal

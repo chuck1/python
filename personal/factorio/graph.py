@@ -5,6 +5,7 @@ from graphviz import Digraph
 import matplotlib.pyplot as plt
 
 from graph2 import *
+import modules
 
 factories = [
         mine_iron_ore,
@@ -61,11 +62,11 @@ class MyGraph:
         self.nodes = {}
         self.edges = []
 
-    def node(self, name, process, product):
+    def node(self, name, process, c, product):
         if name in self.nodes:
             return self.nodes[name]
 
-        n = Node(self, name, process, product, np.random.rand(2))
+        n = Node(self, name, process, c, product, np.random.rand(2))
         self.nodes[name] = n
         return n
 
@@ -129,19 +130,13 @@ class MyGraph:
         #g.render('layout.svg')
         g.view()
 
-def connect_to(process, product0, i, rate):
+def connect_to(process, c, product0, i, rate):
     if i.q < 0: return
     if i.product == Process.electrical_energy: return
 
     process1 = i.product.default_process()
 
-    #c = r / process.items_per_cycle(i.product)
     c1 = -rate / process1.items_per_cycle(i.product)
-
-    # items per second of i.product
-    #r = c * process.items_per_cycle(i.product)
-
-    #c1 = -process1.cycles_per_second(i)
 
     print('{:24} {:8.1f} items/sec produced by {:24} {:8.1f} cycles/sec'.format(process1.name, c1, i.product.name, rate))
     
@@ -150,8 +145,8 @@ def connect_to(process, product0, i, rate):
         src = process1.name
         dst = process.name
         
-        n0 = g2.node(src, process1, i.product)
-        n1 = g2.node(dst, process, product0)
+        n0 = g2.node(src, process1, c1, i.product)
+        n1 = g2.node(dst, process, c, product0)
 
         e = g2.edge(n0, n1, [((process, i.product), rate)])
         
@@ -163,48 +158,12 @@ def connect_to(process, product0, i, rate):
         print('no factory for {}'.format(i.product.name))
         for i1 in process1.inputs:
             #print('\t{}'.format(i1.product.name))
-
+            
             #how much i1?
             r1 = c1 * process1.items_per_cycle(i1.product)
-
-            connect_to(process, product0, i1, r1)
+            
+            connect_to(process, c, product0, i1, r1)
     
-def try_move_neighbor_center(n):
-    if len(list(n.neighbors())) < 2: return False
-
-    c0 = n.g.crossings()
-
-    nc = n.neighbor_center()
-    
-    #print(n.position, nc)
-    
-    p0 = n.position
-    n.position = nc
-
-    c1 = n.g.crossings()
-
-    if c1 < c0:
-        print('{} < {}'.format(c1, c0))
-        return True
-    else:
-        n.position = p0
-        return False
-
-def try_move(n, e, k):
-        c0 = n.g.crossings()
-
-        p0 = n.position
-
-        n.position = e.x(k)
-        
-        c1 = n.g.crossings()
-
-        if c1 < c0:
-            print('{} < {}'.format(c1, c0))
-            return True
-        else:
-            n.position = p0
-            return False
 
 def remove_edges_to_older_ancestors():
     """
@@ -294,14 +253,33 @@ def reroute_through_highest_rank_ancestor():
         
     return c > 0
 
+
 ###################################################################33
 ###################################################################33
 ###################################################################33
+
+Constants.electric_mining_drill = electric_mining_drill
+Constants.mine_uranium_ore = mine_uranium_ore
+Constants.wagons_per_train = 10
+
+modules.apply_modules()
 
 g2 = MyGraph()
 
-inputs = research.all_inputs_default(1000)
 #inputs = produce_rocket_control_unit.all_inputs_default(1000)
+#inputs = produce_production_science_pack.all_inputs_default(10000/60/2)
+
+product = production_science_pack
+items_per_sec = 100
+p = product.default_process()
+
+inputs = list(p.all_inputs_default(items_per_sec / p.items_per_cycle(product), ignore_power=True))
+
+inputs = list(research.all_inputs_default(-1000 / research.items_per_cycle(space_science_pack)))
+
+for i in inputs:
+    print('{:22} {:8.2f}'.format(i.product.name, i.q))
+
 
 for i0 in inputs:
     process = i0.product.default_process()
@@ -309,74 +287,19 @@ for i0 in inputs:
     if process not in factories:
         continue
     
-    #print(process.name, 'c =', process.cycles_per_second(i0))
-    
     c = -process.cycles_per_second(i0)
 
+    print('\t', process.name, 'c = {} i0.q = {}'.format(c, i0.q))
 
     for i in process.inputs:
         r = c * process.items_per_cycle(i.product)
-        connect_to(process, i0.product, i, r)
+        connect_to(process, c, i0.product, i, r)
 
 #for i in research.inputs:
 #    connect_to(research, i, None, None, 1000)
 
 
-def build_graph(process_path, c):
-    """
-    process_path - list of tuples of process and product
-    """
-    pass
     
-
-
-
-print('edges', len(g2.edges))
-
-print(g2.crossings())
-
-repeat = False
-while repeat:
-    repeat = False
-    for n in g2.nodes.values():
-        try_move_neighbor_center(n)
-
-
-print('try move')
-
-repeat = False
-while repeat:
-    repeat = False
-    for e0, e1 in g2.edge_pairs():
-        t = cross(e0, e1)
-        if t is not None:
-    
-            k0, k1 = t
-            
-            if(try_move(e0.src, e0, (k0 + 1) / 2)): repeat = True
-            if(try_move(e0.dst, e0, (k0 + 0) / 2)): repeat = True
-            if(try_move(e1.src, e0, (k1 + 1) / 2)): repeat = True
-            if(try_move(e1.dst, e0, (k1 + 0) / 2)): repeat = True
-        
-x = [np.linalg.norm(e.v()) for e in g2.edges]
-x0 = np.mean(x)
-
-# shorten long edges where one node has only one neighbor
-
-for n in g2.nodes.values():
-    neighbors = list(n.neighbors())
-    if len(neighbors) == 1:
-        for e, n1 in neighbors:
-            d = e.length()
-            if d > x0:
-                if n == e.src:
-                    n.position = e.x(1 - x0 / d)
-                else:
-                    n.position = e.x(x0 / d)
-
-if False:
-    n, bins, patches = plt.hist(x, 50, normed=1, facecolor='green', alpha=0.75)
-    plt.show()
 
 exclude = [
         research,
@@ -405,11 +328,12 @@ for e in g2.edges:
     e.balance_routes()
     #e.products()
 
-#g2.graphviz(True)
+#g2.graphviz()
 
 print()
 
-for n in g2.nodes.values():
+print('factories')
+for n in sorted(g2.nodes.values(), key=lambda n: n.process.name):
     n.factory_layout()
 #g2.nodes[advanced_circuit.name].factory_layout()
 

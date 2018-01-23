@@ -5,6 +5,8 @@ import crayons
 
 #from products import *
 from ingredient import *
+from product import *
+from constants import *
 
 @contextlib.contextmanager
 def stack_context(stack, product):
@@ -217,14 +219,18 @@ class Process:
             p = self.power * self.t * self.power_modifier
             return ProductInput(self.electrical_energy, p)
 
+    def get_base_speed(self):
+        if self.building is None:
+            return 1
+        return self.building.base_speed
+
     @property
     def inputs(self):
         s = self.speed_modifier
         p = self.productivity_modifier
 
         for i in self._inputs:
-            
-            m = s
+            m = self.get_base_speed() * s
 
             if i.q < 0:
                 m *= p
@@ -277,12 +283,29 @@ class Process:
     def cycles_per_second(self, i):
         r = self.items_per_cycle(i.product)
         c = i.q / r
+        print('Process {} Product {} rate {} items per cycle {} cycles per second {}'.format(
+            self.name,
+            i.product.name,
+            i.q,
+            r,
+            c,
+            ))
+
         return c
 
     def buildings(self, product, rate):
         i = self.items_per_cycle(product)
         c = rate / i
-        return c * self.t
+        b = c * self.t
+        print('Process {} Product {} rate {} items per cycle {} cycles per second {} buildings {}'.format(
+            self.name,
+            product.name, 
+            rate,
+            i,
+            c,
+            b))
+
+        return b
 
     def excess_default(self, c0, track=None):
         # c0 - cycles per second
@@ -323,15 +346,23 @@ class Process:
             yield ProductInput(k, s)
 
 
-    def all_inputs_default(self, c0, track=None, stack=[]):
+    def all_inputs_default(self, c0, track=None, stack=[], ignore_power=False):
         # c0 - cycles per second
         # returns list of input items in items per second
             
         inputs = []
             
         for i in self.inputs:
+            if ignore_power:
+                if Process.electrical_energy is None:
+                    raise RuntimeError()
+                if i.product == Process.electrical_energy:
+                    continue
+
             with stack_context(stack, i.product) as b:
                 i1 = i.mul(c0)
+
+                #print('all inputs default i {} {} c {}'.format(i.product.name, i.q, c0))
     
                 if track is not None:
                     if not i1.product in track:
@@ -357,7 +388,7 @@ class Process:
     
                 c1 = rate / -p.items_per_cycle(i.product)
                
-                g = p.all_inputs_default(c1, track, stack)
+                g = p.all_inputs_default(c1, track, stack, ignore_power)
                 
                 for i2 in g:
                     inputs.append(i2)
@@ -373,6 +404,34 @@ class Process:
 
     def count_outputs(self):
         return len(i for i in p.inputs if i.q < 0)
+
+    def footprint_per_building(self):
+        
+        if self.building == Constants.electric_mining_drill:
+            if self == Constants.mine_uranium_ore:
+                pass
+            else:
+                return 9 * 3 * 7 / 12
+
+        liquid_output = sum(1 for i in self._inputs if isinstance(i.product, Liquid) and i.q < 0)
+        liquid_input = sum(1 for i in self._inputs if isinstance(i.product, Liquid) and i.q > 0)
+        item_output_gt_zero = sum(1 for i in self._inputs if (not isinstance(i.product, Liquid)) and i.q < 0) > 0
+        item_input_gt_zero = sum(1 for i in self._inputs if (not isinstance(i.product, Liquid)) and i.q > 0) > 0
+
+        k = (liquid_output, liquid_input, item_output_gt_zero, item_input_gt_zero)
+
+        d = {
+                (1, 0, False, False): 0, # pumpjack
+                (1, 0, False, True): 14 * 3 / 2,
+                (0, 0, True, True): 12 * 3 / 2,
+                (0, 1, True, True): 14 * 3 / 2,
+                (0, 1, True, False): 14 * 3 / 2,
+                (0, 2, True, True): 15 * 3 / 2,
+                (0, 2, True, False): 15 * 3 / 2,
+                (3, 2, False, False): 22 * 6 / 2, # oil refinery
+                }
+        
+        return d[k]
 
 def excess_in(inputs, product):
     #inputs = [i for i in inputs if i.product == product]

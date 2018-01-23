@@ -12,19 +12,38 @@ class Transport:
 
 express_belt = Transport("express belt", 40)
 
-class Product:
-    def __init__(self, name, transport=[], image=None):
+class Item:
+    def __init__(self, name):
         self.name = name
-        self.transport = transport
-        self.image = image
 
-        if image is None:
-            name2 = (name[0].upper() + name[1:]).replace(' ','_')
-            image = os.path.join("image", name2 + ".png")
-            if os.path.exists(image):
-                self.image = image
-            else:
-                print(repr(image), 'does not exist')
+        name2 = (name[0].upper() + name[1:]).replace(' ','_')
+        image = os.path.join("image", name2 + ".png")
+        if os.path.exists(image):
+            self.image = image
+        else:
+            print(repr(image), 'does not exist')
+            self.image = None
+
+
+    def default_process(self):
+        if not hasattr(self, "process_default"):
+            raise RuntimeError("{} does not have a default process".format(self.name))
+        return self.process_default
+
+class Other(Item):
+    def __init__(self, name):
+        super(Other, self).__init__(name)
+
+class Liquid(Item):
+    def __init__(self, name):
+        super(Liquid, self).__init__(name)
+
+class Product(Item):
+    def __init__(self, name, stack_size, module_slots=None, base_speed=1):
+        super(Product, self).__init__(name)
+        self.stack_size = stack_size
+        self.module_slots = module_slots
+        self.base_speed = base_speed
 
     def processes(self):
         #processes = [p for p in globals().values() if isinstance(p, Process)]
@@ -135,11 +154,6 @@ class Product:
             s = sum([i.q for i in g]) * x
 
             yield ProductInput(k, s)
-
-    def default_process(self):
-        if not hasattr(self, "process_default"):
-            raise RuntimeError("{} does not have a default process".format(self.name))
-        return self.process_default
 
 class IntermediateProduct(Product):
     def __init__(self, name, stack_size):

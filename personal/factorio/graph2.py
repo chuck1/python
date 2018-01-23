@@ -6,6 +6,12 @@ from product import *
 import matplotlib.pyplot as plt
 import scipy.optimize
 
+from constants import *
+
+def pythag(a, b, c):
+    d = math.sqrt(b**2 - 4 * a * c)
+    return (-b + d) / 2 / a, (-b - d) / 2 / a
+
 def cargo_wagons_per_second(products):
     w = 0
     for k, r in products:
@@ -13,6 +19,8 @@ def cargo_wagons_per_second(products):
         if not isinstance(product, IntermediateProduct): continue
         w += r / product.stack_size / 40
     return w
+
+
 
 class RouteLegProduct:
     def __init__(self, product, rate):
@@ -26,10 +34,10 @@ class RouteLegProduct:
         print('\t\t' + self.to_string())
 
     def slots(self):
-        if isinstance(self.product, IntermediateProduct):
-            return self.rate / self.product.stack_size
-        else:
+        if isinstance(self.product, Liquid):
             return 0
+
+        return self.rate / self.product.stack_size
 
 def leg_difference(l0, l1):
     products = []
@@ -312,12 +320,16 @@ def load_time(d):
     
 
 class Node:
-    def __init__(self, g, name, process, product, position):
+    def __init__(self, g, name, process, c, product, position):
         self.g = g
         self.name = name
         self.process = process
+        self.cycles_per_second = c
         self.product = product
         self.position = position
+
+    def buildings(self):
+        return self.cycles_per_second * self.process.t
 
     def ancestors(self):
         for e in self.g.edges:
@@ -356,22 +368,12 @@ class Node:
             yield l0, l1
 
     def layout_options(self):
-        legs_term = list(self.legs_term())
-        legs_orig = list(self.legs_orig())
         legs_thru = list(self.legs_thru())
 
-        comb = itertools.combinations_with_replacement(['term', 'orig', 'thru'], 2)
-        for c in comb:
-            if legs_term:
-                if not any(x in c for x in ['term', 'thru']):
-                    continue
-            if legs_orig:
-                if not any(x in c for x in ['orig', 'thru']):
-                    continue
-            if legs_thru:
-                if 'thru' not in c:
-                    continue
-            yield c
+        if legs_thru:
+            return ['thru']
+
+        return ['term', 'orig']
     
     def get_leg_type(self, leg):
         legs_term = list(self.legs_term())
@@ -385,71 +387,79 @@ class Node:
             return 'thru'
         raise RuntimeError()
 
-    def leg_fraction(self, leg, c, comb):
-        """
-        fraction of items from leg that will go through single station with layout c
-        """
+    def leg_compatible(self, leg, station):
+        if station == 'thru':
+            return True
 
-        def compatible(t, s):
-            if s == 'thru': return True
-            return t == s
+        return self.get_leg_type(leg) == station
 
-        t = self.get_leg_type(leg)
+    def inserters_for_product(self, leg, p, r, ins_frac):
 
-        if not compatible(t, c): return 0
-
-        count = sum(1 for c1 in comb if compatible(t, c1))
+        if isinstance(p, Liquid):
+            return 0
         
-        return 1 / count
+        slots = r / p.stack_size
+
+        if leg.route.slots() == 0:
+            leg.route.show()
+
+        wagon_capacity = slots / leg.route.slots() * 40 * p.stack_size
+
+        if ins_frac == 0:
+            print('inserters for product {} {} ins_frac={}'.format(p.name, r, ins_frac))
+            return float("inf")
+
+        t = wagon_capacity / (12 * Constants.inserter_rate * ins_frac)
+
+        utilization = t / (t + Constants.train_transition_time)
+
+        return r / Constants.inserter_rate / utilization
+
+    def inserters_for_leg(self, leg, ins_l_frac, ins_u_frac):
+        leg0, leg1 = leg
         
+        ins_l = 0
+        ins_u = 0
+
+        for p, r in leg_difference(leg0, leg1):
+            #print('product', p.name, r, 'ins_l_frac', ins_l_frac, 'ins_u_frac', ins_u_frac)
+            if r > 0:
+                ins_l += self.inserters_for_product(leg0 or leg1, p, r, ins_l_frac)
+            if r < 0:
+                ins_u += self.inserters_for_product(leg0 or leg1, p, -r, ins_u_frac)
+
+
+        ins0 = 0
+        if ins_l_frac == 0:
+            if ins_l != 0:
+                print('failed', ins_l, ins_l_frac)
+                return float("inf")
+        else:
+            ins0 = ins_l / ins_l_frac
+
+        ins1 = 0
+        if ins_u_frac == 0:
+            if ins_u != 0:
+                print('failed', ins_u, ins_u_frac)
+                return float("inf")
+                return None
+        else:
+            ins1 = ins_u / ins_u_frac
+
+        return max(ins0, ins1)
+
     def test_layout_station(self, station, stations, ins_l_frac):
-        ins = 0
         ins_u_frac = 1 - ins_l_frac
 
-        # fraction of load and unload inserters
-        ins_rate = 27.7
-        transition_time = 20
-        #ins_l_frac = 0.5
-        
         legs = list(self.legs())
+    
+        ins = 0
 
         for leg in legs:
-            f = self.leg_fraction(leg, station, stations)
-            leg0, leg1 = leg
-            
-            l0 = sum(r for p, r in leg_difference(leg0, leg1) if r > 0) * f
-            u0 = sum(r for p, r in leg_difference(leg0, leg1) if r < 0) * f
-            
-            for each product:
-                wagon_capacity_l = slots_l / l0.route.slots() * 40 * p.stack_size
-            
-            load_time = wagon_capacity_l / (12 * ins_rate * ins_l_frac)
-            unload_time = wagon_capacity_u / (12 * ins_rate * ins_u_frac)
+            if not self.leg_compatible(leg, station):
+                continue
 
-            ins_l_utilization = load_time / (load_time + transition_time)
-            ins_u_utilization = unload_time / (unload_time + transition_time)
-
-            ins_l = l0 / ins_rate
-            ins_u = -u0 / ins_rate
-            
-            ins0 = 0
-            if ins_l_frac == 0:
-                if ins_l != 0:
-                    print('failed', ins_l, ins_l_frac)
-                    return float("inf")
-            else:
-                ins0 = ins_l / ins_l_frac
-
-            ins1 = 0
-            if ins_u_frac == 0:
-                if ins_u != 0:
-                    print('failed', ins_u, ins_u_frac)
-                    return float("inf")
-                    return None
-            else:
-                ins1 = ins_u / ins_u_frac
-
-            ins += max(ins0, ins1)
+            ins += self.inserters_for_leg(leg, ins_l_frac, ins_u_frac)
 
         return ins
 
@@ -500,24 +510,96 @@ class Node:
 
     def factory_layout(self):
         print(crayons.blue('factory: {}'.format(self.process.name), bold=True))
+        print('modules:', [str(m) for m in self.process.modules])
 
         # options for factory layout:
         
-        options = list(self.layout_options())
+        stations = self.layout_options()
 
-        res = [self.test_layout(c) for c in options]
+        res = self.test_layout(stations)
         
-        stations, ins, ret = min(res, key=lambda t: t[1])
+        stations, ins, ret = res
 
+        print('optimal:')
         print(stations)
         for station, ins_l_frac, ins in ret:
-            print('{} {:7.3f} {:8.1f}'.format(station, ins_l_frac, ins))
+            print('{} {:7.3f} {:10.3f}'.format(station, ins_l_frac, ins))
+
+            if math.isinf(ins):
+                raise RuntimeError()
+
+        inserters_per_stop = 12 * Constants.wagons_per_train
+
+        b0 = self.buildings()
+
+        fp = self.process.footprint_per_building()
+
+        width = Constants.wagons_per_train * 7
+
+        area = b0 * self.process.footprint_per_building()
+
+        def correct_answer(x, y):
+            if (x < 0) and (y > 0): return y
+            if (x > 0) and (y < 0): return x
+            raise RuntimeError()
+
+        if 'term' in stations:
+            x = ret[0][2]
+            y = ret[1][2]
+            if (y != 0) and (x != 0):
+                station_ratio = x / y
+                print('station ratio ({}/{}): {:8.2f}'.format(ret[0][0], ret[1][0], station_ratio))
+                
+                stops_x = round(max(1, x / y))
+                stops_y = round(max(1, y / x))
+
+                b_x = stops_x * inserters_per_stop * b0 / ret[0][2]
+                b_y = stops_y * inserters_per_stop * b0 / ret[1][2]
+
+                area_x = b_x * fp
+                area_y = b_y * fp
+
+                width_x = correct_answer(*pythag(1, -6 * (stops_x + stops_y), -area_x))
+                width_y = correct_answer(*pythag(1, -6 * (stops_x + stops_y), -area_x))
+                
+                #width_x = round(width_x / Constants.roboport_logistic_range) * Constants.roboport_logistic_range
+                #width_y = round(width_y / Constants.roboport_logistic_range) * Constants.roboport_logistic_range
+                
+                height_x = area_x / width_x
+                height_y = area_y / width_y
+
+                subfactories_x = area / area_x
+                subfactories_y = area / area_y
+                
+                sf_area_x = width_x * (height_x + 6 * (stops_x + stops_y))
+                sf_area_y = width_y * (height_y + 6 * (stops_x + stops_y))
+
+                print('{} stops: {:8.2f} buildings: {:8.2f} width: {:8.2f} height: {:8.2f} subfactories {:8.2f} sf area (robo) {:8.2f}'.format(ret[0][0], stops_x, b_x, width_x, height_x,
+                    subfactories_x,
+                    sf_area_x / (50 * 50)))
+
+                print('{} stops: {:8.2f} buildings: {:8.2f} width: {:8.2f} height: {:8.2f} subfactories {:8.2f} sf area (robo) {:8.2f}'.format(ret[1][0], stops_y, b_y, width_y, height_y,
+                    subfactories_y,
+                    sf_area_y / (50 * 50)))
+                
+                
+
+            # another calculation of the number of stops of each type needed to serve a logisitic area of my chosing
+        
+
 
         def get_items_load(legs):
             return sum(r for l0, l1 in legs for p, r in leg_difference(l0, l1) if r > 0)
         
         def get_items_unload(legs):
             return sum(r for l0, l1 in legs for p, r in leg_difference(l0, l1) if r < 0)
+        
+
+        print('buildings:       {:8.1f}'.format(self.buildings()))
+        print('area (sq tile):  {:8.1f}'.format(area))
+        print('area (sq chunk): {:8.1f}'.format(area / 32 / 32))
+
+        
 
         return
 
@@ -649,5 +731,7 @@ if __name__ == '__main__':
     
     print(cross(e0, e1))
 
-    
+
+
+
 
