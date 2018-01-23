@@ -411,7 +411,7 @@ class Process:
             if self == Constants.mine_uranium_ore:
                 pass
             else:
-                return 9 * 3 * 7 / 12
+                return BuildingLayout(7, 3, 2 / 3)
 
         liquid_output = sum(1 for i in self._inputs if isinstance(i.product, Liquid) and i.q < 0)
         liquid_input = sum(1 for i in self._inputs if isinstance(i.product, Liquid) and i.q > 0)
@@ -421,17 +421,22 @@ class Process:
         k = (liquid_output, liquid_input, item_output_gt_zero, item_input_gt_zero)
 
         d = {
-                (1, 0, False, False): 0, # pumpjack
-                (1, 0, False, True): 14 * 3 / 2,
-                (0, 0, True, True): 12 * 3 / 2,
-                (0, 1, True, True): 14 * 3 / 2,
-                (0, 1, True, False): 14 * 3 / 2,
-                (0, 2, True, True): 15 * 3 / 2,
-                (0, 2, True, False): 15 * 3 / 2,
-                (3, 2, False, False): 22 * 6 / 2, # oil refinery
+                (1, 0, False, False): None,
+                (1, 0, False, True): BuildingLayout(3, 14, 2),
+                (0, 0, True, True): BuildingLayout(3, 12, 2),
+                (0, 1, True, True): BuildingLayout(3, 14, 2),
+                (0, 1, True, False): BuildingLayout(3, 14, 2),
+                (0, 2, True, True): BuildingLayout(3, 15, 2),
+                (0, 2, True, False): BuildingLayout(3, 15, 2),
+                (3, 2, False, False): BuildingLayout(6, 22, 2), # oil refinery
                 }
         
         return d[k]
+
+class BuildingLayout:
+    def __init__(self, tile_x, tile_y, buildings_per_tile):
+        self.tile_x, self.tile_y, self.buildings_per_tile = tile_x, tile_y, buildings_per_tile
+        self.footprint = self.tile_x * self.tile_y / self.buildings_per_tile
 
 def excess_in(inputs, product):
     #inputs = [i for i in inputs if i.product == product]

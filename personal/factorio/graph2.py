@@ -318,6 +318,10 @@ def load_time(d):
     print(items_unload)
     
     
+def correct_answer(x, y):
+    if (x < 0) and (y > 0): return y
+    if (x > 0) and (y < 0): return x
+    raise RuntimeError()
 
 class Node:
     def __init__(self, g, name, process, c, product, position):
@@ -393,8 +397,26 @@ class Node:
 
         return self.get_leg_type(leg) == station
 
-    def inserters_for_product(self, leg, p, r, ins_frac):
+    def fluid_wagon_stops_for_product(self, leg, p, r, ins_frac):
+        
+        if not isinstance(p, Liquid):
+            return 0
 
+        Constants.fluid_wagon_pump_rate = 1000
+        Constants.pumps_per_wagon = 12
+        Constants.fluid_wagon_capacity = 25000
+
+        # TODO consider if we were only partially draining or filling the tank
+        
+        t = Constants.fluid_wagon_capacity / (Constants.fluid_wagon_pump_rate * Constants.pumps_per_wagon)
+
+        utilization = t / (t + Constants.train_transition_time)
+
+        wagon_stops = r / (Constants.fluid_wagon_pump_rate * Constants.pumps_per_wagon) / utilization
+
+        return wagon_stops
+
+    def cargo_wagon_stops_for_product(self, leg, p, r, ins_frac):
         if isinstance(p, Liquid):
             return 0
         
@@ -413,64 +435,89 @@ class Node:
 
         utilization = t / (t + Constants.train_transition_time)
 
-        return r / Constants.inserter_rate / utilization
+        i = r / Constants.inserter_rate / utilization
 
-    def inserters_for_leg(self, leg, ins_l_frac, ins_u_frac):
+        wagon_stops = i / Constants.inserters_per_wagon
+
+        return wagon_stops
+
+    def cargo_wagon_stops_for_leg(self, leg, ins_l_frac, ins_u_frac):
         leg0, leg1 = leg
         
-        ins_l = 0
-        ins_u = 0
+        cargo_wagon_stops_load = 0
+        cargo_wagon_stops_unload = 0
 
         for p, r in leg_difference(leg0, leg1):
             #print('product', p.name, r, 'ins_l_frac', ins_l_frac, 'ins_u_frac', ins_u_frac)
             if r > 0:
-                ins_l += self.inserters_for_product(leg0 or leg1, p, r, ins_l_frac)
+                c = self.cargo_wagon_stops_for_product(leg0 or leg1, p, r, ins_l_frac)
+                cargo_wagon_stops_load += c
             if r < 0:
-                ins_u += self.inserters_for_product(leg0 or leg1, p, -r, ins_u_frac)
+                c = self.cargo_wagon_stops_for_product(leg0 or leg1, p, -r, ins_u_frac)
+                cargo_wagon_stops_unload += c
 
-
-        ins0 = 0
+        c_0 = 0
         if ins_l_frac == 0:
-            if ins_l != 0:
+            if cargo_wagon_stops_load != 0:
                 print('failed', ins_l, ins_l_frac)
                 return float("inf")
         else:
-            ins0 = ins_l / ins_l_frac
+            c_0 = cargo_wagon_stops_load / ins_l_frac
 
-        ins1 = 0
+        c_1 = 0
         if ins_u_frac == 0:
-            if ins_u != 0:
+            if cargo_wagon_stops_unload != 0:
                 print('failed', ins_u, ins_u_frac)
                 return float("inf")
                 return None
         else:
-            ins1 = ins_u / ins_u_frac
+            c_1 = cargo_wagon_stops_unload / ins_u_frac
 
-        return max(ins0, ins1)
+        return max(c_0, c_1)
+    
+    def fluid_wagon_stops_for_leg(self, leg, ins_l_frac, ins_u_frac):
+        leg0, leg1 = leg
+        
+        fluid_wagon_stops_load = 0
+        fluid_wagon_stops_unload = 0
+
+        for p, r in leg_difference(leg0, leg1):
+            #print('product', p.name, r, 'ins_l_frac', ins_l_frac, 'ins_u_frac', ins_u_frac)
+            if r > 0:
+                f = self.fluid_wagon_stops_for_product(leg0 or leg1, p, r, ins_l_frac)
+                fluid_wagon_stops_load += f
+            if r < 0:
+                f = self.fluid_wagon_stops_for_product(leg0 or leg1, p, -r, ins_u_frac)
+                fluid_wagon_stops_unload += f
+
+        return fluid_wagon_stops_load + fluid_wagon_stops_unload
 
     def test_layout_station(self, station, stations, ins_l_frac):
         ins_u_frac = 1 - ins_l_frac
 
         legs = list(self.legs())
     
-        ins = 0
+        ws_c = 0
+        ws_f = 0
 
         for leg in legs:
             if not self.leg_compatible(leg, station):
                 continue
 
-            ins += self.inserters_for_leg(leg, ins_l_frac, ins_u_frac)
+            ws_c += self.cargo_wagon_stops_for_leg(leg, ins_l_frac, ins_u_frac)
+            ws_f += self.fluid_wagon_stops_for_leg(leg, ins_l_frac, ins_u_frac)
 
-        return ins
+        return ws_c, ws_f
 
     def test_layout(self, stations):
         
         legs = list(self.legs())
         
-        ins = 0
-
+        ws_c = 0
+        ws_f = 0
+        
         ret = []
-
+        
         for station in stations:
             
             def func(ins_l_frac):
@@ -478,7 +525,8 @@ class Node:
 
             def func1(X):
                 ins_l_frac = X[0]
-                return self.test_layout_station(station, stations, ins_l_frac)
+                y_c, y_f = self.test_layout_station(station, stations, ins_l_frac)
+                return y_c
             
             if station == 'thru':
                 bounds = [(1e-5, 1 - 1e-5)]
@@ -493,20 +541,85 @@ class Node:
             ins_u_frac = 1 - ins_l_frac
             
             f = np.vectorize(func)
-            y = f(ins_l_frac)
+            y_c, y_f = f(ins_l_frac)
             
             #plt.plot(ins_l_frac, y)
             
-            y = func(x)
+            y_c, y_f = func(x)
             #plt.plot(x,y,'o')
             
             #print(station, 'optimal ins_l_frac: {:7.3f} ins: {:8.1f}'.format(x, y))
 
-            ret.append((station, x, y))
+            ret.append((station, x, y_c, y_f))
 
-            ins += y
+            ws_c += y_c
+            ws_f += y_f
 
-        return stations, ins, ret
+        return stations, ws_c, ws_f, ret
+
+    def subfactory_test(self, w, h, bl, WS, B, ips):
+
+        if bl.footprint == 0:
+            return
+
+        s = np.zeros(np.shape(WS))
+        
+        for a in range(20):
+
+            h_p = h - 6 * np.sum(s)
+
+            a_p = w * h_p
+        
+            b = a_p / bl.footprint
+
+            s_0 = np.array(s)
+        
+            ws = WS / B * b
+           
+            s = ws / Constants.wagons_per_train
+            
+            s[s < 0] = 0
+
+            s = (s + s_0) / 2
+
+            if np.all(np.abs(s - s_0) < 1e-4):
+                break
+            
+            #print('stops: {}'.format(' '.join('{:8.3f}'.format(x) for x in s)))
+
+        s = np.ceil(s)
+        ws = s * Constants.wagons_per_train
+        b = B / WS * ws
+        
+        #print('s', s)
+        #print('ws', ws)
+        #print('b', b)
+
+        b = np.amin(b)
+
+        a_p = b * bl.footprint
+
+        #print('b {} a_p {}'.format(b, a_p))
+
+        w = correct_answer(*pythag(1, -6 * (np.sum(s)), -a_p))
+
+        w = math.ceil(w / bl.tile_x) * bl.tile_x
+
+        h_p = a_p / w
+
+        h_p = math.ceil(h_p / bl.tile_y) * bl.tile_y
+
+        a_p = w * h_p
+
+        b = a_p / bl.footprint
+
+        print('w           ', w)
+        print('h_p         ', h_p)
+        print('a_p         ', a_p)
+        print('b           ', b)
+        print('subfactories', math.ceil(B / b))
+
+        #stops_x_1 = i_x / ips
 
     def factory_layout(self):
         print(crayons.blue('factory: {}'.format(self.process.name), bold=True))
@@ -518,32 +631,32 @@ class Node:
 
         res = self.test_layout(stations)
         
-        stations, ins, ret = res
+        stations, ws_c, ws_f, ret = res
 
         print('optimal:')
         print(stations)
-        for station, ins_l_frac, ins in ret:
-            print('{} {:7.3f} {:10.3f}'.format(station, ins_l_frac, ins))
+        for station, ins_l_frac, ws_c, ws_f in ret:
+            print('{} {:7.3f} ws_c {:10.3f} ws_f {:10.3f}'.format(station, ins_l_frac, ws_c, ws_f))
 
-            if math.isinf(ins):
+            if math.isinf(ws_c):
                 raise RuntimeError()
 
         inserters_per_stop = 12 * Constants.wagons_per_train
 
         b0 = self.buildings()
 
-        fp = self.process.footprint_per_building()
+        bl = self.process.footprint_per_building()
+
+        if bl is None: return
+
+        fp = bl.footprint
 
         width = Constants.wagons_per_train * 7
 
-        area = b0 * self.process.footprint_per_building()
+        area = b0 * fp
 
-        def correct_answer(x, y):
-            if (x < 0) and (y > 0): return y
-            if (x > 0) and (y < 0): return x
-            raise RuntimeError()
 
-        if 'term' in stations:
+        if ('term' in stations) and False:
             x = ret[0][2]
             y = ret[1][2]
             if (y != 0) and (x != 0):
@@ -574,19 +687,25 @@ class Node:
                 sf_area_x = width_x * (height_x + 6 * (stops_x + stops_y))
                 sf_area_y = width_y * (height_y + 6 * (stops_x + stops_y))
 
-                print('{} stops: {:8.2f} buildings: {:8.2f} width: {:8.2f} height: {:8.2f} subfactories {:8.2f} sf area (robo) {:8.2f}'.format(ret[0][0], stops_x, b_x, width_x, height_x,
+                print('{} stops: {:8.2f} buildings: {:8.2f} width: {:8.2f} height: {:8.2f} subfactories {:8.2f} sf area (robo) {:8.2f}'.format(ret[0][0], stops_x, b_x, 
+                    width_x, 
+                    height_x,
                     subfactories_x,
                     sf_area_x / (50 * 50)))
 
-                print('{} stops: {:8.2f} buildings: {:8.2f} width: {:8.2f} height: {:8.2f} subfactories {:8.2f} sf area (robo) {:8.2f}'.format(ret[1][0], stops_y, b_y, width_y, height_y,
+                print('{} stops: {:8.2f} buildings: {:8.2f} width: {:8.2f} height: {:8.2f} subfactories {:8.2f} sf area (robo) {:8.2f}'.format(ret[1][0], stops_y, b_y, 
+                    width_y, 
+                    height_y,
                     subfactories_y,
                     sf_area_y / (50 * 50)))
-                
-                
 
-            # another calculation of the number of stops of each type needed to serve a logisitic area of my chosing
-        
+        if b0 > 0:
+            ws_c = [r[2] for r in ret if r[2] > 0]
+            if ws_c:
+                a_p = self.subfactory_test(100, 100, bl, np.array(ws_c), b0, inserters_per_stop)
 
+        # another calculation of the number of stops of each type needed to serve a logisitic area of my chosing
+        # need function ...
 
         def get_items_load(legs):
             return sum(r for l0, l1 in legs for p, r in leg_difference(l0, l1) if r > 0)
@@ -594,12 +713,9 @@ class Node:
         def get_items_unload(legs):
             return sum(r for l0, l1 in legs for p, r in leg_difference(l0, l1) if r < 0)
         
-
         print('buildings:       {:8.1f}'.format(self.buildings()))
         print('area (sq tile):  {:8.1f}'.format(area))
         print('area (sq chunk): {:8.1f}'.format(area / 32 / 32))
-
-        
 
         return
 

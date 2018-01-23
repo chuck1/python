@@ -261,6 +261,7 @@ def reroute_through_highest_rank_ancestor():
 Constants.electric_mining_drill = electric_mining_drill
 Constants.mine_uranium_ore = mine_uranium_ore
 Constants.wagons_per_train = 10
+Constants.inserters_per_wagon = 12
 
 modules.apply_modules()
 
@@ -269,13 +270,19 @@ g2 = MyGraph()
 #inputs = produce_rocket_control_unit.all_inputs_default(1000)
 #inputs = produce_production_science_pack.all_inputs_default(10000/60/2)
 
-product = production_science_pack
-items_per_sec = 100
-p = product.default_process()
+#product = production_science_pack
+#p = product.default_process()
 
-inputs = list(p.all_inputs_default(items_per_sec / p.items_per_cycle(product), ignore_power=True))
+#inputs = list(p.all_inputs_default(items_per_sec / p.items_per_cycle(product), ignore_power=True))
 
-inputs = list(research.all_inputs_default(-1000 / research.items_per_cycle(space_science_pack)))
+
+# INPUT
+items_per_sec = 1000
+
+
+
+c = -items_per_sec / research.items_per_cycle(space_science_pack)
+inputs = list(research.all_inputs_default(c))
 
 for i in inputs:
     print('{:22} {:8.2f}'.format(i.product.name, i.q))
