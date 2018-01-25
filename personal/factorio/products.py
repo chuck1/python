@@ -2,7 +2,7 @@ import math
 import itertools
 import crayons
 
-from process import *
+from fact.process import *
 from product import *
 
 

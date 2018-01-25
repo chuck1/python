@@ -4,8 +4,8 @@ import contextlib
 import crayons
 
 #from products import *
-from ingredient import *
 from product import *
+from ingredient import *
 from constants import *
 
 @contextlib.contextmanager

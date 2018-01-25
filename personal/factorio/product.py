@@ -3,7 +3,7 @@ import math
 import itertools
 import crayons
 
-from process import *
+#from process import *
 
 class Transport:
     def __init__(self, name, rate):

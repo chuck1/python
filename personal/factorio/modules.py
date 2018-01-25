@@ -1,5 +1,5 @@
 
-from processes import *
+from fact.processes import *
 
 def output_intermediate(process):
     for i in process.inputs:

@@ -1,10 +1,12 @@
 import os
 
-from sites import *
 from graphviz import Digraph
 import matplotlib.pyplot as plt
 
+#from sites import *
 from graph2 import *
+from products import *
+from fact.processes import *
 import modules
 
 factories = [
