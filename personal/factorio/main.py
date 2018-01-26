@@ -330,22 +330,28 @@ print()
 
 #g2.nodes[processing_unit.name].inputs()
 
-for r in Routes.routes:
-    r.show()
-
 for e in g2.edges:
     e.balance_routes()
     #e.products()
+
+
+if False:
+    for r in Routes.routes:
+        r.show()
+
+for e in g2.edges:
+    e.show()
 
 #g2.graphviz()
 
 print()
 
-print('factories')
-for n in sorted(g2.nodes.values(), key=lambda n: n.process.name):
-    n.factory_layout()
-#g2.nodes[advanced_circuit.name].factory_layout()
+if False:
+    print('factories')
+    for n in sorted(g2.nodes.values(), key=lambda n: n.process.name):
+        n.factory_layout()
 
-
+#g2.nodes['advanced circuit'].factory_layout()
+g2.nodes['plastic bar'].factory_layout()
 
 

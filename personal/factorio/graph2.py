@@ -7,6 +7,11 @@ import matplotlib.pyplot as plt
 import scipy.optimize
 
 from constants import *
+from fact.graph.edge import *
+
+import blueprints as bp
+import blueprints.build_1
+import blueprints.templates
 
 def pythag(a, b, c):
     d = math.sqrt(b**2 - 4 * a * c)
@@ -20,6 +25,32 @@ def cargo_wagons_per_second(products):
         w += r / product.stack_size / 40
     return w
 
+class Subfactory:
+    def __init__(self, stations, stops_c, stops_f, count_x, count_y):
+        self.stations = stations
+        
+        self.stops_c = stops_c
+        self.stops_f = stops_f
+
+        self.count_x = count_x
+        self.count_y = count_y
+
+    def blueprint(self):
+
+        stop_blueprints = [bp.templates.train_stop(Constants.train_configuration.wagons, s.load_inserter_fraction) for s in self.stations]
+
+        g = blueprints.build_1.subfactory(
+                    blueprints.templates.assembling(), 
+                    self.stops_c,
+                    stop_blueprints,
+                    self.count_y, 
+                    self.count_x)
+
+        b = blueprints.blueprint.Blueprint()
+        b.entities.append(g)
+        b.plot()
+        
+        #stops_x_1 = i_x / ips
 
 
 class RouteLegProduct:
@@ -39,271 +70,7 @@ class RouteLegProduct:
 
         return self.rate / self.product.stack_size
 
-def leg_difference(l0, l1):
-    products = []
-    
-    if l0 is not None:
-        products += [RouteLegProduct(p.product, -p.rate) for p in l0.products]
 
-    if l1 is not None:
-        products += [RouteLegProduct(p.product, p.rate) for p in l1.products]
-    
-    products = sorted(products, key=lambda p: id(p.product))
-    groups = itertools.groupby(products, key=lambda p: p.product)
-
-    for k, g in groups:
-        yield k, sum(p.rate for p in g)
-
-class RouteLeg:
-    def __init__(self, route, edge, products):
-        self.route = route
-        self.edge = edge
-        self.products = products
-
-    def slots(self):
-        return sum(p.slots() for p in self.products)
-
-    def get_product(self, product):
-        return next(p for p in self.products if p.product == product)
-
-    def prev(self):
-        for l in self.route.legs:
-            if l.edge.dst == self.edge.src:
-                return l
-
-    def next(self):
-        for l in self.route.legs:
-            if l.edge.src == self.edge.dst:
-                return l
-
-    def empty_slots(self):
-        if self.slots() == self.route.slots():
-            return self.route.slots_second() - self.slots()
-        else:
-            return self.route.slots() - self.slots()
-    
-    def empty_percent(self):
-        if self.route.slots() > 0:
-            return self.empty_slots() / self.route.slots() * 100
-        else:
-            return 0
-
-    def show(self):
-        print('\t{:24} -> {:24} empty slots: {:5.1f} {:5.1f}%'.format(self.edge.src.name, self.edge.dst.name, self.empty_slots(), self.empty_percent()))
-        for p in self.products:
-            p.show()
-
-class Route:
-    def __init__(self, node, legs):
-        self.id_ = Routes.next_id()
-        self.node = node
-        self.legs = legs
-
-    def slots_second(self):
-        seq = [l.slots() for l in self.legs if l.slots() != self.slots()]
-        
-        if not seq:
-            return self.slots()
-
-        return max(seq)
-
-    def slots(self):
-        return max(l.slots() for l in self.legs)
-
-    def show(self):
-        print('route {:2}: {}'.format(self.id_, self.node.process.name))
-        for leg in self.legs:
-            leg.show()
-    
-    def leg(self, edge, products):
-
-        products = [copy.copy(p) for p in products]
-
-        leg = RouteLeg(self, edge, products)
-
-        if any(l.edge == leg.edge for l in self.legs):
-            l = next(l for l in self.legs if l.edge == leg.edge)
-            l.products += leg.products
-            return l
-
-        self.legs.append(leg)
-        return leg
-
-    def find_leg(self, edge):
-        for l in self.legs:
-            if l.edge == edge:
-                return l
-
-class Routes:
-    routes = []
-    _next_id = 0
-
-    @classmethod
-    def next_id(cls):
-        i = cls._next_id
-        cls._next_id += 1
-        
-        if i == 0: return 'A'
-
-        s = ''
-        while i > 0:
-            m = i % 26
-            s += chr(ord('A') + m)
-            i -= m
-            i //= 26
-
-        return s[::-1]
-
-    @classmethod
-    def add_route(cls, route):
-        cls.routes.append(route)
-
-    @classmethod
-    def find_route(cls, process, edge):
-        for r in cls.routes:
-            if r.node.process == process:
-                for l in r.legs:
-                    if l.edge == edge:
-                        yield r
-                        break
-
-class Edge:
-    def __init__(self, src, dst):
-        self.src = src
-        self.dst = dst
-
-    def routes(self):
-        for r in Routes.routes:
-            for l in r.legs:
-                if l.edge == self:
-                    yield r, l
-                    break
-
-    def legs(self):
-        for r in Routes.routes:
-            for l in r.legs:
-                if l.edge == self:
-                    yield l
-                    break
-
-    def start(self):
-        return self.src.position
-
-    def v(self):
-        return self.dst.position - self.src.position
-
-    def x(self, k):
-        return self.src.position + k * self.v()
-
-    def length(self):
-        return np.linalg.norm(self.v())
-
-    def label_lines(self):
-
-        for r, l in self.routes():
-            yield 'Route {:2} empty: {:5.1f} {:5.1f}%'.format(r.id_, l.empty_slots(), l.empty_percent())
-            for p in l.products:
-                yield p.to_string()
-
-
-        #for k, r in self.products:
-        #    w = cargo_wagons_per_second([(k, r)])
-        #    yield '{:18} {:6.0f} -> {:22} {:4.1f} wag/sec'.format(k[1].name, r, k[0].name, w) 
-
-    def products(self):
-        products = list(set([p.product for r, l in self.routes() for p in l.products]))
-
-        print('edge: {:24} -> {:24}'.format(self.src.name, self.dst.name))
-
-        for product in products:
-            print('\tproduct: {:24}'.format(product.name))
-
-            for r, l in self.routes():
-                try:
-                    p = next(p for p in l.products if p.product == product)
-                except StopIteration:
-                    continue
-
-                print('\t\tRoute {:2} rate: {:8.1f}'.format(r.id_, p.rate))
-
-    def balance_one(self):
-        sources = [(r, l, l.empty_slots()) for r, l in self.routes() if l.empty_slots() > 0]
-        sinks = [(r, l, l.empty_slots()) for r, l in self.routes() if l.empty_slots() < 0]
-
-        
-        sources = sorted(sources, key=lambda t: -t[2])
-        sinks = sorted(sinks, key=lambda t: t[2])
-
-        for r0, l0, slots0 in sources:
-            for r1, l1, slots1 in sinks:
-                slots = min(slots0, -slots1)
-                transfer(l0, l1, slots)
-                return True
-
-        return False
-    
-    def balance_routes(self):
-        print('edge: {:24} -> {:24}'.format(self.src.name, self.dst.name))
-        
-        for r, l in self.routes():
-            print('\troute {:2} empty: {:5.1f}'.format(r.id_, l.empty_slots()))
-
-        while self.balance_one(): pass
-
-        for r, l in self.routes():
-            print('\troute {:2} empty: {:5.1f}'.format(r.id_, l.empty_slots()))
-
-
-
-def common_products(leg0, leg1):
-    p0 = set([p.product for p in leg0.products])
-    p1 = set([p.product for p in leg0.products])
-    return list(p0 & p1)
-
-def transfer(l0, l1, slots):
-    print('transfer {:6.1f} slots from route {} to {}'.format(slots, l0.route.id_, l1.route.id_))
-
-    products = common_products(l0, l1)
-    
-    if False:
-        print()
-        l0.show()
-        print()
-        l1.show()
-        print()
-        print('common products')
-
-        for p in products:
-            print('\t{}'.format(p.name))
-    
-    if len(products) != 1: return
-
-    product = products[0]
-
-    #print()
-
-    p0 = l0.get_product(product)
-    p1 = l1.get_product(product)
-
-    #print('slots of {}'.format(product.name))
-    #print('{:8.1f}'.format(p0.slots()))
-    #print('{:8.1f}'.format(p1.slots()))
-
-    if p1.slots() < slots:
-        print('the sink does not have enough slots of {} to transfer'.format(product))
-    
-    t = slots * product.stack_size
-
-    p0.rate = p0.rate + t
-    p1.rate = p1.rate - t
-   
-    if False:
-        print('after transfer')
-        print()
-        l0.route.show()
-        print()
-        l1.route.show()
-        print()
 
 def load_time(d):
     ins_rate = 27.7
@@ -322,6 +89,11 @@ def correct_answer(x, y):
     if (x < 0) and (y > 0): return y
     if (x > 0) and (y < 0): return x
     raise RuntimeError()
+
+class Station:
+    def __init__(self, type_, w_c, w_f, load_inserter_fraction):
+        self.type_ = type_
+        self.w_c, self.w_f, self.load_inserter_fraction = w_c, w_f, load_inserter_fraction
 
 class Node:
     def __init__(self, g, name, process, c, product, position):
@@ -550,76 +322,87 @@ class Node:
             
             #print(station, 'optimal ins_l_frac: {:7.3f} ins: {:8.1f}'.format(x, y))
 
-            ret.append((station, x, y_c, y_f))
+            ret.append(Station(station, y_c, y_f, x))
 
             ws_c += y_c
             ws_f += y_f
 
         return stations, ws_c, ws_f, ret
 
-    def subfactory_test(self, w, h, bl, WS, B, ips):
-
+    def subfactory_test(self, w, h, bl, stations, B, ips):
+        
         if bl.footprint == 0:
             return
+        
+        WS_c = np.array([s.w_c for s in stations])
+        WS_f = np.array([s.w_f for s in stations])
 
-        s = np.zeros(np.shape(WS))
+        stops = np.zeros(np.shape(WS_c))
         
         for a in range(20):
 
-            h_p = h - 6 * np.sum(s)
+            h_p = h - 6 * np.sum(stops)
 
             a_p = w * h_p
         
             b = a_p / bl.footprint
 
-            s_0 = np.array(s)
+            stops_0 = np.array(stops)
         
-            ws = WS / B * b
+            ws_c = WS_c / B * b
            
-            s = ws / Constants.wagons_per_train
+            stops = ws_c / Constants.train_configuration.wagons
             
-            s[s < 0] = 0
+            stops[stops < 0] = 0
 
-            s = (s + s_0) / 2
+            stops = (stops + stops_0) / 2
 
-            if np.all(np.abs(s - s_0) < 1e-4):
+            if np.all(np.abs(stops - stops_0) < 1e-4):
                 break
             
             #print('stops: {}'.format(' '.join('{:8.3f}'.format(x) for x in s)))
 
-        s = np.ceil(s)
-        ws = s * Constants.wagons_per_train
-        b = B / WS * ws
-        
-        #print('s', s)
-        #print('ws', ws)
-        #print('b', b)
+        stops = np.ceil(stops)
+        ws = stops * Constants.train_configuration.wagons
+        b = B / WS_c * ws_c
 
+        ws_f = WS_f / B * b
+        stops_f = np.ceil(ws_f / Constants.train_configuration.wagons)
+    
         b = np.amin(b)
 
         a_p = b * bl.footprint
 
         #print('b {} a_p {}'.format(b, a_p))
+        
+        height_stops = np.sum(stops) * 6
 
-        w = correct_answer(*pythag(1, -6 * (np.sum(s)), -a_p))
-
-        w = math.ceil(w / bl.tile_x) * bl.tile_x
+        w = correct_answer(*pythag(1, -height_stops, -a_p))
 
         h_p = a_p / w
+        count_y = math.ceil(h_p / bl.tile_y)
+        h_p = count_y * bl.tile_y
 
-        h_p = math.ceil(h_p / bl.tile_y) * bl.tile_y
+        w = a_p / h_p
+        count_x = math.floor(w / bl.tile_x)
+        w = count_x * bl.tile_x
 
         a_p = w * h_p
 
         b = a_p / bl.footprint
 
+        print('cargo stops ', stops)
+        print('fluid stops ', stops_f)
         print('w           ', w)
         print('h_p         ', h_p)
         print('a_p         ', a_p)
         print('b           ', b)
+        print('count x     ', count_x)
+        print('count y     ', count_y)
         print('subfactories', math.ceil(B / b))
+       
+        return Subfactory(stations, stops, stops_f, count_x, count_y)
 
-        #stops_x_1 = i_x / ips
 
     def factory_layout(self):
         print(crayons.blue('factory: {}'.format(self.process.name), bold=True))
@@ -635,13 +418,13 @@ class Node:
 
         print('optimal:')
         print(stations)
-        for station, ins_l_frac, ws_c, ws_f in ret:
-            print('{} {:7.3f} ws_c {:10.3f} ws_f {:10.3f}'.format(station, ins_l_frac, ws_c, ws_f))
+        for station in ret:
+            print('{} {:7.3f} ws_c {:10.3f} ws_f {:10.3f}'.format(station.type_, station.load_inserter_fraction, station.w_c, station.w_f))
 
             if math.isinf(ws_c):
                 raise RuntimeError()
 
-        inserters_per_stop = 12 * Constants.wagons_per_train
+        inserters_per_stop = 12 * Constants.train_configuration.wagons
 
         b0 = self.buildings()
 
@@ -655,54 +438,14 @@ class Node:
 
         area = b0 * fp
 
-
-        if ('term' in stations) and False:
-            x = ret[0][2]
-            y = ret[1][2]
-            if (y != 0) and (x != 0):
-                station_ratio = x / y
-                print('station ratio ({}/{}): {:8.2f}'.format(ret[0][0], ret[1][0], station_ratio))
-                
-                stops_x = round(max(1, x / y))
-                stops_y = round(max(1, y / x))
-
-                b_x = stops_x * inserters_per_stop * b0 / ret[0][2]
-                b_y = stops_y * inserters_per_stop * b0 / ret[1][2]
-
-                area_x = b_x * fp
-                area_y = b_y * fp
-
-                width_x = correct_answer(*pythag(1, -6 * (stops_x + stops_y), -area_x))
-                width_y = correct_answer(*pythag(1, -6 * (stops_x + stops_y), -area_x))
-                
-                #width_x = round(width_x / Constants.roboport_logistic_range) * Constants.roboport_logistic_range
-                #width_y = round(width_y / Constants.roboport_logistic_range) * Constants.roboport_logistic_range
-                
-                height_x = area_x / width_x
-                height_y = area_y / width_y
-
-                subfactories_x = area / area_x
-                subfactories_y = area / area_y
-                
-                sf_area_x = width_x * (height_x + 6 * (stops_x + stops_y))
-                sf_area_y = width_y * (height_y + 6 * (stops_x + stops_y))
-
-                print('{} stops: {:8.2f} buildings: {:8.2f} width: {:8.2f} height: {:8.2f} subfactories {:8.2f} sf area (robo) {:8.2f}'.format(ret[0][0], stops_x, b_x, 
-                    width_x, 
-                    height_x,
-                    subfactories_x,
-                    sf_area_x / (50 * 50)))
-
-                print('{} stops: {:8.2f} buildings: {:8.2f} width: {:8.2f} height: {:8.2f} subfactories {:8.2f} sf area (robo) {:8.2f}'.format(ret[1][0], stops_y, b_y, 
-                    width_y, 
-                    height_y,
-                    subfactories_y,
-                    sf_area_y / (50 * 50)))
-
         if b0 > 0:
-            ws_c = [r[2] for r in ret if r[2] > 0]
-            if ws_c:
-                a_p = self.subfactory_test(100, 100, bl, np.array(ws_c), b0, inserters_per_stop)
+            #WS_c = [ws_c for station, ins_l_frac, ws_c, ws_f in ret if ws_c > 0]
+            #WS_f = [ws_f for station, ins_l_frac, ws_c, ws_f in ret if ws_c > 0]
+            #if WS_c:
+            subfactory = self.subfactory_test(100, 100, bl, ret, b0, inserters_per_stop)
+
+            subfactory.blueprint()
+        
 
         # another calculation of the number of stops of each type needed to serve a logisitic area of my chosing
         # need function ...
@@ -716,38 +459,6 @@ class Node:
         print('buildings:       {:8.1f}'.format(self.buildings()))
         print('area (sq tile):  {:8.1f}'.format(area))
         print('area (sq chunk): {:8.1f}'.format(area / 32 / 32))
-
-        return
-
-        legs_term = list(self.legs_term())
-        legs_orig = list(self.legs_orig())
-        legs_thru = list(self.legs_thru())
-
-        legs = list(self.legs())
-
-        items_load = get_items_load(legs)
-        items_unload = get_items_unload(legs)
-        
-        print('total:')
-        print('\titems load   {:8.1f}'.format(get_items_load(legs)))
-        print('\titems unload {:8.1f}'.format(get_items_unload(legs)))
-        print('term:')
-        print('\titems load   {:8.1f}'.format(get_items_load(legs_term)))
-        print('\titems unload {:8.1f}'.format(get_items_unload(legs_term)))
-        print('orig:')
-        print('\titems load   {:8.1f}'.format(get_items_load(legs_orig)))
-        print('\titems unload {:8.1f}'.format(get_items_unload(legs_orig)))
-        print('thru:')
-        print('\titems load   {:8.1f}'.format(get_items_load(legs_thru)))
-        print('\titems unload {:8.1f}'.format(get_items_unload(legs_thru)))
-        
-        print('legs')
-        for l0, l1 in legs:
-            print('\ttrain item delta')
-            d = list(leg_difference(l0, l1))
-            for p, r in d:
-                print('\t\t{:22} {:8.1f}'.format(p.name, r))
-            print()
 
     def items_out(self):
         for l in self.legs_out():
