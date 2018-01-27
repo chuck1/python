@@ -342,7 +342,7 @@ if False:
 for e in g2.edges:
     e.show()
 
-#g2.graphviz()
+g2.graphviz()
 
 print()
 
@@ -351,7 +351,8 @@ if False:
     for n in sorted(g2.nodes.values(), key=lambda n: n.process.name):
         n.factory_layout()
 
-#g2.nodes['advanced circuit'].factory_layout()
-g2.nodes['plastic bar'].factory_layout()
+if False:
+    #g2.nodes['advanced circuit'].factory_layout()
+    g2.nodes['plastic bar'].factory_layout()
 
 
