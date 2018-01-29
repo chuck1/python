@@ -1,32 +1,13 @@
 import random
 import math
 import numpy as np
-from conductor.route import *
 import matplotlib.pyplot as plt
+
+from conductor.route import *
+from conductor.point import *
 
 speed = 1
 train_length = 1
-
-class Window:
-    def __init__(self, t_0, t_1):
-        self.t_0 = t_0
-        self.t_1 = t_1
-
-class Point:
-    def __init__(self, position):
-        self.position = position
-        
-        self.edges = []
-
-        self.reserved = []
-
-    def reserve(self, t_0, t_1):
-
-        self.reserved.append(Window(t_0, t_1))
-
-        for e in self.edges:
-            T_0, T_1 = e.route.time_to_point(self)
-            e.route.windows.append(Window(t_0 - T_1, t_1 - T_0))
 
 def repeat(S):
     while True:
@@ -46,6 +27,10 @@ class Points:
     def plot(self, ax):
         
         for i, p in zip(range(len(self.points)), self.points):
+
+            ax.plot([min(w.t_0 for w in p.reserved), max(w.t_1 for w in p.reserved)], [i - 0.5] * 2)
+            ax.plot([min(w.t_0 for w in p.reserved), max(w.t_1 for w in p.reserved)], [i + 0.5] * 2)
+
             for w, y in zip(p.reserved, repeat([-.1, .1])):
                 ax.plot([w.t_0, w.t_1], [i + y] * 2, '-o')
 
@@ -355,12 +340,12 @@ def test_7_routes(samples, n):
 
 def plot_routes(routes):
     fig = plt.figure()
-    ax = fig.add_subplot(121)
+    ax = fig.add_subplot(211)
 
     for r in routes:
         r.plot(ax)
     
-    ax = fig.add_subplot(122)
+    ax = fig.add_subplot(212)
 
     Points(routes).plot(ax)
 
@@ -439,12 +424,11 @@ def test_crossing_1():
 if __name__ == '__main__':
     
     #test_1(10)
-    #test_2(100)
     #test_3(100)
     #test_4(100)
     #test_5(100, 2)
     #test_6a(100, 4)
-    test_6(10, 4, train_length=1, d=1)
+    test_6(10, 3, train_length=1, d=1)
     #test_7(100, 4)
     
     #test_crossing(10, 2)
