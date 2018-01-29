@@ -18,10 +18,36 @@ class Point:
         
         self.edges = []
 
+        self.reserved = []
+
     def reserve(self, t_0, t_1):
+
+        self.reserved.append(Window(t_0, t_1))
+
         for e in self.edges:
             T_0, T_1 = e.route.time_to_point(self)
             e.route.windows.append(Window(t_0 - T_1, t_1 - T_0))
+
+def repeat(S):
+    while True:
+        for s in S:
+            yield s
+
+class Points:
+    def __init__(self, routes):
+
+        self.points = []
+
+        for r in routes:
+            for p in r.points():
+                if p not in self.points:
+                    self.points.append(p)
+
+    def plot(self, ax):
+        
+        for i, p in zip(range(len(self.points)), self.points):
+            for w, y in zip(p.reserved, repeat([-.1, .1])):
+                ax.plot([w.t_0, w.t_1], [i + y] * 2, '-o')
 
 
 class Edge:
@@ -67,6 +93,7 @@ def test_1(n):
             r.schedule(0)
 
     show_routes(routes)
+    plot_routes(routes)
 
 def show_routes(routes):
     print('routes')
@@ -135,7 +162,9 @@ def test_3(n):
 def random_arrivals(routes, n):
     for i in range(n):
         for j in range(len(routes)):
-            routes[random.randrange(len(routes))].schedule(0)
+            k = random.randrange(len(routes))
+            print('schdule route', k)
+            routes[k].schedule(0)
 
 def test_4(n):
     points = [
@@ -203,13 +232,13 @@ def crossing_grid(n):
     for i in range(n):
         yield [None]*n
 
-def merge_bus_2(n, points0, points1, o):
+def merge_bus_2(n, points0, points1, o, d=1):
     o = np.array(o)
 
     pl0 = []
     pl1 = []
 
-    points2 = [Point(o + [n, y + n/2]) for y in range(n)]
+    points2 = [Point((o + [n, y + n/2]) * d) for y in range(n)]
     
     crossing_points = list(crossing_grid(n))
  
@@ -245,13 +274,13 @@ def merge_bus_2(n, points0, points1, o):
 
     return points2, pl0, pl1
 
-def merge_bus_1(n, o):
+def merge_bus_1(n, o, d=1):
     o = np.array(o)
 
-    points0 = [Point(o + [0, y]) for y in range(n)]
-    points1 = [Point(o + [0, y + n]) for y in range(n)]
+    points0 = [Point((o + [0, y]) * d) for y in range(n)]
+    points1 = [Point((o + [0, y + n]) * d) for y in range(n)]
     
-    points2, pl0, pl1 = merge_bus_2(n, points0, points1, o)
+    points2, pl0, pl1 = merge_bus_2(n, points0, points1, o, d)
 
     return points0, points1, points2, pl0, pl1
 
@@ -264,13 +293,13 @@ def test_5(n, a):
     random_arrivals(routes, n)
     show_routes(routes)
 
-def two_to_bus(n, o):
+def two_to_bus(n, o, d=1):
     o = np.array(o)
 
-    points0, points1, points2, pl0, pl1 = merge_bus_1(n, o)
+    points0, points1, points2, pl0, pl1 = merge_bus_1(n, o, d)
  
-    point0 = Point(o + [-n, (n - 1) / 2])
-    point1 = Point(o + [-n, (n - 1) / 2 + n])
+    point0 = Point((o + [-n, ((n - 1) / 2)]) * d)
+    point1 = Point((o + [-n, ((n - 1) / 2 + n)]) * d)
     
     for pl in pl0:
         pl.insert(0, point0)
@@ -291,17 +320,17 @@ def test_6a(n, a):
     show_routes(routes)
     plot_routes(routes)
 
-def test_6(n, a):
+def test_6(n, a, train_length=1, d=1):
     print('merge bus')
     #points0, points1, points2, pl0, pl1 = merge_bus_1(a, [0,0])
  
     #point0 = Point([-a, (a - 1) / 2])
     #point1 = Point([-a, (a - 1) / 2 + a])
     
-    points2, pl0, pl1 = two_to_bus(a, [0, 10])
+    points2, pl0, pl1 = two_to_bus(a, [0, 10], d)
 
     #routes = [Route(edges([point0] + pl)) for pl in pl0] + [Route(edges([point1] + pl)) for pl in pl1]
-    routes = [Route(edges(pl)) for pl in pl0] + [Route(edges(pl)) for pl in pl1]
+    routes = [Route(edges(pl), train_length) for pl in pl0] + [Route(edges(pl), train_length) for pl in pl1]
 
     random_arrivals(routes, n)
     show_routes(routes)
@@ -326,10 +355,14 @@ def test_7_routes(samples, n):
 
 def plot_routes(routes):
     fig = plt.figure()
-    ax = fig.add_subplot(111)
+    ax = fig.add_subplot(121)
 
     for r in routes:
         r.plot(ax)
+    
+    ax = fig.add_subplot(122)
+
+    Points(routes).plot(ax)
 
     plt.show()
 
@@ -383,7 +416,7 @@ def crossing(n):
     return pl_a, pl_b
 
 
-def test_8(samples, n):
+def test_crossing(samples, n):
     pl0, pl1 = crossing(n)
     
     print(pl0)
@@ -395,21 +428,26 @@ def test_8(samples, n):
     show_routes(routes)
     plot_routes(routes)
 
+
+
+def test_crossing_1():
+    test_crossing(100, 1)
+    test_crossing(100, 2)
+    test_crossing(100, 3)
+    test_crossing(100, 4)
+
 if __name__ == '__main__':
     
-    #test_1(100)
+    #test_1(10)
     #test_2(100)
     #test_3(100)
     #test_4(100)
     #test_5(100, 2)
     #test_6a(100, 4)
-    #test_6(100, 4)
+    test_6(10, 4, train_length=1, d=1)
     #test_7(100, 4)
-    test_8(100, 1)
-    test_8(100, 2)
-    test_8(100, 3)
-    test_8(100, 4)
-
+    
+    #test_crossing(10, 2)
 
 
 
