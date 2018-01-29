@@ -16,8 +16,10 @@ class Point:
         self.t_0 = {}
 
     def check_window(self, w1):
+        
+        self.reserved0 = sorted(self.reserved0, key=lambda w: w.t_0)
 
-        for w in self.reserved:
+        for w in self.reserved0:
             if w1.t_1 <= w.t_0:
                 continue
 
@@ -63,10 +65,6 @@ class Point:
         self.check_window(w)
         self.reserved.append(w)
         self.reserved0.append(w)
-
-        #for e in self.edges:
-        #    W = e.route.time_to_point(self)
-        #    e.route.windows.append(Window(t_0 - W.t_1, t_1 - W.t_0))
 
 
 

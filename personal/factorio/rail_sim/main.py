@@ -379,11 +379,14 @@ def plot_routes(routes):
 
     plt.show()
 
-def test_7(samples, n):
-    routes = [Route(edges(pl)) for pl in test_7_routes(samples, n)]
+def test_7(samples, n, args, route_options={}):
+    routes = [Route(edges(pl), **route_options) for pl in test_7_routes(samples, n)]
+
     random_arrivals(routes, samples)
     show_routes(routes)
-    plot_routes(routes)
+
+    if args.plot:
+        plot_routes(routes)
 
 def crossing(n):
     points_a0 = [Point([0, i]) for i in range(n)]
@@ -452,6 +455,7 @@ def test_crossing_1():
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
+    parser.add_argument('n', type=int)
     parser.add_argument('--plot', action='store_true')
     args = parser.parse_args()
 
@@ -467,10 +471,12 @@ if __name__ == '__main__':
    
     #plt.plot(x, y)
     #plt.show()
+    
+    route_options={'allow_speed_decrease': True, 'speed_min': 1.0, 'train_length': 1}
 
-    test_6(100, 6, args, d=1, route_options={'allow_speed_decrease': True, 'speed_min': 0.1, 'train_length': 1})
+    #test_6(100, 6, args, d=1, route_options={'allow_speed_decrease': True, 'speed_min': 0.1, 'train_length': 1})
 
-    #test_7(100, 4)
+    test_7(args.n, 4, args, route_options=route_options)
     
     #test_crossing(10, 2)
 
