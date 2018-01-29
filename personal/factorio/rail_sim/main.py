@@ -1,7 +1,9 @@
+import sys
 import random
 import math
 import numpy as np
 import matplotlib.pyplot as plt
+import argparse
 
 from conductor.route import *
 from conductor.point import *
@@ -28,10 +30,10 @@ class Points:
         
         for i, p in zip(range(len(self.points)), self.points):
 
-            ax.plot([min(w.t_0 for w in p.reserved), max(w.t_1 for w in p.reserved)], [i - 0.5] * 2)
-            ax.plot([min(w.t_0 for w in p.reserved), max(w.t_1 for w in p.reserved)], [i + 0.5] * 2)
+            ax.plot([min(w.t_0 for w in p.reserved0), max(w.t_1 for w in p.reserved0)], [i - 0.5] * 2)
+            ax.plot([min(w.t_0 for w in p.reserved0), max(w.t_1 for w in p.reserved0)], [i + 0.5] * 2)
 
-            for w, y in zip(p.reserved, repeat([-.1, .1])):
+            for w, y in zip(p.reserved0, repeat([-.1, .1])):
                 ax.plot([w.t_0, w.t_1], [i + y] * 2, '-o')
 
 
@@ -59,6 +61,32 @@ def route(points, indices=None):
 
     return Route([Edge(p0, p1) for p0, p1 in zip(p[:-1], p[1:])])
 
+def progress_bar(i, n):
+    length = 100
+    fill = u"\u25A0"
+    blank = ' '
+    
+    fill_length = int(length * i / n)
+
+    bar = fill * fill_length + blank * (length - fill_length)
+    
+    sys.stdout.write('\r[{:s}] {:4}/{:4}'.format(bar, i, n))
+    sys.stdout.flush()
+ 
+
+def random_arrivals(routes, n):
+    print('random arrivals')
+    
+    m = n * len(routes)
+    for i in range(m):
+        
+        if (i % 10) == 0:
+            progress_bar(i, m)
+   
+        k = random.randrange(len(routes))
+        routes[k].schedule(0)
+
+
 def test_1(n):
     print('single rail')
     points = [
@@ -84,12 +112,14 @@ def show_routes(routes):
     print('routes')
     t = 0
     for r in routes:
-        #r.show()
+        r.show()
         t1 = r.throughput()
         print('\t{:4} {:8.2f}'.format(len(r.departures), t1))
         t += t1
-
+    
+    print('count speed decrease {:8}'.format(Route.count_speed_decrease))
     print('{:8.2f}'.format(t))
+    return t
 
 def test_2(n):
     print('simple crossing')
@@ -143,18 +173,6 @@ def test_3(n):
             r.schedule(0)
 
     show_routes(routes)
-
-def random_arrivals(routes, n):
-    print('random arrivals')
-    
-    m = n * len(routes)
-    for i in range(m):
-        
-        if (i % 10) == 0:
-            print('{:4}/{:4}'.format(i, m))
-
-        k = random.randrange(len(routes))
-        routes[k].schedule(0)
 
 def test_4(n):
     points = [
@@ -310,7 +328,7 @@ def test_6a(n, a):
     show_routes(routes)
     plot_routes(routes)
 
-def test_6(n, a, train_length=1, d=1, route_options={}):
+def test_6(n, a, args, d=1, route_options={}):
     print('merge bus')
     #points0, points1, points2, pl0, pl1 = merge_bus_1(a, [0,0])
  
@@ -321,11 +339,15 @@ def test_6(n, a, train_length=1, d=1, route_options={}):
 
     #routes = [Route(edges([point0] + pl)) for pl in pl0] + [Route(edges([point1] + pl)) for pl in pl1]
     #routes = [Route(edges(pl), train_length, **route_options) for pl in pl0] + [Route(edges(pl), train_length, **route_options) for pl in pl1]
-    routes = [Route(edges(pl), train_length, **route_options) for pl in pl0 + pl1]
+    routes = [Route(edges(pl), **route_options) for pl in pl0 + pl1]
 
     random_arrivals(routes, n)
-    show_routes(routes)
-    plot_routes(routes)
+    throughput = show_routes(routes)
+
+    if args.plot:
+        plot_routes(routes)
+    
+    return throughput
 
 def test_7_routes(samples, n):
 
@@ -428,15 +450,25 @@ def test_crossing_1():
     test_crossing(100, 4)
 
 if __name__ == '__main__':
-    
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--plot', action='store_true')
+    args = parser.parse_args()
+
     #test_1(10)
     #test_3(100)
     #test_4(100)
     #test_5(100, 2)
     #test_6a(100, 4)
     
+    #x = np.logspace(-3, 0, 50)
 
-    test_6(100, 3, train_length=1, d=1, route_options={'allow_speed_reduce': False})
+    #y = [test_6(500, 3, args, train_length=1, d=1, route_options={'allow_speed_decrease': True, 'speed_min': speed_min}) for speed_min in x]
+   
+    #plt.plot(x, y)
+    #plt.show()
+
+    test_6(100, 6, args, d=1, route_options={'allow_speed_decrease': True, 'speed_min': 0.1, 'train_length': 1})
 
     #test_7(100, 4)
     

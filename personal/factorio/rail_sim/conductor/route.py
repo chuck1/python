@@ -1,5 +1,6 @@
 import random
 import math
+import numpy as np
 
 from .window import *
 
@@ -34,25 +35,46 @@ class Schedule:
         
         raise RuntimeError()
 
+    def cleanup_points(self):
+        """
+        when a route creates a schedule, we know that when the route creates the next schedule
+        the second schedule will have values of t_0 for each point greater than those for the first schedule
+        """
+
+        for p in self.route.points():
+
+            w = self.point_window(p)
+
+            p.t_0[self.route] = w.t_0
+
+            p.cleanup()
+
+    def width(self):
+        t0 = self.point_window(self.route.point_first()).t_0
+        t1 = self.point_window(self.route.point_last()).t_1
+        return t1 - t0
 
 class Route:
     speed_max = 1.2
-    speed_min = 0.8
     speed = 1
+    count_speed_decrease = 0
     
-    
-
-    def __init__(self, edges, train_length=1, allow_speed_reduce=True):
+    def __init__(self, edges, train_length=1, allow_speed_decrease=True, speed_min=0.5):
         self.edges = edges
         
         self.train_length = train_length
 
-        self.allow_speed_reduce = allow_speed_reduce
+        self.allow_speed_decrease = allow_speed_decrease
+        self.speed_min = speed_min
 
         for e in self.edges:
             e.route = self
 
         self.departures = []
+        self.schedules = []
+
+        # first possible t_0 for first point
+        self.t_0 = 0
 
     def point_index(self, p0):
         points = list(self.points())
@@ -78,7 +100,7 @@ class Route:
         # reduce speed of edge before point p in order to avoid reserved window of p
         # previous points should not be affected
 
-        if not self.allow_speed_reduce: return False
+        if not self.allow_speed_decrease: return False
 
         i = self.point_index(p)
         if i == 0: return False
@@ -93,6 +115,9 @@ class Route:
         if speed1 < self.speed_min: return False
 
         #print('reduce speed from {} to {} for edge {}'.format(speed0, speed1, i-1))
+
+        Route.count_speed_decrease += 1
+
         #print('to avoid window {:8.2f} {:8.2f}'.format(w.t_0, w.t_1))
 
         s.speed[i-1] = speed1
@@ -114,44 +139,45 @@ class Route:
                 print("\t{:8.2f} {:8.2f}".format(w.t_0, w.t_1))
 
         
-        restart_point_check = True
-        while restart_point_check:
-            restart_point_check = False
-            for w in p.reserved:
-    
-                #W0 = w0 + t
-                
-                W0 = s.point_window(p)
+        for w in p.reserved:
+
+            #W0 = w0 + t
             
-                if W0.t_1 <= w.t_0:
-                    return t, t_changed
+            W0 = s.point_window(p)
+        
+            if W0.t_1 <= w.t_0:
+                return t, t_changed
+            
+            elif W0.t_0 < w.t_1 - 1e-10:
                 
-                elif W0.t_0 < w.t_1 - 1e-10:
-                    
-                    t_d = w.t_1 - W0.t_0
-                    
-                    if self.try_reduce_speed(p, t, s, t_d, w): 
-                        #restart_point_check = True
+                t_d = w.t_1 - W0.t_0
+                
+                if self.try_reduce_speed(p, t, s, t_d, w): 
 
-                        W0 = s.point_window(p)
-                        
-                        p.check_window(W0)
-                        #assert((W0.t_1 <= w.t_0) or (W0.t_0 >= w.t_1))
+                    W0 = s.point_window(p)
+                    
+                    p.check_window(W0)
+                    #assert((W0.t_1 <= w.t_0) or (W0.t_0 >= w.t_1))
 
-                        #break
-                    else:
-                        #print('{} < {}'.format(W0.t_0, w.t_1))
-                        #print('t changed ', t, w.t_1 - w0.t_0)
-                        t = w.t_1 - w0.t_0
-                        t_changed = True
+                    #break
+                else:
+                    #print('{} < {}'.format(W0.t_0, w.t_1))
+                    #print('t changed ', t, w.t_1 - w0.t_0)
+                    t = w.t_1 - w0.t_0
+                    t_changed = True
         
         return t, t_changed
 
     def schedule(self, t):
-        
 
+        t = max(t, self.t_0)
+        
         # find valid time
         
+        #self.t_0 = self.point_first().first_possible_t_0(self.t_0, self.train_length / self.speed)
+        #t = self.t_0
+        #print('schedule t = {:8.2f}'.format(t))
+
         t_changed = True
         while t_changed:
             
@@ -163,7 +189,13 @@ class Route:
             for p in self.points():
                 t, t_changed = self.check_point(p, t, s)
                 if t_changed: break
+        
+        self.t_0 = t
+        #self.point_first().t_0[self] = t
 
+        #self.point_first().cleanup()
+
+        s.cleanup_points()
 
         # reserve times in points
 
@@ -176,9 +208,13 @@ class Route:
             p.reserve(W)
 
         self.departures.append(t)
+        self.schedules.append(s)
 
     def point_first(self):
         return self.edges[0].p0
+
+    def point_last(self):
+        return self.edges[-1].p1
 
     def points(self):
         yield self.edges[0].p0
@@ -190,18 +226,31 @@ class Route:
             yield e.p1
 
     def show(self):
+
+        widths = [s.width() for s in self.schedules]
+
         print('route')
-        print('\tpoints')
-        for p in self.points():
-            print('\t\t{:16} {:16}'.format(str(p.position), str(self.time_to_point(p))))
-        print('\twindows')
-        for w in self.windows:
-            print('\t\t{:8.1f} {:8.1f}'.format(w.t_0, w.t_1))
-        print('\tdepartures')
-        print('\t\t{}'.format(self.departures))
+    
+        if False:
+            print('\tpoints')
+            for p in self.points():
+                print('\t\t{:16} {:16}'.format(str(p.position), str(self.time_to_point(p))))
+
+            print('\twindows')
+            for w in self.windows:
+                print('\t\t{:8.1f} {:8.1f}'.format(w.t_0, w.t_1))
+
+            print('\tdepartures')
+            print('\t\t{}'.format(self.departures))
+
+        print('\tschedule width average {:8.2f} std {:8.2f}'.format(np.average(widths), np.std(widths)))
 
     def throughput(self):
-        return len(self.departures) / max(self.departures)
+
+        t_1 = [s.point_window(self.point_last()).t_1 for s in self.schedules]
+        
+        #return len(self.departures) / max(self.departures)
+        return len(self.departures) / max(t_1)
 
     def plot(self, ax):
     

@@ -11,6 +11,9 @@ class Point:
         self.edges = []
 
         self.reserved = []
+        self.reserved0 = []
+
+        self.t_0 = {}
 
     def check_window(self, w1):
 
@@ -28,16 +31,44 @@ class Point:
             print('but conflicts with window {:8.2f} {:8.2f}'.format(w.t_0, w.t_1))
             raise RuntimeError()
 
-    def first_possible_t_0(self, width, t_0):
+    def min_t_0(self):
+        T = self.t_0.values()
+        if not T:
+            return 0
+        return min(T)
 
-        pass
+    def routes(self):
+        ret = []
+        for e in self.edges:
+            if e.route not in ret:
+                ret.append(e.route)
+        return ret
+
+    def cleanup(self):
+        t_0 = self.min_t_0()
+        i = 0
+
+        self.reserved = sorted(self.reserved, key=lambda w: w.t_0)
+
+        for w in self.reserved:
+
+            if w.t_1 <= t_0:
+                i += 1
+            else:
+                break
+
+        self.reserved = self.reserved[i:]
 
     def reserve(self, w):
         self.check_window(w)
         self.reserved.append(w)
+        self.reserved0.append(w)
 
         #for e in self.edges:
         #    W = e.route.time_to_point(self)
         #    e.route.windows.append(Window(t_0 - W.t_1, t_1 - W.t_0))
+
+
+
 
 
