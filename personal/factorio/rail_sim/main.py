@@ -145,11 +145,16 @@ def test_3(n):
     show_routes(routes)
 
 def random_arrivals(routes, n):
-    for i in range(n):
-        for j in range(len(routes)):
-            k = random.randrange(len(routes))
-            print('schdule route', k)
-            routes[k].schedule(0)
+    print('random arrivals')
+    
+    m = n * len(routes)
+    for i in range(m):
+        
+        if (i % 10) == 0:
+            print('{:4}/{:4}'.format(i, m))
+
+        k = random.randrange(len(routes))
+        routes[k].schedule(0)
 
 def test_4(n):
     points = [
@@ -305,7 +310,7 @@ def test_6a(n, a):
     show_routes(routes)
     plot_routes(routes)
 
-def test_6(n, a, train_length=1, d=1):
+def test_6(n, a, train_length=1, d=1, route_options={}):
     print('merge bus')
     #points0, points1, points2, pl0, pl1 = merge_bus_1(a, [0,0])
  
@@ -315,7 +320,8 @@ def test_6(n, a, train_length=1, d=1):
     points2, pl0, pl1 = two_to_bus(a, [0, 10], d)
 
     #routes = [Route(edges([point0] + pl)) for pl in pl0] + [Route(edges([point1] + pl)) for pl in pl1]
-    routes = [Route(edges(pl), train_length) for pl in pl0] + [Route(edges(pl), train_length) for pl in pl1]
+    #routes = [Route(edges(pl), train_length, **route_options) for pl in pl0] + [Route(edges(pl), train_length, **route_options) for pl in pl1]
+    routes = [Route(edges(pl), train_length, **route_options) for pl in pl0 + pl1]
 
     random_arrivals(routes, n)
     show_routes(routes)
@@ -428,7 +434,10 @@ if __name__ == '__main__':
     #test_4(100)
     #test_5(100, 2)
     #test_6a(100, 4)
-    test_6(10, 3, train_length=1, d=1)
+    
+
+    test_6(100, 3, train_length=1, d=1, route_options={'allow_speed_reduce': False})
+
     #test_7(100, 4)
     
     #test_crossing(10, 2)

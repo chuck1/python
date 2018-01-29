@@ -36,12 +36,18 @@ class Schedule:
 
 
 class Route:
+    speed_max = 1.2
+    speed_min = 0.8
     speed = 1
+    
+    
 
-    def __init__(self, edges, train_length=1):
+    def __init__(self, edges, train_length=1, allow_speed_reduce=True):
         self.edges = edges
         
         self.train_length = train_length
+
+        self.allow_speed_reduce = allow_speed_reduce
 
         for e in self.edges:
             e.route = self
@@ -72,6 +78,8 @@ class Route:
         # reduce speed of edge before point p in order to avoid reserved window of p
         # previous points should not be affected
 
+        if not self.allow_speed_reduce: return False
+
         i = self.point_index(p)
         if i == 0: return False
 
@@ -82,10 +90,10 @@ class Route:
 
         speed1 = self.edges[i-1].length() / dur1
         
-        if speed1 / speed0 < 0.8: return False
+        if speed1 < self.speed_min: return False
 
-        print('reduce speed from {} to {} for edge {}'.format(speed0, speed1, i-1))
-        print('to avoid window {:8.2f} {:8.2f}'.format(w.t_0, w.t_1))
+        #print('reduce speed from {} to {} for edge {}'.format(speed0, speed1, i-1))
+        #print('to avoid window {:8.2f} {:8.2f}'.format(w.t_0, w.t_1))
 
         s.speed[i-1] = speed1
 

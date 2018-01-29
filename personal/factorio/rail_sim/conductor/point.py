@@ -28,6 +28,10 @@ class Point:
             print('but conflicts with window {:8.2f} {:8.2f}'.format(w.t_0, w.t_1))
             raise RuntimeError()
 
+    def first_possible_t_0(self, width, t_0):
+
+        pass
+
     def reserve(self, w):
         self.check_window(w)
         self.reserved.append(w)
