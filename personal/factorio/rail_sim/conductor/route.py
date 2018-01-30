@@ -26,16 +26,25 @@ class Schedule:
 
         t_0 = self.t_0
 
-        if self.route.point_first() == p0: return Window(t_0, t_0 + self.route.train_length / self.route.speed)
+        if self.route.point_first() == p0:
+            return Window(t_0, t_0 + self.route.train_length / self.route.speed, None, self.route.edges[0])
 
         for e, s in zip(self.route.edges, self.speed):
             p = e.p1
 
             t_0 += e.length() / s
 
-            if p == p0: return Window(t_0, t_0 + self.route.train_length / self.route.speed)
+            if p == p0:
+                return Window(t_0, t_0 + self.route.train_length / self.route.speed, e, self.route.edge_next(e))
         
         raise RuntimeError()
+
+    def edge_window(self, e):
+
+        w0 = self.point_window(e.p0)
+        w1 = self.point_window(e.p1)
+
+        return w0.t_0, w1.t_1
 
     def cleanup_points(self):
         """
@@ -76,7 +85,7 @@ class Route:
         self.speed_min = speed_min
 
         for e in self.edges:
-            e.route = self
+            e.routes.append(self)
 
         self.departures = []
         self.schedules = []
@@ -95,14 +104,12 @@ class Route:
         t = 0
         
         if p == self.edges[0].p0:
-            return Window(t, t + self.train_length / self.speed)
+            return Window(t, t + self.train_length / self.speed, None, self.edges[0])
 
         for e in self.edges:
             t += e.length() / self.speed
             if e.p1 == p:
-                break
-
-        return Window(t, t + self.train_length / self.speed)
+                return Window(t, t + self.train_length / self.speed, e, self.edge_next(e))
 
     def try_reduce_speed(self, p, t, s, t_d, w):
         # reduce speed of edge before point p in order to avoid reserved window of p
@@ -298,6 +305,22 @@ class Route:
         Y = [self.edges[0].p0.position[1]] + [e.p1.position[1] for e in self.edges]
 
         ax.plot(X, Y, '-o')
+
+    def edge_next(self, e0):
+        
+        edges = iter(self.edges)
+
+        for e in edges:
+            if e == e0:
+                break
+        
+        try:
+            return next(edges)
+        except StopIteration:
+            return None
+        
+
+
 
 
 

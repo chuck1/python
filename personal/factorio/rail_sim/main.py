@@ -8,6 +8,7 @@ import argparse
 
 from conductor.route import *
 from conductor.point import *
+from conductor.edge import *
 
 def repeat(S):
     while True:
@@ -45,21 +46,8 @@ class Points:
             ax.plot(x, y + i * o)
 
 
-class Edge:
-    def __init__(self, p0, p1):
-        self.p0 = p0
-        self.p1 = p1
-
-        self.p0.edges.append(self)
-        self.p1.edges.append(self)
-
-    def length(self):
-        x = self.p1.position[0] - self.p0.position[0]
-        y = self.p1.position[1] - self.p0.position[1]
-        return math.sqrt(x*x + y*y)
-
 def edges(points):
-    return [Edge(p0, p1) for p0, p1 in zip(points[:-1], points[1:])]
+    return [Edges.edge(p0, p1) for p0, p1 in zip(points[:-1], points[1:])]
 
 def route(points, indices=None):
     if indices is None:
@@ -67,7 +55,7 @@ def route(points, indices=None):
     else:
         p = [points[i] for i in indices]
 
-    return Route([Edge(p0, p1) for p0, p1 in zip(p[:-1], p[1:])])
+    return Route(edges(p))
 
 def progress_bar(i, n):
     length = 100
@@ -376,14 +364,24 @@ def test_7_routes(samples, n):
 
 def plot_routes(routes):
     fig = plt.figure()
-    ax = fig.add_subplot(211)
+    ax = fig.add_subplot(221)
 
     for r in routes:
         r.plot(ax)
     
-    ax = fig.add_subplot(212)
+    ax = fig.add_subplot(222)
 
     Points(routes).plot(ax)
+
+    ax = fig.add_subplot(223)
+
+    Edges.plot(ax)
+    #ax.legend()
+
+    for e in Edges.edges:
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        e.train_position_plots(ax)
 
     plt.show()
 
@@ -491,7 +489,7 @@ if __name__ == '__main__':
     #test_6(args.n, 4, args, d=1, route_options=route_options)
 
     #route_options={'allow_speed_decrease': True, 'speed_min': 0.5, 'train_length': 1}
-    #test_6(args.n, 4, args, d=1, route_options=route_options)
+    #test_6(args.n, 3, args, d=1, route_options=route_options)
 
     test_7(args.n, 4, args, route_options=route_options)
     

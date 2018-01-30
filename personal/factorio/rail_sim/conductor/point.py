@@ -4,10 +4,7 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 
-class Event:
-    def __init__(self, t, y):
-        self.t = t
-        self.y = y
+from .event import *
 
 class Point:
     def __init__(self, position):
@@ -129,8 +126,9 @@ class Point:
     def routes(self):
         ret = []
         for e in self.edges:
-            if e.route not in ret:
-                ret.append(e.route)
+            for route in e.routes:
+                if route not in ret:
+                    ret.append(route)
         return ret
 
     def cleanup(self):
@@ -151,8 +149,8 @@ class Point:
     def reserve(self, w):
 
         self.check_window(w)
-        self.reserved.append(copy.deepcopy(w))
-        self.reserved0.append(copy.deepcopy(w))
+        self.reserved.append(w)#copy.deepcopy(w))
+        self.reserved0.append(w)#copy.deepcopy(w))
 
 
 
