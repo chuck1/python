@@ -18,6 +18,7 @@ class Point:
         self.reserved = []
         self.reserved0 = []
 
+        # key is Route
         self.t_0 = {}
         
     def occupancy(self):
@@ -40,7 +41,6 @@ class Point:
             x.append(e.t)
             y.append(y[-1] + e.y)
 
-
         return x, y
 
     def check_window(self, w1):
@@ -62,7 +62,7 @@ class Point:
             raise RuntimeError()
 
     def check(self):
-        print('check')
+        #print('check')
 
         self.reserved0 = sorted(self.reserved0, key=lambda w: w.t_0)
         
@@ -74,14 +74,14 @@ class Point:
                 if w0 == w1: continue
                 if w1.t_0 < w0.t_0: continue
                 
-                print('[{:8.2f} {:8.2f}] [{:8.2f} {:8.2f}]'.format(w0.t_0, w0.t_1, w1.t_0, w1.t_1))
+                #print('[{:8.2f} {:8.2f}] [{:8.2f} {:8.2f}]'.format(w0.t_0, w0.t_1, w1.t_0, w1.t_1))
 
                 if w0.t_1 <= w1.t_0 + 1e-10:
-                    print('w0.t_1 <= w1.t_0')
+                    #print('w0.t_1 <= w1.t_0')
                     continue
                 
                 if w0.t_0 >= w1.t_1 - 1e-10:
-                    print('w0.t_0 >= w1.t_1')
+                    #print('w0.t_0 >= w1.t_1')
                     continue
 
                 print(w1.t_1 - w0.t_0)
@@ -93,10 +93,38 @@ class Point:
                 raise RuntimeError()
 
     def min_t_0(self):
-        T = self.t_0.values()
-        if not T:
-            return 0
+
+        for route in self.routes():
+            for p in route.points_up_to(self):
+                if not p.t_0_set():
+                    return 0
+
+        for route in self.routes():
+            if route not in self.t_0:
+                return 0
+
+        #T = self.t_0.values()
+        
+        #if not T:
+        #    return 0
+        
+        #return min(T)
+        
+        T = []
+        for route in self.routes():
+            p0 = route.point_first()
+            if p0 == self:
+                T.append(self.t_0[route])
+            else:
+                T.append(p0.min_t_0())
+
         return min(T)
+
+    def t_0_set(self):
+        for route in self.routes():
+            if route not in self.t_0:
+                return False
+        return True
 
     def routes(self):
         ret = []
@@ -113,7 +141,7 @@ class Point:
 
         for w in self.reserved:
 
-            if w.t_1 <= t_0:
+            if w.t_1 <= t_0 - 10:
                 i += 1
             else:
                 break

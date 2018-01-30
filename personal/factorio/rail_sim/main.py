@@ -1,3 +1,4 @@
+import functools
 import sys
 import random
 import math
@@ -77,7 +78,7 @@ def progress_bar(i, n):
 
     bar = fill * fill_length + blank * (length - fill_length)
     
-    sys.stdout.write('\r[{:s}] {:4}/{:4}\n'.format(bar, i, n))
+    sys.stdout.write('\r[{:s}] {:4}/{:4}'.format(bar, i, n))
     sys.stdout.flush()
  
 
@@ -439,25 +440,35 @@ def crossing(n):
     return pl_a, pl_b
 
 
-def test_crossing(samples, n):
+def test_crossing(samples, n, args, route_options={}):
     pl0, pl1 = crossing(n)
     
     print(pl0)
     print(pl1)
 
-    routes = [Route(edges(pl)) for pl in pl0] + [Route(edges(pl)) for pl in pl1]
+    routes = [Route(edges(pl), **route_options) for pl in pl0] + [Route(edges(pl)) for pl in pl1]
 
     random_arrivals(routes, samples)
-    show_routes(routes)
-    plot_routes(routes)
+    t = show_routes(routes)
 
+    if args.plot:
+        plot_routes(routes)
 
+    return t
 
 def test_crossing_1():
     test_crossing(100, 1)
     test_crossing(100, 2)
     test_crossing(100, 3)
     test_crossing(100, 4)
+
+def test_speed_max(f):
+    x = np.logspace(-3, 0, 20)
+    
+    y = [f(route_options={'allow_speed_decrease': True, 'speed_min': speed_min}) for speed_min in x]
+
+    plt.plot(x, y)
+    plt.show()
 
 if __name__ == '__main__':
 
@@ -472,20 +483,19 @@ if __name__ == '__main__':
     #test_5(100, 2)
     #test_6a(100, 4)
     
-    #x = np.logspace(-3, 0, 50)
+    #test_speed_max(functools.partial(test_6, args.n, 3, args, d=1, ))
 
-    #y = [test_6(500, 3, args, train_length=1, d=1, route_options={'allow_speed_decrease': True, 'speed_min': speed_min}) for speed_min in x]
+    #test_speed_max(functools.partial(test_crossing, args.n, 2, args))
    
-    #plt.plot(x, y)
-    #plt.show()
-    
-    route_options={'allow_speed_decrease': True, 'speed_min': 1.0, 'train_length': 1}
+    route_options={'allow_speed_decrease': True, 'speed_min': 0.1, 'train_length': 1}
+    #test_6(args.n, 4, args, d=1, route_options=route_options)
 
-    test_6(args.n, 4, args, d=1, route_options=route_options)
+    #route_options={'allow_speed_decrease': True, 'speed_min': 0.5, 'train_length': 1}
+    #test_6(args.n, 4, args, d=1, route_options=route_options)
 
-    #test_7(args.n, 4, args, route_options=route_options)
+    test_7(args.n, 4, args, route_options=route_options)
     
-    #test_crossing(args.n, 2)
+    #test_crossing(args.n, 2, args)
 
 
 

@@ -4,6 +4,8 @@ import numpy as np
 
 from .window import *
 
+DEBUG = False
+
 """
 for implementing adjustable speed
 
@@ -40,12 +42,18 @@ class Schedule:
         when a route creates a schedule, we know that when the route creates the next schedule
         the second schedule will have values of t_0 for each point greater than those for the first schedule
         """
-
+        
+        t_0 = self.point_window(self.route.point_first()).t_0
+        
         for p in self.route.points():
 
-            w = self.point_window(p)
+            #w = self.point_window(p)
+            
+            #p.t_0[self.route] = w.t_0
 
-            p.t_0[self.route] = w.t_0
+            w = self.route.time_to_point(p)
+
+            p.t_0[self.route] = t_0 + w.t_0
 
             p.cleanup()
 
@@ -130,20 +138,42 @@ class Route:
 
         p.reserved = sorted(p.reserved, key=lambda w: w.t_0)
         
-        #print("check_point", p.position)
-        if False:
+        W0 = s.point_window(p)
+        
+        if DEBUG:
+            print('route points')
+            for p0 in self.points():
+                print("{} t_0_set = {:5} min_t_0 = {:8.2f} t_0 = {:8.2f}".format(self.point_index(p0), str(p0.t_0_set()), p0.min_t_0(), p0.t_0[self] if self in p0.t_0 else -1))
+
+            print("t =                  {}".format(t))
+            print("check_point {}".format(self.point_index(p)))
+            print("\tt_0_set =            {}".format(p.t_0_set()))
+            print("\tmin_t_0 =            {}".format(p.min_t_0()))
+            print("\tW0.t_0 =             {}".format(W0.t_0))
+            if self in p.t_0:
+                print("\tt_0 for this route = {}".format(p.t_0[self]))
+
             print('reserved')
             for w in p.reserved:
                 print("\t{:8.2f} {:8.2f}".format(w.t_0, w.t_1))
 
+        if W0.t_0 < p.min_t_0():
+            raise RuntimeError()
+
         
-        for w in p.reserved0:
+        for w in p.reserved:
 
             #W0 = w0 + t
             
             W0 = s.point_window(p)
         
             if W0.t_1 <= w.t_0:
+
+                #print("W0.t_1 <= w.t_0")
+                #print("{} <= {}".format(W0.t_1, w.t_0))
+
+                p.check_window(W0)
+
                 return t, t_changed
             
             elif W0.t_0 < w.t_1 - 1e-10:
@@ -153,9 +183,13 @@ class Route:
                 if self.try_reduce_speed(p, t, s, t_d, w): 
 
                     W0 = s.point_window(p)
+
+                    if DEBUG:
+                        print("speed decrease")
+                        print("window       {:8.2f} {:8.2f}".format(W0.t_0, W0.t_1))
+                        print("avoid window {:8.2f} {:8.2f}".format(w.t_0, w.t_1))
                     
-                    p.check_window(W0)
-                    #assert((W0.t_1 <= w.t_0) or (W0.t_0 >= w.t_1))
+                    #p.check_window(W0)
 
                     #break
                 else:
@@ -164,14 +198,13 @@ class Route:
 
                     w0 = self.time_to_point(p)
                     t = w.t_1 - w0.t_0
-                    t_changed = True
                     return t, True
         
         return t, t_changed
 
     def schedule(self, t):
 
-        t = max(t, self.t_0)
+        t = max(t, self.point_first().min_t_0())
         
         # find valid time
         
@@ -219,6 +252,14 @@ class Route:
         yield self.edges[0].p0
         for e in self.edges:
             yield e.p1
+
+    def points_up_to(self, p):
+        yield self.edges[0].p0
+        if self.edges[0].p0 == p: return
+
+        for e in self.edges:
+            yield e.p1
+            if e.p1 == p: return
 
     def points_not_first(self):
         for e in self.edges:
