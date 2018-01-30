@@ -23,6 +23,9 @@ class Points:
                 if p not in self.points:
                     self.points.append(p)
 
+        for p in self.points:
+            p.check()
+
     def plot(self, ax):
         
         o = 0
@@ -74,7 +77,7 @@ def progress_bar(i, n):
 
     bar = fill * fill_length + blank * (length - fill_length)
     
-    sys.stdout.write('\r[{:s}] {:4}/{:4}'.format(bar, i, n))
+    sys.stdout.write('\r[{:s}] {:4}/{:4}\n'.format(bar, i, n))
     sys.stdout.flush()
  
 
@@ -478,7 +481,7 @@ if __name__ == '__main__':
     
     route_options={'allow_speed_decrease': True, 'speed_min': 1.0, 'train_length': 1}
 
-    test_6(args.n, 6, args, d=1, route_options=route_options)
+    test_6(args.n, 2, args, d=1, route_options=route_options)
 
     #test_7(args.n, 4, args, route_options=route_options)
     

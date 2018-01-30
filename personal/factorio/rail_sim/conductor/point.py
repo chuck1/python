@@ -19,7 +19,7 @@ class Point:
         self.reserved0 = []
 
         self.t_0 = {}
-
+        
     def occupancy(self):
     
         events = []
@@ -46,12 +46,12 @@ class Point:
     def check_window(self, w1):
         
         self.reserved0 = sorted(self.reserved0, key=lambda w: w.t_0)
-
+        
         for w in self.reserved0:
             if w1.t_1 <= w.t_0:
                 continue
 
-            if w1.t_0 >= w.t_1 - 1e10:
+            if w1.t_0 >= w.t_1 - 1e-10:
                 continue
             
             print(w1.t_1 - w.t_0)
@@ -60,6 +60,31 @@ class Point:
             print('trying to reserve window  {:8.2f} {:8.2f}'.format(w1.t_0, w1.t_1))
             print('but conflicts with window {:8.2f} {:8.2f}'.format(w.t_0, w.t_1))
             raise RuntimeError()
+
+    def check(self):
+        print('check')
+
+        self.reserved0 = sorted(self.reserved0, key=lambda w: w.t_0)
+        
+        #for w in self.reserved0:
+        #    print('[{:8.2f} {:8.2f}]'.format(w.t_0, w.t_1))
+
+        for w0 in self.reserved0:
+            for w1 in self.reserved0:
+                if w0 == w1: continue
+                if w1.t_0 < w0.t_0: continue
+                
+                print('[{:8.2f} {:8.2f}] [{:8.2f} {:8.2f}]'.format(w0.t_0, w0.t_1, w1.t_0, w1.t_1))
+
+                if w0.t_1 <= w1.t_0:
+                    print('w0.t_1 <= w1.t_0')
+                    continue
+                
+                if w0.t_0 >= w1.t_1 - 1e-10:
+                    print('w0.t_0 >= w1.t_1')
+                    continue
+                
+                raise RuntimeError()
 
     def min_t_0(self):
         T = self.t_0.values()
@@ -92,7 +117,7 @@ class Point:
     def reserve(self, w):
 
         self.check_window(w)
-        self.reserved.append(w)
+        self.reserved.append(copy.deepcopy(w))
         self.reserved0.append(copy.deepcopy(w))
 
 
