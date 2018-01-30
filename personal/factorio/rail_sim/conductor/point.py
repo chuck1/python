@@ -1,8 +1,13 @@
+import copy
 import random
 import math
 import numpy as np
 import matplotlib.pyplot as plt
 
+class Event:
+    def __init__(self, t, y):
+        self.t = t
+        self.y = y
 
 class Point:
     def __init__(self, position):
@@ -14,6 +19,29 @@ class Point:
         self.reserved0 = []
 
         self.t_0 = {}
+
+    def occupancy(self):
+    
+        events = []
+
+        for w in self.reserved0:
+            events.append(Event(w.t_0, 1))
+            events.append(Event(w.t_1, -1))
+
+        events = sorted(events, key=lambda e: e.t)
+
+        x = [0]
+        y = [0]
+
+        for e in events:
+            x.append(e.t)
+            y.append(y[-1])
+
+            x.append(e.t)
+            y.append(y[-1] + e.y)
+
+
+        return x, y
 
     def check_window(self, w1):
         
@@ -62,9 +90,10 @@ class Point:
         self.reserved = self.reserved[i:]
 
     def reserve(self, w):
+
         self.check_window(w)
         self.reserved.append(w)
-        self.reserved0.append(w)
+        self.reserved0.append(copy.deepcopy(w))
 
 
 

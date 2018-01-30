@@ -126,7 +126,6 @@ class Route:
 
     def check_point(self, p, t, s):
 
-        w0 = self.time_to_point(p)
         
         t_changed = False
 
@@ -163,8 +162,11 @@ class Route:
                 else:
                     #print('{} < {}'.format(W0.t_0, w.t_1))
                     #print('t changed ', t, w.t_1 - w0.t_0)
+
+                    w0 = self.time_to_point(p)
                     t = w.t_1 - w0.t_0
                     t_changed = True
+                    return t, True
         
         return t, t_changed
 
@@ -183,7 +185,6 @@ class Route:
             
             #print('check points {:8.2f}'.format(t))
 
-            #s = Schedule(self, self.time_to_point(self.point_first()) + t)
             s = Schedule(self, t)
             
             for p in self.points():
@@ -200,7 +201,6 @@ class Route:
         # reserve times in points
 
         for p in self.points():
-            #w = self.time_to_point(p)
             #W = w + t
             
             W = s.point_window(p)
@@ -234,7 +234,7 @@ class Route:
         if False:
             print('\tpoints')
             for p in self.points():
-                print('\t\t{:16} {:16}'.format(str(p.position), str(self.time_to_point(p))))
+                print('\t\t{:16}'.format(str(p.position)))
 
             print('\twindows')
             for w in self.windows:

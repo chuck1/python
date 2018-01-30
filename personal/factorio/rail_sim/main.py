@@ -8,9 +8,6 @@ import argparse
 from conductor.route import *
 from conductor.point import *
 
-speed = 1
-train_length = 1
-
 def repeat(S):
     while True:
         for s in S:
@@ -28,13 +25,20 @@ class Points:
 
     def plot(self, ax):
         
+        o = 0
+
         for i, p in zip(range(len(self.points)), self.points):
+            
+            x = [min(w.t_0 for w in p.reserved0), max(w.t_1 for w in p.reserved0)]
+            ax.plot(x, [i * o] * 2, 'k', linewidth=.5)
+            ax.plot(x, [i * o + 1] * 2, 'k', linewidth=.5)
 
-            ax.plot([min(w.t_0 for w in p.reserved0), max(w.t_1 for w in p.reserved0)], [i - 0.5] * 2)
-            ax.plot([min(w.t_0 for w in p.reserved0), max(w.t_1 for w in p.reserved0)], [i + 0.5] * 2)
+            #for w, y in zip(p.reserved0, repeat([-.1, .1])):
+            #    ax.plot([w.t_0, w.t_1], [i + y] * 2, '-o')
 
-            for w, y in zip(p.reserved0, repeat([-.1, .1])):
-                ax.plot([w.t_0, w.t_1], [i + y] * 2, '-o')
+            x, y = p.occupancy()
+            y = np.array(y)
+            ax.plot(x, y + i * o)
 
 
 class Edge:
@@ -474,11 +478,11 @@ if __name__ == '__main__':
     
     route_options={'allow_speed_decrease': True, 'speed_min': 1.0, 'train_length': 1}
 
-    #test_6(100, 6, args, d=1, route_options={'allow_speed_decrease': True, 'speed_min': 0.1, 'train_length': 1})
+    test_6(args.n, 6, args, d=1, route_options=route_options)
 
-    test_7(args.n, 4, args, route_options=route_options)
+    #test_7(args.n, 4, args, route_options=route_options)
     
-    #test_crossing(10, 2)
+    #test_crossing(args.n, 2)
 
 
 

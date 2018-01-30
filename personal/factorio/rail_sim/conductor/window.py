@@ -1,6 +1,9 @@
 
 class Window:
     def __init__(self, t_0, t_1):
+        if t_0 > t_1:
+            raise RuntimeError()
+
         self.t_0 = t_0
         self.t_1 = t_1
 
