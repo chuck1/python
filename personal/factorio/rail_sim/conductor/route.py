@@ -6,76 +6,20 @@ from .window import *
 from .edge_window import *
 
 DEBUG = False
+       
 
-"""
-for implementing adjustable speed
+def schedule(s):
 
-store:
-list of speeds corresponding to edges
-start time
-"""
-class Schedule:
-    def __init__(self, route, t_0):
-        self.route = route
-        self.t_0 = t_0
-        self.speed = [self.route.speed] * len(self.route.edges)
+    c = s.find_conflict()
 
-    """
-    return the entry and exit times for point p
-    """
-    def point_window(self, p0):
+    if c is None:
+        return s
+    
+    for s1 in c.fixes():
+        s2 = schedule(s1)
+        if s2 is not None:
+            return s2
 
-        t_0 = self.t_0
-
-        if self.route.point_first() == p0:
-            return Window(t_0, t_0 + self.route.train_length / self.route.speed, None, self.route.edges[0])
-
-        for e, s in zip(self.route.edges, self.speed):
-            p = e.p1
-
-            t_0 += e.length() / s
-
-            if p == p0:
-                return Window(t_0, t_0 + self.route.train_length / self.route.speed, e, self.route.edge_next(e))
-        
-        raise RuntimeError()
-
-    def edge_speed(self, edge):
-        for e, s in zip(self.route.edges, self.speed):
-            if e == edge:
-                return s
-
-    def edge_window(self, e):
-
-        w0 = self.point_window(e.p0)
-        w1 = self.point_window(e.p1)
-
-        return EdgeWindow(e, self, w0.t_0, w1.t_0)
-
-    def cleanup_points(self):
-        """
-        when a route creates a schedule, we know that when the route creates the next schedule
-        the second schedule will have values of t_0 for each point greater than those for the first schedule
-        """
-        
-        t_0 = self.point_window(self.route.point_first()).t_0
-        
-        for p in self.route.points():
-
-            #w = self.point_window(p)
-            
-            #p.t_0[self.route] = w.t_0
-
-            w = self.route.time_to_point(p)
-
-            p.t_0[self.route] = t_0 + w.t_0
-
-            p.cleanup()
-
-    def width(self):
-        t0 = self.point_window(self.route.point_first()).t_0
-        t1 = self.point_window(self.route.point_last()).t_1
-        return t1 - t0
 
 class Route:
     speed_max = 1.2
@@ -143,12 +87,17 @@ class Route:
 
         s.speed[i-1] = speed1
 
+        e = self.edges[i-1]
+        w = s.edge_window(e)
+
+        if not e.check_window(w):
+            s.speed[i-1] = speed0
+            return False
+
         return True
 
     def check_point(self, p, t, s):
         
-        t_changed = False
-
         p.reserved = sorted(p.reserved, key=lambda w: w.t_0)
         
         W0 = s.point_window(p)
@@ -173,7 +122,6 @@ class Route:
         if W0.t_0 < p.min_t_0():
             raise RuntimeError()
 
-        
         for w in p.reserved:
 
             #W0 = w0 + t
@@ -187,7 +135,7 @@ class Route:
 
                 p.check_window(W0)
 
-                return t, t_changed
+                return t, False
             
             elif W0.t_0 < w.t_1 - 1e-10:
                 
