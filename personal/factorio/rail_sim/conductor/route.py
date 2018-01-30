@@ -3,6 +3,7 @@ import math
 import numpy as np
 
 from .window import *
+from .edge_window import *
 
 DEBUG = False
 
@@ -44,7 +45,7 @@ class Schedule:
         w0 = self.point_window(e.p0)
         w1 = self.point_window(e.p1)
 
-        return w0.t_0, w1.t_1
+        return EdgeWindow(e, self, w0.t_0, w1.t_0)
 
     def cleanup_points(self):
         """

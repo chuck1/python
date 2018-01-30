@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import argparse
 
 from .event import *
+from .edge_window import *
 
 class Edges:
     edges = []
@@ -47,6 +48,7 @@ class TrainPositionPlot:
     def plot(self, ax):
         ax.plot(self.x, self.y)
 
+
 class Edge:
     def __init__(self, p0, p1):
         self.p0 = p0
@@ -62,17 +64,31 @@ class Edge:
         y = self.p1.position[1] - self.p0.position[1]
         return math.sqrt(x*x + y*y)
 
-    def train_position_plots(self, ax):
-        
-        #plots = []
-        
+    def windows(self):
         for route in self.routes:
             for s in route.schedules:
-                t_0, t_1 = s.edge_window(self)
+                yield s.edge_window(self)
 
-                plot = TrainPositionPlot([t_0, t_1], [0, 1])
-                plot.plot(ax)
-                #plots.append()
+    def check_window(self, w0):
+        
+        for w in self.windows():
+
+            if w0.t_0 < w.t_0:
+                w1, w2 = w0, w
+            else:
+                w1, w2 = w, w0
+
+            # w1 enters first so change w1 to the back of the train
+            w1 = w1 + 
+
+        
+    def train_position_plots(self, ax):
+        
+        windows = list(self.windows())
+
+        for w in windows:
+            plot = TrainPositionPlot([w.t_0, w.t_1], [0, 1])
+            plot.plot(ax)
 
     def occupancy(self):
     
