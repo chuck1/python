@@ -40,6 +40,11 @@ class Schedule:
         
         raise RuntimeError()
 
+    def edge_speed(self, edge):
+        for e, s in zip(self.route.edges, self.speed):
+            if e == edge:
+                return s
+
     def edge_window(self, e):
 
         w0 = self.point_window(e.p0)

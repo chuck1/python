@@ -379,8 +379,9 @@ def plot_routes(routes):
     #ax.legend()
 
     for e in Edges.edges:
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
+        #fig = plt.figure()
+        #ax = fig.add_subplot(111)
+        ax = None
         e.train_position_plots(ax)
 
     plt.show()

@@ -18,6 +18,6 @@ class EdgeWindow:
         self.t_1 = t_1
 
     def __add__(self, t):
-        return EdgeWindow(self.edge, self.t_0 + t, self.t_1 + t)
+        return EdgeWindow(self.edge, self.schedule, self.t_0 + t, self.t_1 + t)
 
 

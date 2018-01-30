@@ -72,21 +72,45 @@ class Edge:
     def check_window(self, w0):
         
         for w in self.windows():
-
+            if w == w0:
+                continue
+            
             if w0.t_0 < w.t_0:
                 w1, w2 = w0, w
             else:
                 w1, w2 = w, w0
 
+            print("check window")
+            print("w1.t_0 {:8.2f} w2.t_0 {:8.2f}".format(w1.t_0, w2.t_0))
+            
             # w1 enters first so change w1 to the back of the train
-            w1 = w1 + 
+            t = w1.schedule.route.train_length /  w1.schedule.edge_speed(w1.edge)
+            w1 = w1 + t
 
+            if w1.t_0 > w2.t_0:
+                print("{:8} > {:8}".format("w1.t_0", "w2.t_0"))
+                print("{:8.2f} > {:8.2f}".format(w1.t_0, w2.t_0))
+                return False
+
+            if w1.t_1 > w2.t_1:
+                print("{:8} > {:8}".format("w1.t_1", "w2.t_1"))
+                print("{:8.2f} > {:8.2f}".format(w1.t_1, w2.t_1))
+                return False
         
+        return True
+
     def train_position_plots(self, ax):
         
         windows = list(self.windows())
 
         for w in windows:
+
+            if self.check_window(w):
+                continue
+            
+            print('would plot')
+            continue
+
             plot = TrainPositionPlot([w.t_0, w.t_1], [0, 1])
             plot.plot(ax)
 
