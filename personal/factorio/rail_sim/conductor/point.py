@@ -76,13 +76,19 @@ class Point:
                 
                 print('[{:8.2f} {:8.2f}] [{:8.2f} {:8.2f}]'.format(w0.t_0, w0.t_1, w1.t_0, w1.t_1))
 
-                if w0.t_1 <= w1.t_0:
+                if w0.t_1 <= w1.t_0 + 1e-10:
                     print('w0.t_1 <= w1.t_0')
                     continue
                 
                 if w0.t_0 >= w1.t_1 - 1e-10:
                     print('w0.t_0 >= w1.t_1')
                     continue
+
+                print(w1.t_1 - w0.t_0)
+                print(w0.t_1 - w1.t_0)
+
+                #print('trying to reserve window  {:8.2f} {:8.2f}'.format(w1.t_0, w1.t_1))
+                #print('but conflicts with window {:8.2f} {:8.2f}'.format(w.t_0, w.t_1))
                 
                 raise RuntimeError()
 

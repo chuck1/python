@@ -125,7 +125,6 @@ class Route:
         return True
 
     def check_point(self, p, t, s):
-
         
         t_changed = False
 
@@ -138,7 +137,7 @@ class Route:
                 print("\t{:8.2f} {:8.2f}".format(w.t_0, w.t_1))
 
         
-        for w in p.reserved:
+        for w in p.reserved0:
 
             #W0 = w0 + t
             

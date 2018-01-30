@@ -481,7 +481,7 @@ if __name__ == '__main__':
     
     route_options={'allow_speed_decrease': True, 'speed_min': 1.0, 'train_length': 1}
 
-    test_6(args.n, 2, args, d=1, route_options=route_options)
+    test_6(args.n, 4, args, d=1, route_options=route_options)
 
     #test_7(args.n, 4, args, route_options=route_options)
     
