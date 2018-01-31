@@ -84,7 +84,6 @@ class Edge:
             else:
                 w1, w2 = w, w0
 
-            
             # w1 enters first so change w1 to the back of the train
             t = w1.schedule.route.train_length /  w1.schedule.edge_speed(w1.edge)
             W1 = w1 + t
@@ -149,4 +148,7 @@ class Edge:
             y.append(y[-1] + e.y)
 
         return x, y
+
+    def find_conflict_visit(self, s):
+        yield from s.find_conflict_edge(self)
 

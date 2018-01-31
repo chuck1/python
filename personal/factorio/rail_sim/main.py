@@ -76,7 +76,7 @@ def random_arrivals(routes, n):
     m = n * len(routes)
     for i in range(m):
         
-        if (i % 10) == 0:
+        if (i % 1) == 0:
             progress_bar(i, m)
    
         k = random.randrange(len(routes))

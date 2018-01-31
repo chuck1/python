@@ -45,7 +45,7 @@ class Point:
         self.reserved0 = sorted(self.reserved0, key=lambda w: w.t_0)
         
         for w in self.reserved0:
-            if w1.t_1 <= w.t_0:
+            if w1.t_1 <= w.t_0 + 1e-10:
                 continue
 
             if w1.t_0 >= w.t_1 - 1e-10:
@@ -152,7 +152,8 @@ class Point:
         self.reserved.append(w)#copy.deepcopy(w))
         self.reserved0.append(w)#copy.deepcopy(w))
 
-
+    def find_conflict_visit(self, s):
+        yield from s.find_conflict_point(self)
 
 
 

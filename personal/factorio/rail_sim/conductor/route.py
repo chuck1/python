@@ -4,22 +4,29 @@ import numpy as np
 
 from .window import *
 from .edge_window import *
+from .schedule import *
 
 DEBUG = False
        
 
 def schedule(s):
 
-    c = s.find_conflict()
-
-    if c is None:
-        return s
+    C = s.find_conflict()
     
-    for s1 in c.fixes():
-        s2 = schedule(s1)
-        if s2 is not None:
-            return s2
+    #if c is None:
+    #    return s
+    
+    for c in C:
+        for s1 in c.fixes():
+            if s1 is None: continue
 
+            s2 = schedule(s1)
+            if s2 is not None:
+                return s2
+        
+        return None
+    
+    return s
 
 class Route:
     speed_max = 1.2
@@ -41,7 +48,8 @@ class Route:
         self.schedules = []
 
         # first possible t_0 for first point
-        self.t_0 = 0
+        #self.t_0 = 0
+
 
     def point_index(self, p0):
         points = list(self.points())
@@ -54,12 +62,12 @@ class Route:
         t = 0
         
         if p == self.edges[0].p0:
-            return Window(t, t + self.train_length / self.speed, None, self.edges[0])
+            return Window(p, t, t + self.train_length / self.speed, None, self.edges[0])
 
         for e in self.edges:
             t += e.length() / self.speed
             if e.p1 == p:
-                return Window(t, t + self.train_length / self.speed, e, self.edge_next(e))
+                return Window(p, t, t + self.train_length / self.speed, e, self.edge_next(e))
 
     def try_reduce_speed(self, p, t, s, t_d, w):
         # reduce speed of edge before point p in order to avoid reserved window of p
@@ -161,7 +169,24 @@ class Route:
                     t = w.t_1 - w0.t_0
                     return t, True
         
-        return t, t_changed
+        return t, False
+
+    def features(self):
+        yield self.point_first()
+        for e in self.edges:
+            yield e
+            yield e.p1
+
+    def features_starting_with(self, feature0):
+        features = iter(self.features())
+        
+        for f in features:
+            if f == feature0:
+                yield f
+                break
+
+        for f in features:
+            yield f
 
     def schedule(self, t):
 
@@ -172,19 +197,34 @@ class Route:
         #self.t_0 = self.point_first().first_possible_t_0(self.t_0, self.train_length / self.speed)
         #t = self.t_0
         #print('schedule t = {:8.2f}'.format(t))
+    
 
-        t_changed = True
-        while t_changed:
-            
-            #print('check points {:8.2f}'.format(t))
+        if True:
 
-            s = Schedule(self, t)
-            
-            for p in self.points():
-                t, t_changed = self.check_point(p, t, s)
-                if t_changed: break
+            # try new method
+            s = schedule(Schedule(self, t))
+            if s is not None:
+                #print("new method success")
+                pass
+            else:
+                print("new method failure!!!!!!")
         
-        self.t_0 = t
+        else:        
+
+            t_changed = True
+            while t_changed:
+            
+                #print('check points {:8.2f}'.format(t))
+
+                s = Schedule(self, t)
+            
+                for p in self.points():
+                    t, t_changed = self.check_point(p, t, s)
+                    if t_changed: break
+        
+        if s is None: raise RuntimeError()
+
+        #self.t_0 = t
         #self.point_first().t_0[self] = t
 
         #self.point_first().cleanup()
