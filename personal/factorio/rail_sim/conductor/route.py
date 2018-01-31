@@ -20,9 +20,15 @@ def schedule(s):
         for s1 in c.fixes():
             if s1 is None: continue
 
-            s2 = schedule(s1)
-            if s2 is not None:
-                return s2
+            try:
+                s2 = schedule(s1)
+                if s2 is not None:
+                    return s2
+            except RecursionError:
+                print(crayons.yellow('resursion exception caught'))
+                #s1.plot()
+                pass
+            
         
         return None
     
@@ -233,12 +239,7 @@ class Route:
 
         # reserve times in points
 
-        for p in self.points():
-            #W = w + t
-            
-            W = s.point_window(p)
-
-            p.reserve(W)
+        s.reserve()
 
         self.departures.append(t)
         self.schedules.append(s)

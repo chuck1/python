@@ -4,6 +4,8 @@ import numpy as np
 
 from .window import *
 from .edge_window import *
+from .point_conflict import *
+from .edge_conflict import *
 
 DEBUG = False
 
@@ -27,6 +29,9 @@ class Schedule:
         else:
             self.speed = [self.route.speed] * len(self.route.edges)
 
+    def copy(self):
+        return Schedule(self.route, self.t_0, self.speed)
+    
     """
     return the entry and exit times for point p
     """
@@ -174,4 +179,12 @@ class Schedule:
 
                 yield EdgeWindowConflictExit(self, w0, t)
         
+    def reserve(self):
+        for p in self.route.points():
+            W = self.point_window(p)
+            p.reserve(W)
+        
+        for e in self.route.edges:
+            W = self.edge_window(e)
+            e.reserve(W)
 

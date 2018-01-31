@@ -61,15 +61,23 @@ class Edge:
 
         self.routes = []
 
+        self._windows = []
+
     def length(self):
         x = self.p1.position[0] - self.p0.position[0]
         y = self.p1.position[1] - self.p0.position[1]
         return math.sqrt(x*x + y*y)
 
-    def windows(self):
+    def windows1(self):
         for route in self.routes:
             for s in route.schedules:
                 yield s.edge_window(self)
+
+    def windows(self):
+        return self._windows
+    
+    def reserve(self, w0):
+        self._windows.append(w0)
 
     def check_window(self, w0):
         

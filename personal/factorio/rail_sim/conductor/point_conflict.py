@@ -29,7 +29,7 @@ class PointWindowConflict:
 
         yield self.try_speed_decrease(t)
 
-        yield Schedule(self.schedule.route, self.schedule.t_0 + t)
+        yield self.schedule.__class__(self.schedule.route, self.schedule.t_0 + t)
     
 
     def try_speed_decrease(self, t):
@@ -45,7 +45,7 @@ class PointWindowConflict:
         i = route.point_index(p)
         if i == 0: return
 
-        s = Schedule(self.schedule.route, self.schedule.t_0, self.schedule.speed)
+        s = self.schedule.copy()
 
         l = route.edges[i-1].length()
 

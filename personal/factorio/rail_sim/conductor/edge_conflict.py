@@ -37,7 +37,7 @@ class EdgeWindowConflictExit:
         #yield self.try_speed_decrease(self.t)
         self.try_speed_decrease(self.t)
 
-        yield Schedule(self.schedule.route, self.schedule.t_0 + self.t)
+        yield self.schedule.__class__(self.schedule.route, self.schedule.t_0 + self.t)
 
     def try_speed_decrease(self, t):
         # reduce speed of edge before point p in order to avoid reserved window of p
@@ -52,7 +52,7 @@ class EdgeWindowConflictExit:
         i = route.edges.index(e)
         if i == 0: return
 
-        s = Schedule(self.schedule.route, self.schedule.t_0, self.schedule.speed)
+        s = self.schedule.copy()
 
         l = e.length()
 
