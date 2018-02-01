@@ -216,7 +216,7 @@ def merge_bus_0(n):
     points0 = [Point([0, y]) for y in range(n)]
     points1 = [Point([0, y + n]) for y in range(n)]
 
-    points2 = [Point([n, y + n/2]) for y in range(n)]
+    points2 = [Point([2 * n, y + n/2]) for y in range(n)]
 
     point_merge = Point([n/2, n + 0.5])
 
@@ -243,7 +243,7 @@ def merge_bus_2(n, points0, points1, o, d=1):
     pl0 = []
     pl1 = []
 
-    points2 = [Point((o + [n, y + n/2]) * d) for y in range(n)]
+    points2 = [Point((o + [2 * n, y + n/2]) * d) for y in range(n)]
     
     crossing_points = list(crossing_grid(n))
  
@@ -341,6 +341,9 @@ def test_6(n, a, args, d=1, route_options={}):
     random_arrivals(routes, n)
     throughput = show_routes(routes)
 
+    if args.animate:
+        animate_trains(routes)
+
     if args.plot:
         plot_routes(routes)
     
@@ -396,7 +399,8 @@ def test_7(samples, n, args, route_options={}):
     random_arrivals(routes, samples)
     show_routes(routes)
     
-    animate_trains(routes)
+    if args.animate:
+        animate_trains(routes)
 
     if args.plot:
         plot_routes(routes)
@@ -459,6 +463,9 @@ def test_crossing(samples, n, args, route_options={}):
     if args.plot:
         plot_routes(routes)
 
+    if args.animate:
+        animate_trains(routes)
+
     return t
 
 def test_crossing_1():
@@ -510,12 +517,13 @@ def animate_trains(routes):
     for r in routes:
         r.plot(ax)
     
-    
     lines = [ax.plot([], [], 'o')[0] for r in routes]
 
     frames = int(t_1 / T)
 
-    anim = animation.FuncAnimation(fig, update_plot, frames, fargs=(routes, lines), interval=50, blit=True)
+    anim = animation.FuncAnimation(fig, update_plot, frames, fargs=(routes, lines), interval=10, blit=True)
+
+    anim.save('trains.mp4')
 
     plt.show()
 
@@ -524,6 +532,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('n', type=int)
     parser.add_argument('--plot', action='store_true')
+    parser.add_argument('--animate', action='store_true')
+    parser.add_argument('--speed', type=float, default=1)
     parser.add_argument('--speed_min', type=float, default=1)
     parser.add_argument('--seed', type=int, default=0)
     args = parser.parse_args()
@@ -540,15 +550,19 @@ if __name__ == '__main__':
 
     #test_speed_max(functools.partial(test_crossing, args.n, 2, args))
    
-    route_options={'allow_speed_decrease': True, 'speed_min': args.speed_min, 'train_length': 1}
+    route_options={
+            'allow_speed_decrease': True, 
+            'speed': args.speed, 
+            'speed_min': args.speed_min, 
+            'train_length': 1}
     #test_6(args.n, 4, args, d=1, route_options=route_options)
 
     #route_options={'allow_speed_decrease': True, 'speed_min': 0.5, 'train_length': 1}
-    #test_6(args.n, 3, args, d=1, route_options=route_options)
+    test_6(args.n, 16, args, d=1, route_options=route_options)
 
-    test_7(args.n, 4, args, route_options=route_options)
+    #test_7(args.n, 4, args, route_options=route_options)
     
-    #test_crossing(args.n, 2, args)
+    #test_crossing(args.n, 6, args, route_options=route_options)
 
 
 

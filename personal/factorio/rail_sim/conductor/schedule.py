@@ -142,6 +142,13 @@ class Schedule:
             return state0
 
         d = x - state0.x
+
+        if Debug.level >= 20:
+            print("state at position")
+            print("x0 = {:8.2f}".format(state0.x))
+            print("x1 = {:8.2f}".format(x))
+            print("v0 = {:8.2f}".format(state0.v))
+            print("a0 = {:8.2f}".format(state0.a))
         
         if state0.a == 0:
             # d = v * t 
@@ -149,12 +156,20 @@ class Schedule:
             T = d / state0.v
         else:
             # d = v * t + 0.5 * a * t**2
+            
+            D = state0.v**2 + 2 * state0.a * d
+            
+            print(D)
+            for s in self.states():
+                print("x", s.x)
+
+            print('acc events')
+            for e in self.acceleration_events:
+                print("{:8.2f} {:8.2f}".format(e.t, e.a))
+
             T = pythag(0.5 * state0.a, state0.v, -d)
         
         if Debug.level >= 20:
-            print("state at position")
-            print("x0 = {:8.2f}".format(state0.x))
-            print("x1 = {:8.2f}".format(x))
             print("T =  {:8.2f}".format(T))
             print("x0 == x1 = {}".format(x0==x1))
             #print("state " + str(p0))

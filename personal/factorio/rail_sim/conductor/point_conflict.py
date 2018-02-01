@@ -156,6 +156,8 @@ class PointWindowConflict:
         def acc_dec_events(v1):
             a, T0, T1 = acc_dec(T, X, state0.v, v1)
             
+            if T0 < 0: return
+
             if Debug.level >= 10:
                 print()
                 print("need acceleration of", a)
@@ -163,6 +165,16 @@ class PointWindowConflict:
                 print("v1 = {:8.2f}".format(v1))
                 print("T0 = {:8.2f}".format(T0))
                 print("T1 = {:8.2f}".format(T1))
+            
+            assert(abs((2 * T0 + T1) - T) < 1e-10)
+            
+            if t1 <= (t0 + T0 + T1):
+                print("need acceleration of", a)
+                print("T  = {:8.2f}".format(T))
+                print("v1 = {:8.2f}".format(v1))
+                print("T0 = {:8.2f}".format(T0))
+                print("T1 = {:8.2f}".format(T1))
+                raise RuntimeError()
 
             return [
                     AccelerationEvent(t0, a),
@@ -192,6 +204,7 @@ class PointWindowConflict:
             events = acc_dec_events(route.speed_min)
         
             if events is None:
+                return
                 raise RuntimeError()
         
 

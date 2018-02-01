@@ -34,15 +34,15 @@ def schedule(s):
 
 class Route:
     speed_max = 1.2
-    speed = 1
     count_speed_decrease = 0
     
-    def __init__(self, edges, train_length=1, allow_speed_decrease=True, speed_min=0.5):
+    def __init__(self, edges, train_length=1, allow_speed_decrease=True, speed=1, speed_min=1):
         self.edges = edges
         
         self.train_length = train_length
 
         self.allow_speed_decrease = allow_speed_decrease
+        self.speed = speed
         self.speed_min = speed_min
 
         for e in self.edges:
