@@ -1,0 +1,8 @@
+README.md
+gen_reg/__init__.py
+gen_reg/test.py
+gen_reg.egg-info/PKG-INFO
+gen_reg.egg-info/SOURCES.txt
+gen_reg.egg-info/dependency_links.txt
+gen_reg.egg-info/not-zip-safe
+gen_reg.egg-info/top_level.txt
