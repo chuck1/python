@@ -35,7 +35,7 @@ class EdgeWindowConflictExit:
         #if s is not None: yield s
 
         #yield self.try_speed_decrease(self.t)
-        self.try_speed_decrease(self.t)
+        #self.try_speed_decrease(self.t)
 
         yield self.schedule.__class__(self.schedule.route, self.schedule.t_0 + self.t)
 

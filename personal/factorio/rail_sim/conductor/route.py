@@ -1,38 +1,36 @@
 import random
 import math
 import numpy as np
+import crayons
 
 from .window import *
 from .edge_window import *
 from .schedule import *
 
-DEBUG = False
-       
 
 def schedule(s):
 
-    C = s.find_conflict()
-    
-    #if c is None:
-    #    return s
-    
-    for c in C:
-        for s1 in c.fixes():
-            if s1 is None: continue
+    if Debug.level >= 10:
+        print("schdule t_0 = {:8.2f}".format(s.t_0))
 
-            try:
-                s2 = schedule(s1)
-                if s2 is not None:
-                    return s2
-            except RecursionError:
-                print(crayons.yellow('resursion exception caught'))
-                #s1.plot()
-                pass
-            
+    c = s.find_conflict()
+
+    if c is None: return s
+
+    for s1 in c.fixes():
+        if s1 is None: continue
+
+        #try:
+        s2 = schedule(s1)
+        if s2 is not None:
+            return s2
+        #except RecursionError:
+        #    print(crayons.yellow('resursion exception caught'))
+        #    #s1.plot()
+        #    pass
         
-        return None
-    
-    return s
+    return None
+
 
 class Route:
     speed_max = 1.2
@@ -52,10 +50,21 @@ class Route:
 
         self.departures = []
         self.schedules = []
-
+        
         # first possible t_0 for first point
         #self.t_0 = 0
 
+    def point_distance(self, p0):
+        """
+        distance along route of point
+        """
+        d = 0
+
+        if p0 == self.point_first(): return d
+
+        for e in self.edges:
+            d += e.length()
+            if e.p1 == p0: return d
 
     def point_index(self, p0):
         points = list(self.points())
@@ -65,15 +74,11 @@ class Route:
         raise RuntimeError()
 
     def time_to_point(self, p):
-        t = 0
-        
-        if p == self.edges[0].p0:
-            return Window(p, t, t + self.train_length / self.speed, None, self.edges[0])
+        s = Schedule(self, 0)
+        return s.point_window(p)
 
-        for e in self.edges:
-            t += e.length() / self.speed
-            if e.p1 == p:
-                return Window(p, t, t + self.train_length / self.speed, e, self.edge_next(e))
+    def length(self):
+        return sum(e.length() for e in self.edges)
 
     def try_reduce_speed(self, p, t, s, t_d, w):
         # reduce speed of edge before point p in order to avoid reserved window of p
@@ -116,7 +121,7 @@ class Route:
         
         W0 = s.point_window(p)
         
-        if DEBUG:
+        if Debug.level >= 10:
             print('route points')
             for p0 in self.points():
                 print("{} t_0_set = {:5} min_t_0 = {:8.2f} t_0 = {:8.2f}".format(self.point_index(p0), str(p0.t_0_set()), p0.min_t_0(), p0.t_0[self] if self in p0.t_0 else -1))
@@ -159,7 +164,7 @@ class Route:
 
                     W0 = s.point_window(p)
 
-                    if DEBUG:
+                    if Debug.level >= 10:
                         print("speed decrease")
                         print("window       {:8.2f} {:8.2f}".format(W0.t_0, W0.t_1))
                         print("avoid window {:8.2f} {:8.2f}".format(w.t_0, w.t_1))
@@ -266,6 +271,18 @@ class Route:
     def points_not_first(self):
         for e in self.edges:
             yield e.p1
+    
+    def info(self):
+        print("route")
+        for p in self.points():
+            w = self.time_to_point(p)
+            print("\tpoint ({:8.2f} {:8.2f}) distance = {:8.2f} const speed window = [{:8.2f} {:8.2f}]".format(
+                p.position[0],
+                p.position[1],
+                self.point_distance(p),
+                w.t_0,
+                w.t_1,
+                ))
 
     def show(self):
 
@@ -299,7 +316,12 @@ class Route:
         X = [self.edges[0].p0.position[0]] + [e.p1.position[0] for e in self.edges]
         Y = [self.edges[0].p0.position[1]] + [e.p1.position[1] for e in self.edges]
 
-        ax.plot(X, Y, '-o')
+        ax.plot(X, Y, '-', color="black", linewidth=0.5)
+    
+    def point_prev(self, p):
+        for e in self.edges:
+            if p == e.p1:
+                return e.p0
 
     def edge_next(self, e0):
         
@@ -314,8 +336,14 @@ class Route:
         except StopIteration:
             return None
         
+    def edge_before(self, p):
+        for e in self.edges:
+            if e.p1 == p: return e
 
+    def edge_after(self, p):
+        for e in self.edges:
+            if e.p0 == p: return e
 
-
+        
 
 

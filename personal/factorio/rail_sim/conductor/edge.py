@@ -158,5 +158,5 @@ class Edge:
         return x, y
 
     def find_conflict_visit(self, s):
-        yield from s.find_conflict_edge(self)
+        return s.find_conflict_edge(self)
 

@@ -4,6 +4,7 @@ import random
 import math
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 import argparse
 
 from conductor.route import *
@@ -389,8 +390,13 @@ def plot_routes(routes):
 def test_7(samples, n, args, route_options={}):
     routes = [Route(edges(pl), **route_options) for pl in test_7_routes(samples, n)]
 
+    for r in routes:
+        r.info()
+
     random_arrivals(routes, samples)
     show_routes(routes)
+    
+    animate_trains(routes)
 
     if args.plot:
         plot_routes(routes)
@@ -469,12 +475,60 @@ def test_speed_max(f):
     plt.plot(x, y)
     plt.show()
 
+def animate_trains(routes):
+    
+    def coordinates(schedules, t):
+        for s in schedules:
+            c = s.coordinates_at_time(t)
+            if c is not None:
+                yield c
+    
+    def update_plot(num, routes, lines):
+        
+        for route, line in zip(routes, lines):
+            coor = list(coordinates(route.schedules, num * T))
+        
+            if coor:
+                coor = np.concatenate(coor, axis=1)
+            
+                line.set_data(coor)
+    
+        return lines
+    
+    schedules = [s for r in routes for s in r.schedules]
+
+    t_1 = max(s.t_1() for s in schedules)
+
+    #def positions(routes, t):
+    
+    T = 0.1
+
+    fig = plt.figure()
+    
+    ax = fig.add_subplot(111)
+
+    for r in routes:
+        r.plot(ax)
+    
+    
+    lines = [ax.plot([], [], 'o')[0] for r in routes]
+
+    frames = int(t_1 / T)
+
+    anim = animation.FuncAnimation(fig, update_plot, frames, fargs=(routes, lines), interval=50, blit=True)
+
+    plt.show()
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('n', type=int)
     parser.add_argument('--plot', action='store_true')
+    parser.add_argument('--speed_min', type=float, default=1)
+    parser.add_argument('--seed', type=int, default=0)
     args = parser.parse_args()
+
+    random.seed(args.seed)
 
     #test_1(10)
     #test_3(100)
@@ -486,7 +540,7 @@ if __name__ == '__main__':
 
     #test_speed_max(functools.partial(test_crossing, args.n, 2, args))
    
-    route_options={'allow_speed_decrease': True, 'speed_min': 0.1, 'train_length': 1}
+    route_options={'allow_speed_decrease': True, 'speed_min': args.speed_min, 'train_length': 1}
     #test_6(args.n, 4, args, d=1, route_options=route_options)
 
     #route_options={'allow_speed_decrease': True, 'speed_min': 0.5, 'train_length': 1}

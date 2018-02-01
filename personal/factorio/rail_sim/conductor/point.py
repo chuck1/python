@@ -8,7 +8,7 @@ from .event import *
 
 class Point:
     def __init__(self, position):
-        self.position = position
+        self.position = np.array(position)
         
         self.edges = []
 
@@ -153,7 +153,7 @@ class Point:
         self.reserved0.append(w)#copy.deepcopy(w))
 
     def find_conflict_visit(self, s):
-        yield from s.find_conflict_point(self)
+        return s.find_conflict_point(self)
 
 
 
