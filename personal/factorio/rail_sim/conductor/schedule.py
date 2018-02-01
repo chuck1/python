@@ -3,26 +3,13 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 
+from .util import *
 from .window import *
 from .edge_window import *
 from .point_conflict import *
 from .edge_conflict import *
 from .acceleration_event import *
 
-
-def pythag(a, b, c):
-    d = math.sqrt(b**2 - 4 * a * c)
-
-    x0 = (-b + d) / 2 / a
-    x1 = (-b - d) / 2 / a
-
-    if (x0 < 0) and (x1 < 0):
-        raise RuntimeError()
-
-    if (x0 > 0) and (x1 > 0):
-        return min(x0, x1)
-
-    return max(x0, x1)
 
 
 class State:
@@ -167,7 +154,7 @@ class Schedule:
             for e in self.acceleration_events:
                 print("{:8.2f} {:8.2f}".format(e.t, e.a))
 
-            T = pythag(0.5 * state0.a, state0.v, -d)
+            T = quadratic(0.5 * state0.a, state0.v, -d)
         
         if Debug.level >= 20:
             print("T =  {:8.2f}".format(T))
@@ -215,7 +202,7 @@ class Schedule:
             t = d / p0.v
         else:
             # d = v * t + 0.5 * a * t**2
-            t = pythag(0.5 * p0.a, p0.v, -d)
+            t = quadratic(0.5 * p0.a, p0.v, -d)
         
         print("state " + str(p0))
         print("t_0", self.t_0)

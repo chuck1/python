@@ -4,33 +4,71 @@ import numpy as np
 import matplotlib.pyplot as plt
 import crayons
 
+from .util import *
 from .window import *
 from .edge_window import *
 from .acceleration_event import *
 from .debug import *
 
-def acc_dec(T, X, v0, v1):
-
-    a = -(v1 - v0)**2 / (X - v1 * T)
-
-    T1 = T - 2 * (v1 - v0) / a
-    T0 = (T - T1) / 2
-
-    X1 = v1 * T1
-    X0 = (X - X1) / 2
- 
-    return a, T0, T1
-
-def acc_dec2(T, X, v0):
-
-    a = (X - v0 * T) / T**2 * 4
-
-    v1 = T * a / 2 + v0
-
-    return a, v1
-
-   
+def acc_dec_1_events(route, T, X, state0, v1):
+    a, T0, T1 = acc_dec(T, X, state0.v, v1)
     
+    if T0 < 0: return
+
+    if Debug.level >= 10:
+        print()
+        print("need acceleration of", a)
+        print("T  = {:8.2f}".format(T))
+        print("v1 = {:8.2f}".format(v1))
+        print("T0 = {:8.2f}".format(T0))
+        print("T1 = {:8.2f}".format(T1))
+    
+    assert(abs((2 * T0 + T1) - T) < 1e-10)
+    
+    if t1 <= (t0 + T0 + T1):
+        print("need acceleration of", a)
+        print("T  = {:8.2f}".format(T))
+        print("v1 = {:8.2f}".format(v1))
+        print("T0 = {:8.2f}".format(T0))
+        print("T1 = {:8.2f}".format(T1))
+        raise RuntimeError()
+
+    return [
+            AccelerationEvent(t0, a),
+            AccelerationEvent(t0 + T0, 0),
+            AccelerationEvent(t0 + T0 + T1, -a),
+            AccelerationEvent(t1, 0),
+            ]
+  
+def acc_dec_2_events(route, T, X, state0):
+    a, v1 = acc_dec2(T, X, state0.v)
+
+    if v1 < route.speed_min:
+        return
+    
+    return [
+            AccelerationEvent(t0, a),
+            AccelerationEvent(t0 + T / 2, -a),
+            AccelerationEvent(t1, 0),
+            ]
+
+def acc_dec_3_events(route, T, X, state0):
+    a0 = route.deceleration
+    a2 = route.acceleration
+
+    T_0, T_1, T_2, v_1 = acc_dec_3(T, X, state0.v, a0, a2)
+
+    if T_0 < 0: return
+    if T_1 < 0: return
+    if T_2 < 0: return
+    if v_1 < 0: return
+
+    return [
+            AccelerationEvent(t0, a0),
+            AccelerationEvent(t0 + T0, 0),
+            AccelerationEvent(t0 + T0 + T1, a2),
+            AccelerationEvent(t1, 0),
+            ]
 
 """
 window w0 of scheulde conflicts with reserved window w1
@@ -153,60 +191,18 @@ class PointWindowConflict:
             self.schedule.plot()
             plt.show()
         
-        def acc_dec_events(v1):
-            a, T0, T1 = acc_dec(T, X, state0.v, v1)
-            
-            if T0 < 0: return
 
-            if Debug.level >= 10:
-                print()
-                print("need acceleration of", a)
-                print("T  = {:8.2f}".format(T))
-                print("v1 = {:8.2f}".format(v1))
-                print("T0 = {:8.2f}".format(T0))
-                print("T1 = {:8.2f}".format(T1))
-            
-            assert(abs((2 * T0 + T1) - T) < 1e-10)
-            
-            if t1 <= (t0 + T0 + T1):
-                print("need acceleration of", a)
-                print("T  = {:8.2f}".format(T))
-                print("v1 = {:8.2f}".format(v1))
-                print("T0 = {:8.2f}".format(T0))
-                print("T1 = {:8.2f}".format(T1))
-                raise RuntimeError()
-
-            return [
-                    AccelerationEvent(t0, a),
-                    AccelerationEvent(t0 + T0, 0),
-                    AccelerationEvent(t0 + T0 + T1, -a),
-                    AccelerationEvent(t1, 0),
-                    ]
-
-        def acc_dec2_events():
-            a, v1 = acc_dec2(T, X, state0.v)
-
-            if v1 < route.speed_min:
-                return
-            
-            return [
-                    AccelerationEvent(t0, a),
-                    AccelerationEvent(t0 + T / 2, -a),
-                    AccelerationEvent(t1, 0),
-                    ]
 
         if abs(state0.v - route.speed_min) < 1e-10: return
-        
-        events = acc_dec2_events()
-        
-        if events is None:
 
-            events = acc_dec_events(route.speed_min)
-        
+        events = acc_dec_3_events(route, T, X, state0)
+        if events is None:
+            events = acc_dec_2_events(route, T, X, state0)
             if events is None:
-                return
-                raise RuntimeError()
-        
+                events = acc_dec_events(route, T, X, state0, route.speed_min)
+                if events is None:
+                    return
+                    raise RuntimeError()
 
         #a = (X - state0.v * T) / (0.5 * T**2)
 

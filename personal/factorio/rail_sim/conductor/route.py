@@ -36,7 +36,7 @@ class Route:
     speed_max = 1.2
     count_speed_decrease = 0
     
-    def __init__(self, edges, train_length=1, allow_speed_decrease=True, speed=1, speed_min=1):
+    def __init__(self, edges, train_length=1, allow_speed_decrease=True, speed=1, speed_min=1, acceleration=1, deceleration=-1):
         self.edges = edges
         
         self.train_length = train_length
@@ -44,6 +44,9 @@ class Route:
         self.allow_speed_decrease = allow_speed_decrease
         self.speed = speed
         self.speed_min = speed_min
+
+        self.acceleration = acceleration
+        self.deceleration = deceleration
 
         for e in self.edges:
             e.routes.append(self)
