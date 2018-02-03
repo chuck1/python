@@ -445,4 +445,9 @@ pumpjack = Product(
         module_slots=2,
         )
 
+research_phantom = Product(
+        "research phantom",
+        0,
+        )
+
 

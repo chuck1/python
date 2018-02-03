@@ -67,11 +67,11 @@ class Edge:
 
     def show(self):
         
-        lines = math.ceil(self.trains_per_second() / Constants.train_line_capacity())
+        lines = self.train_lines()
 
         print(crayons.blue('edge: {:24} -> {:24}'.format(self.src.name, self.dst.name), bold=True))
         print('\ttrains per second:    {:8.3f}'.format(self.trains_per_second()))
-        print('\ttrains line capacity: {:8.3f}'.format(Constants.train_line_capacity()))
+        print('\ttrains line capacity: {:8.3f}'.format(Constants.train_configuration.train_line_capacity()))
         print('\ttrains lines:         {:8.3f}'.format(lines))
 
     def routes(self):
@@ -83,6 +83,9 @@ class Edge:
 
     def trains_per_second(self):
         return sum(r.trains_per_second() for r, l in self.routes())
+
+    def train_lines(self):
+        return self.trains_per_second() / Constants.train_configuration.train_line_capacity()
 
     def legs(self):
         for r in Routes.routes:

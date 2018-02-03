@@ -9,7 +9,8 @@ import scipy.optimize
 from constants import *
 
 class RouteLegProduct:
-    def __init__(self, product, rate):
+    def __init__(self, leg, product, rate):
+        self.leg = leg
         self.product = product
         self.rate = rate
     
@@ -24,5 +25,11 @@ class RouteLegProduct:
             return 0
 
         return self.rate / self.product.stack_size
+    
+    def fluid_wagons(self):
+        # fluid wagons per second
+        if not isinstance(self.product, Liquid): return 0
+
+        return self.rate / Constants.fluid_wagon_capacity
 
 

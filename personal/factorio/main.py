@@ -1,3 +1,4 @@
+import argparse
 import os
 
 from graphviz import Digraph
@@ -7,7 +8,11 @@ import matplotlib.pyplot as plt
 from graph2 import *
 from products import *
 from fact.processes import *
+from fact.graph.node import *
 import modules
+
+def lerp(x, x0, x1, y0, y1):
+    return y0 + (x - x0) / (x1 - x0) * (y1 - y0)
 
 factories = [
         mine_iron_ore,
@@ -63,6 +68,7 @@ class MyGraph:
     def __init__(self):
         self.nodes = {}
         self.edges = []
+        self.node_groups = []
 
     def node(self, name, process, c, product):
         if name in self.nodes:
@@ -96,43 +102,77 @@ class MyGraph:
 
     def mean_length(self):
         return np.mean([e.length() for e in self.edges])
+     
+    def edge_trains(self):
+        trains = [e.trains_per_second() for e in self.edges]
+        return min(trains), max(trains)
+
+    def edge_width(self, e):
+        x0, x1 = self.edge_trains()
+        y = lerp(e.trains_per_second(), x0, x1, 1.0, 5.0)
+        return y
     
+    def edge_weight(self, e):
+        x0, x1 = self.edge_trains()
+        y = lerp(e.trains_per_second(), x0, x1, 1.0, 5.0)
+        return int(y**2)
+
+    def graph_node(self, g, n):
+        if n.product.image is not None:
+            g.node(n.name.replace(' ','_'), "", image=n.product.image)
+        else:
+            g.node(n.name.replace(' ','_'))
+
+    def node_in_node_group(self, n):
+        for group in self.node_groups:
+            if n in group:
+                return True
+        return False
+
     def graphviz(self, label_edges=False):
         g = Digraph()
 
         #g = Digraph(engine='neato')
 
         #g.attr('graph', overlap='scalexy')
-        g.attr('graph', ranksep='2.0')
+        g.attr('graph', ranksep='3.0')
         g.attr('graph', rankdir='LR')
         g.attr('node', fontname='courier')
         g.attr('edge', fontname='courier')
-    
+        
+        for group in self.node_groups:
+            s = Digraph()
+            s.attr("graph", rank="same")
+
+            for n in group:
+                self.graph_node(s, n)
+
+            g.subgraph(s)
+
         for n in self.nodes.values():
-            scale = 10 / self.mean_length()
-            p = n.position * scale
-            pos_string = '{},{}!'.format(p[0], p[1])
-            #print(pos_string)
-            
-            if n.product.image is not None:
-                g.node(n.name.replace(' ','_'), "", pos=pos_string, image=n.product.image)
-            else:
-                g.node(n.name.replace(' ','_'), pos=pos_string)
+            if self.node_in_node_group(n): continue
+            self.graph_node(g, n)
 
         for e in self.edges:
+            edge_options = {
+                    'penwidth': str(self.edge_width(e)),
+                    'weight': str(self.edge_weight(e)),
+                    }
+
             if label_edges:
-                #l = '\l'.join(list(e.label_lines()) + ['{} wagons/sec'.format(cargo_wagons_per_second(e.products))])
-                l = '\l'.join(list(e.label_lines()))
-                g.edge(e.src.name.replace(' ','_'), e.dst.name.replace(' ','_'), label=l)
+                edge_options['label'] = '\l'.join(list(e.label_lines()))
             else:
-                g.edge(e.src.name.replace(' ','_'), e.dst.name.replace(' ','_'))
+                #edge_options['label'] = "{:8.1f}".format(e.trains_per_second() * 60)
+                edge_options['label'] = "{:8.3f}".format(e.train_lines())
+            
+            g.edge(e.src.name.replace(' ','_'), e.dst.name.replace(' ','_'), **edge_options)
 
         #print(g.source)
 
         #g.render('layout.svg')
         g.view()
 
-def connect_to(process, c, product0, i, rate):
+def connect_to(g2, process, c, product0, i, rate):
     if i.q < 0: return
     if i.product == Process.electrical_energy: return
 
@@ -153,7 +193,8 @@ def connect_to(process, c, product0, i, rate):
         e = g2.edge(n0, n1, [((process, i.product), rate)])
         
         r = Route(n1, [])
-        r.leg(e, [RouteLegProduct(i.product, rate)])
+        l = r.leg(e, [])
+        l.products.append(RouteLegProduct(l, i.product, rate))
         Routes.add_route(r)
 
     else:
@@ -164,10 +205,10 @@ def connect_to(process, c, product0, i, rate):
             #how much i1?
             r1 = c1 * process1.items_per_cycle(i1.product)
             
-            connect_to(process, c, product0, i1, r1)
+            connect_to(g2, process, c, product0, i1, r1)
     
 
-def remove_edges_to_older_ancestors():
+def remove_edges_to_older_ancestors(g2):
     """
     A -> B -> C
     A -> C
@@ -255,19 +296,130 @@ def reroute_through_highest_rank_ancestor():
         
     return c > 0
 
+#################################
 
-###################################################################33
-###################################################################33
-###################################################################33
+def define_node_groups(g):
+    
+    print(g.nodes.keys())
+
+    g.node_groups.append([
+        g.nodes['mine iron ore'],
+        g.nodes['mine copper ore'],
+        g.nodes['mine coal'],
+        ])
+
+    g.node_groups.append([
+        g.nodes['science pack 1'],
+        g.nodes['science pack 2'],
+        g.nodes['science pack 3'],
+        g.nodes['military science pack'],
+        g.nodes['production science pack'],
+        g.nodes['high tech science pack'],
+        g.nodes['satellite_launch'],
+        ])
+
+def create_graph(args):
+
+    modules.apply_modules()
+
+    g = MyGraph()
+
+    # INPUT
+    items_per_sec = 1000
+    
+    c = -items_per_sec / research.items_per_cycle(space_science_pack)
+    inputs = list(research.all_inputs_default(c))
+    
+    for i in inputs:
+        print('{:22} {:8.2f}'.format(i.product.name, i.q))
+    
+    
+    for i0 in inputs:
+        process = i0.product.default_process()
+        
+        if process not in factories:
+            continue
+        
+        c = -process.cycles_per_second(i0)
+    
+        print('\t', process.name, 'c = {} i0.q = {}'.format(c, i0.q))
+    
+        for i in process.inputs:
+            r = c * process.items_per_cycle(i.product)
+            connect_to(g, process, c, i0.product, i, r)
+        
+    
+    exclude = [
+            #research,
+            ]
+
+    define_node_groups(g)
+
+    repeat = True
+    while repeat:
+        repeat = False
+        #if remove_edges_to_older_ancestors(g): repeat = True
+        #if reroute_through_highest_rank_ancestor(g): repeat = True
+    
+    for e in g.edges:
+        e.balance_routes()
+    
+    return g
+
+def program_graph(args):
+    g = create_graph(args)
+    
+    if False:
+        for r in Routes.routes:
+            r.show()
+    
+    for e in g.edges:
+        e.show()
+    
+    g.graphviz()
+ 
+def program_factories(args):
+    g = create_graph(args)
+    
+    #g.nodes['accumulator'].factory_layout()
+    #g.nodes['advanced circuit'].factory_layout()
+    g.nodes['iron plate'].factory_layout()
+    return
+
+    print('factories')
+    for n in sorted(g.nodes.values(), key=lambda n: n.process.name):
+        n.factory_layout()
+
+###################################################################
+###################################################################
+###################################################################
 
 Constants.electric_mining_drill = electric_mining_drill
 Constants.mine_uranium_ore = mine_uranium_ore
-Constants.wagons_per_train = 10
-Constants.inserters_per_wagon = 12
 
-modules.apply_modules()
+#########################
 
-g2 = MyGraph()
+parser = argparse.ArgumentParser()
+
+def help_(args):
+    parser.print_help()
+
+parser.set_defaults(func=help_)
+
+subparsers = parser.add_subparsers()
+
+parser_1 = subparsers.add_parser('graph')
+parser_1.set_defaults(func=program_graph)
+
+parser_2 = subparsers.add_parser('factories')
+parser_2.set_defaults(func=program_factories)
+
+args = parser.parse_args()
+
+args.func(args)
+
+#############################
+
 
 #inputs = produce_rocket_control_unit.all_inputs_default(1000)
 #inputs = produce_production_science_pack.all_inputs_default(10000/60/2)
@@ -278,78 +430,12 @@ g2 = MyGraph()
 #inputs = list(p.all_inputs_default(items_per_sec / p.items_per_cycle(product), ignore_power=True))
 
 
-# INPUT
-items_per_sec = 1000
-
-
-
-c = -items_per_sec / research.items_per_cycle(space_science_pack)
-inputs = list(research.all_inputs_default(c))
-
-for i in inputs:
-    print('{:22} {:8.2f}'.format(i.product.name, i.q))
-
-
-for i0 in inputs:
-    process = i0.product.default_process()
-    
-    if process not in factories:
-        continue
-    
-    c = -process.cycles_per_second(i0)
-
-    print('\t', process.name, 'c = {} i0.q = {}'.format(c, i0.q))
-
-    for i in process.inputs:
-        r = c * process.items_per_cycle(i.product)
-        connect_to(process, c, i0.product, i, r)
-
 #for i in research.inputs:
 #    connect_to(research, i, None, None, 1000)
 
 
-    
-
-exclude = [
-        research,
-        ]
-
-repeat = True
-while repeat:
-    repeat = False
-    if remove_edges_to_older_ancestors(): repeat = True
-    #if reroute_through_highest_rank_ancestor(): repeat = True
-
-
-
 print()
 
-#print(g.source)
-#g.render('items.svg')
-
-
-#g2.nodes[processing_unit.name].inputs()
-
-for e in g2.edges:
-    e.balance_routes()
-    #e.products()
-
-
-if False:
-    for r in Routes.routes:
-        r.show()
-
-for e in g2.edges:
-    e.show()
-
-g2.graphviz()
-
-print()
-
-if False:
-    print('factories')
-    for n in sorted(g2.nodes.values(), key=lambda n: n.process.name):
-        n.factory_layout()
 
 if False:
     #g2.nodes['advanced circuit'].factory_layout()

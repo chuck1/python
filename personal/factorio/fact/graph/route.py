@@ -23,14 +23,22 @@ class Route:
 
         return max(seq)
 
+    def cargo_wagons(self):
+        wagons = self.slots() / Constants.cargo_wagon_slots
+        return wagons
+
     def trains_per_second(self):
-        cargo_wagons_per_second = self.slots() / 40
-        trains_per_second = cargo_wagons_per_second / Constants.wagons_per_train
+        wagons = self.cargo_wagons() + self.fluid_wagons()
+        trains_per_second = wagons / Constants.train_configuration.wagons
         return trains_per_second
 
     def slots(self):
         # cargo wagon slots per second
         return max(l.slots() for l in self.legs)
+
+    def fluid_wagons(self):
+        # fluid wagons per second
+        return max(l.fluid_wagons() for l in self.legs)
 
     def show(self):
         print('route {:2}: {}'.format(self.id_, self.node.process.name))

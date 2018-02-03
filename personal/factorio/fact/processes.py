@@ -768,6 +768,7 @@ research = Process(
             ProductInput(production_science_pack, 1),
             ProductInput(high_tech_science_pack, 1),
             ProductInput(space_science_pack, 1),
+            ProductInput(research_phantom, -1),
             ],
         1,
         has_site=True,
@@ -1065,10 +1066,12 @@ production = Process("production",
         )
 
 
+
 #x.process_default = produce_x
 #x.process_default = produce_x
 #x.process_default = produce_x
 #x.process_default = produce_x
+research_phantom.process_default = research
 pumpjack.process_default = produce_pumpjack
 lab.process_default = produce_lab
 oil_refinery.process_default = produce_oil_refinery

@@ -9,21 +9,26 @@ import scipy.optimize
 from constants import *
 from fact.graph.edge import *
 from fact.graph.product import *
+from fact.graph.util import *
 
 def leg_difference(l0, l1):
     products = []
     
     if l0 is not None:
-        products += [RouteLegProduct(p.product, -p.rate) for p in l0.products]
+        products += [RouteLegProduct(None, p.product, -p.rate) for p in l0.products]
 
     if l1 is not None:
-        products += [RouteLegProduct(p.product, p.rate) for p in l1.products]
+        products += [RouteLegProduct(None, p.product, p.rate) for p in l1.products]
     
     products = sorted(products, key=lambda p: id(p.product))
     groups = itertools.groupby(products, key=lambda p: p.product)
 
     for k, g in groups:
-        yield k, sum(p.rate for p in g)
+        rate = sum(p.rate for p in g)
+        
+        if abs(rate) < 1e-10: continue
+
+        yield ItemRate(k, rate)
 
 class RouteLeg:
     def __init__(self, route, edge, products):
@@ -33,6 +38,9 @@ class RouteLeg:
 
     def slots(self):
         return sum(p.slots() for p in self.products)
+
+    def fluid_wagons(self):
+        return sum(p.fluid_wagons() for p in self.products)
 
     def get_product(self, product):
         return next(p for p in self.products if p.product == product)

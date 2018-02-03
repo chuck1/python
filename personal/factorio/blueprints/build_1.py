@@ -14,6 +14,7 @@ def gcd(X):
 
 def distribute(counts_and_blueprints):
 
+    counts_and_blueprints = [x for x in counts_and_blueprints if x[0] > 0]
     counts_and_blueprints = sorted(counts_and_blueprints, key=lambda x: x[0])
     
     s0, blueprints = zip(*counts_and_blueprints)
