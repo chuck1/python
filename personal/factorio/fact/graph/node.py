@@ -558,6 +558,7 @@ class Node:
         
         # total width of each subfactory will be 
 
+        # add margin of 6 to subfactory height for additional beacons
 
         w = self.subfactory_grid_width
         h = self.subfactory_grid_height
@@ -661,11 +662,11 @@ class Node:
 
             if sum(s.ws_c for s in stations) > 0:
 
-                subfactory = self.subfactory_test(100, 100, bl, stations, b0, inserters_per_stop)
+                subfactory = self.subfactory_test(50, 50, bl, stations, b0, inserters_per_stop)
                 
                 self.factory_layout_2(subfactory)
 
-                #subfactory.blueprint()
+                subfactory.blueprint()
         
 
         # another calculation of the number of stops of each type needed to serve a logisitic area of my chosing

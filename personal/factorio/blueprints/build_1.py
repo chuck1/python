@@ -51,9 +51,39 @@ def distribute(counts_and_blueprints):
 def repeat(b):
     while True:
         yield b
-            
-def subfactory(g0, stops, stop_blueprints, m, n):
+   
+def stops_in_middle(g0, stops, stop_blueprints, m, n):
+    g1 = Group(tile(g0, 1, n))
     
+    l = []
+    
+    m1 = m // 2
+    m2 = m - m1
+
+    for i in range(m1):
+        b1 = copy.deepcopy(g1)
+        if l:
+            b1.shift([l[-1].x_max() - b1.x_min() + 1, 0])
+        l.append(b1)
+        
+
+    for c, b in zip(stops, stop_blueprints):
+        for i in range(int(c)):
+            b1 = copy.deepcopy(b)
+            if l:
+                b1.shift([l[-1].x_max() - b1.x_min() + 1, 0])
+            l.append(b1)
+
+    for i in range(m2):
+        b1 = copy.deepcopy(g1)
+        if l:
+            b1.shift([l[-1].x_max() - b1.x_min() + 1, 0])
+        l.append(b1)
+ 
+    return Group(l)
+
+def stops_distributed(g0, stops, stop_blueprints, m, n):
+
     g1 = Group(tile(g0, 1, n))
     
     l = []
@@ -73,6 +103,9 @@ def subfactory(g0, stops, stop_blueprints, m, n):
         l.append(b1)
 
     return Group(l)
+
+def subfactory(g0, stops, stop_blueprints, m, n):
+    return stops_in_middle(g0, stops, stop_blueprints, m, n)
 
 
 if __name__ == '__main__':

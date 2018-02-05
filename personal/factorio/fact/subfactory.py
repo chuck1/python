@@ -42,5 +42,9 @@ class Subfactory:
         return self.count_x * self.bl.tile_x
 
     def height(self):
-        return self.count_y * self.bl.tile_y
+        # for additional beacons
+        margin = 6
+        return self.count_y * self.bl.tile_y + margin
+
+
 
