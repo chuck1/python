@@ -30,13 +30,17 @@ class Subfactory:
                     stop_blueprints,
                     self.count_y, 
                     self.count_x)
+        
+        print('subfactory blueprint')
+        print('height   ', g.height())
 
-        b = blueprints.blueprint.Blueprint()
-        b.entities.append(g)
-        b.plot()
+        #b = blueprints.blueprint.Blueprint()
+        #b.entities.append(g)
+        #b.plot()
         
         #stops_x_1 = i_x / ips
 
+        return g
 
     def width(self):
         return self.count_x * self.bl.tile_x

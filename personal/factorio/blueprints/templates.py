@@ -4,9 +4,9 @@ import numpy as np
 
 from .blueprint import *
 
-def floor_(x, y):
-    return (x // y) * y
-
+class GroupTrainStop(Group):
+    def __init__(self, entities):
+        super(GroupTrainStop, self).__init__(entities)
 
 def pipes_y(x, y0, y1):
     for y in range(y0, y1 + 1):
@@ -23,10 +23,21 @@ def fluid_train_stop(wagons):
         ])
 
 def train_stop(wagons, frac_loading):
-    return Group([
-        Group(tile(wagon_stop(frac_loading), 1, wagons, x=0, y=1)),
-        Group(rails_y(0.5, 0.5, 0.5 + floor_(wagons * 7, 2))),
+    #rails = list(rails_y(3.0, 1.0, 1.0 + floor_(wagons * 7, 2)))
+
+    g = GroupTrainStop([
+        Group(tile(wagon_stop(frac_loading), wagons, 1, x=1, y=0)),
+        #Group(rails),
         ])
+    
+    g.rail_placeholder = Entity({'name':'placeholder'}, [3.0, 1.0])
+
+    g.entities.append(g.rail_placeholder)
+
+    #g.rail_west = rails[0]
+    #g.rail_east = rails[-1]
+    
+    return g
 
 def fluid_wagon_stop():
     return Group([
@@ -38,9 +49,9 @@ def wagon_stop(frac_loading):
 
     def inserter_and_chest_positions():
         for i in range(6):
-            yield [-1, i], [-2, i]
+            yield [i + 0.5, 1.5], [i + 0.5, 0.5]
         for i in range(6):
-            yield [2, i], [3, i]
+            yield [i + 0.5, 4.5], [i + 0.5, 5.5]
     
     p = inserter_and_chest_positions()
 
@@ -110,30 +121,30 @@ def assembling_pipe():
 
 def assembling():
     g1 = Group([
-        Entity({'name': 'assembling-machine-1'}, [0, 0]),
+        Entity({'name': 'assembling-machine-1'}, [0.5, 0.5]),
         ])
-    g1 = Group(tile(g1, 1, 2))
+    g1 = Group(tile(g1, 2, 1))
    
     g2 = Group([
-        Entity({'name': 'assembling-machine-1'}, [6, 0]),
+        Entity({'name': 'assembling-machine-1'}, [0.5, 6.5]),
         ])
-    g2 = Group(tile(g2, 1, 2))
+    g2 = Group(tile(g2, 2, 1))
    
     inserters1 = Group([
-        Entity({'name': 'inserter'}, [2, -1]),
-        Entity({'name': 'inserter'}, [2, 0]),
-        Entity({'name': 'inserter'}, [4, -1]),
-        Entity({'name': 'inserter'}, [4, 0]),
+        Entity({'name': 'inserter'}, [-0.5, 2.5]),
+        Entity({'name': 'inserter'}, [0.5, 2.5]),
+        Entity({'name': 'inserter'}, [-0.5, 4.5]),
+        Entity({'name': 'inserter'}, [0.5, 4.5]),
         ])
     inserters2 = copy.deepcopy(inserters1)
-    inserters2.shift([0, 4])
+    inserters2.shift([4, 0])
 
     chests1 = Group([
-        Entity({'name': 'requester-chest'}, [3, -1]),
-        Entity({'name': 'passive-provider-chest'}, [3, 0]),
+        Entity({'name': 'requester-chest'}, [-0.5, 3.5]),
+        Entity({'name': 'passive-provider-chest'}, [0.5, 3.5]),
         ])
     chests2 = copy.deepcopy(chests1)
-    chests1.shift([0, 4])
+    chests1.shift([4, 0])
 
     g = Group([
         g1,
@@ -142,11 +153,11 @@ def assembling():
         inserters2,
         chests1,
         chests2,
-        Group(tile(Entity({'name': 'beacon'}, [9, 0]), 1, 2)),
-        Entity({'name': 'substation'}, [3.5, 1.5]),
+        Group(tile(Entity({'name': 'beacon'}, [0.5, 9.5]), 2, 1)),
+        Entity({'name': 'substation'}, [2, 4]),
         ])
     
-    g.shift([g.x_min(), g.y_min()])
+    #g.shift([g.x_min(), g.y_min()])
 
     return g
 

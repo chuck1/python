@@ -10,10 +10,15 @@ import enum
 import copy
 
 def tile(g0, m, n, x=0, y=0):
+
+    h = g0.height()
+    w = g0.width()
+
     for i in range(m):
         for j in range(n):
             g = copy.deepcopy(g0)
-            s = [(g0.width() + x) * i, (g0.height() + y) * j]
+            #s = [(g0.width() + x) * i, (g0.height() + y) * j]
+            s = [(w + x) * i, (h + y) * j]
             g.shift(s)
             yield g
 
@@ -37,7 +42,7 @@ class BlueprintBook:
     def find_print(self, label):
         for b in self.data['blueprint_book']['blueprints']:
             if b['blueprint']['label'] == label:
-                return b['blueprint']
+                return Blueprint(b['blueprint'])
 
 class Group:
     def __init__(self, entities):
@@ -106,7 +111,17 @@ class Entity:
         return Entity(data, p)
 
     def __init__(self, data, position):
-        self.data, self.position = data, position
+        self.data = data
+        self.position = np.array(position, dtype=float)
+        
+        f = self.footprint()
+        
+        #self.position[0] = self.position[0] - (f[0] - 1) / 2
+        #self.position[1] -= (f[1] - 1) / 2
+        
+        #self.position += [0.5, 0.5]
+
+        #print(self.name(), position, f, (f-1)/2, self.position)
 
     def name(self):
         return self.data['name']
@@ -117,7 +132,7 @@ class Entity:
     def color(self):
         m = {
                 'straight-rail':            [0.0, 0.0, 0.0],#self.color_straight_rail,
-                'curved-rail':              [0.1, 0.1, 0.5],
+                'curved-rail':              [1.0, 1.0, 0.0],
                 'transport-belt':           [1.0, 1.0, 0.0],
                 'assembling-machine-1':     [0.0, 0.0, 1.0],
                 'inserter':                 [1.0, 0.5, 0.0],
@@ -173,43 +188,34 @@ class Entity:
                 'pump':                 [2, 1],
                 }
         if self.data['name'] in footprints:
-            return footprints[self.data['name']]
+            return np.array(footprints[self.data['name']])
 
-        return [1, 1]
-    
+        return np.array([1, 1])
+
     def plot(self, img, x0, y0):
         x = self.position[0] - x0
         y = self.position[1] - y0
         
         f = self.footprint()
         
+
         X = np.arange(x - (f[0] - 1) / 2, x + (f[0] + 1) / 2)
         Y = np.arange(y - (f[1] - 1) / 2, y + (f[1] + 1) / 2)
+
+        #print(self.name(), f, x, y, X, Y)
 
         c = self.color()
 
         if c is None: return
-
-        """
-        if (x % 1) == 0:
-            X = [x]
-        else:
-            X = [math.floor(x), math.ceil(x)]
-
-        if (y % 1) == 0:
-            Y = [y]
-        else:
-            Y = [math.floor(y), math.ceil(y)]
-        """
 
         for x in X:
             for y in Y:
                 x = int(round(x))
                 y = int(round(y))
                 
-                blank = np.all(img[x, y] == np.array([1, 1, 1]))
+                blank = np.all(img[y, x] == np.array([1, 1, 1]))
                 if blank or (self.name() == 'substation'):
-                    img[x, y] = c
+                    img[y, x] = c
 
     def show(self, i=0):
         p = ' '*i
@@ -288,11 +294,13 @@ class Blueprint:
     def plot(self):
         print('plot')
         print(self.width(), self.height())
-
-        img = np.ones((int(self.width()) + 2, int(self.height()) + 2, 3))
         
-        x0 = self.x_min() - 1
-        y0 = self.y_min() - 1
+        h_img = int(self.height()) + 2
+        w_img = int(self.width()) + 2
+        img = np.ones((h_img, w_img, 3))
+        
+        x0 = math.ceil(self.x_min()) - 1 - 0.5
+        y0 = math.ceil(self.y_min()) - 1 - 0.5
         
         names = []
 
@@ -302,27 +310,8 @@ class Blueprint:
             #    print(e.data['name'])
             #    names.append(e.data['name'])
             
-            
             e.plot(img, x0, y0)
-            continue
-
-            x = e.data['position']['x'] - x0
-            y = e.data['position']['y'] - y0
-            
-            if (x % 1) == 0:
-                X = [x]
-            else:
-                X = [math.floor(x), math.ceil(x)]
-
-            if (y % 1) == 0:
-                Y = [y]
-            else:
-                Y = [math.floor(y), math.ceil(y)]
-            
-            for x in X:
-                for y in Y:
-                    img[x, y] = c
-        
+               
         fig = plt.figure()
 
         ax = fig.add_subplot(111)
@@ -332,7 +321,7 @@ class Blueprint:
         loc = plticker.MultipleLocator(base=1)
         ax.xaxis.set_major_locator(loc)
         ax.yaxis.set_major_locator(loc)
-        ax.grid(which='major', axis='both', linestyle='-')
+        #ax.grid(which='major', axis='both', linestyle='-')
 
         plt.show()
 

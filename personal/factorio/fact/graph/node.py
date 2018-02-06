@@ -433,19 +433,23 @@ class Node:
         h_p = count_y * bl.tile_y
 
         w = a_p / h_p
-        count_x = math.floor(w / bl.tile_x)
+        count_x = floor_(w / bl.tile_x, 2)
         w = count_x * bl.tile_x
 
         a_p = w * h_p
 
         b = a_p / bl.footprint
 
+        subfactories_0 = B / b
         subfactories = math.ceil(B / b)
         
         w_h_ratio = 2 / 3
         
-        w = math.ceil(math.sqrt(B / b * w_h_ratio))
-        h = math.ceil(B / b / w)
+        #w = math.ceil(math.sqrt(subfactories_0 * w_h_ratio))
+        #h = math.ceil(subfactories_0 / w)
+
+        h = math.ceil(math.sqrt(subfactories_0 / w_h_ratio))
+        w = math.ceil(subfactories_0 / h)
 
         self.subfactory_grid_width = w
         self.subfactory_grid_height = h
@@ -554,6 +558,12 @@ class Node:
         f = 0.5
         return math.ceil(self.bus_1_trains_per_sec_downstream() / Constants.train_configuration.train_line_capacity() / f)
 
+    def bus_2_width_up(self):
+        return Constants.train_turn_radius + 1 + 4 * (self.bus_2_rails_upstream() - 1)
+
+    def bus_2_width_down(self):
+        return Constants.train_turn_radius + 1 + 4 * (self.bus_2_rails_downstream() - 1)
+
     def factory_layout_2(self, subfactory):
         
         # total width of each subfactory will be 
@@ -565,13 +575,12 @@ class Node:
         
         subfactory_waiting = TrainWaitingAreaEW(2)
         
-        bus_2_width_up = Constants.train_turn_radius + 1 + 4 * (self.bus_2_rails_upstream() - 1)
+        
         bus_1_width_up = Constants.train_turn_radius + 1 + 4 * (self.bus_1_rails_upstream() - 1)
 
-        bus_2_width_down = Constants.train_turn_radius + 1 + 4 * (self.bus_2_rails_downstream() - 1)
         bus_1_width_down = Constants.train_turn_radius + 1 + 4 * (self.bus_1_rails_downstream() - 1)
 
-        column_width = subfactory.width() + subfactory_waiting.width() * 2 + bus_2_width_up + bus_2_width_down
+        column_width = subfactory.width() + subfactory_waiting.width() * 2 + self.bus_2_width_up() + self.bus_2_width_down()
 
         height = subfactory.height() * h + bus_1_width_up + bus_1_width_down
         width = column_width * w
@@ -582,7 +591,7 @@ class Node:
         print()
         print('bus 2 trains                ', self.bus_2_trains_per_sec_upstream())
         print('bus 2 rails                 ', self.bus_2_rails_upstream())
-        print('bus 2 width                 ', bus_2_width_up)
+        print('bus 2 width                 ', self.bus_2_width_up())
         print()
         print('bus 1 trains                ', self.bus_1_trains_per_sec_upstream())
         print('bus 1 rails                 ', self.bus_1_rails_upstream())
@@ -594,7 +603,7 @@ class Node:
         print()
         print('bus 2 trains                ', self.bus_2_trains_per_sec_downstream())
         print('bus 2 rails                 ', self.bus_2_rails_downstream())
-        print('bus 2 width                 ', bus_2_width_down)
+        print('bus 2 width                 ', self.bus_2_width_down())
         print()
         print('bus 1 trains                ', self.bus_1_trains_per_sec_downstream())
         print('bus 1 rails                 ', self.bus_1_rails_downstream())
@@ -605,6 +614,23 @@ class Node:
         print('col width                   ', column_width)
         print('height                      ', height)
         print('width                       ', width)
+
+    def blueprint(self):
+        
+        subfactory_blueprint = self.subfactory.blueprint()
+        
+        g = blueprints.blueprint.Group(list(blueprints.blueprint.tile(
+            subfactory_blueprint, 
+            self.subfactory_grid_width, 
+            self.subfactory_grid_height)))
+
+        l1 = [g]
+
+        g1 = blueprints.blueprint.Group(l1)
+        
+        b = blueprints.blueprint.Blueprint()
+        b.entities.append(g1)
+        b.plot()
 
     def factory_layout(self):
         print(crayons.blue('factory: {}'.format(self.process.name), bold=True))
@@ -662,11 +688,11 @@ class Node:
 
             if sum(s.ws_c for s in stations) > 0:
 
-                subfactory = self.subfactory_test(50, 50, bl, stations, b0, inserters_per_stop)
+                self.subfactory = self.subfactory_test(46, 50, bl, stations, b0, inserters_per_stop)
                 
-                self.factory_layout_2(subfactory)
+                self.factory_layout_2(self.subfactory)
 
-                subfactory.blueprint()
+                self.subfactory.blueprint()
         
 
         # another calculation of the number of stops of each type needed to serve a logisitic area of my chosing
@@ -681,6 +707,8 @@ class Node:
         print('buildings:       {:8.1f}'.format(self.buildings()))
         print('area (sq tile):  {:8.1f}'.format(area))
         print('area (sq chunk): {:8.1f}'.format(area / 32 / 32))
+
+        self.blueprint()
 
     def items_out(self):
         for l in self.legs_out():
