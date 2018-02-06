@@ -2,6 +2,8 @@ import copy
 import enum
 import fractions
 
+from fact.util import *
+
 from .templates import *
 from .blueprint import *
 
@@ -157,10 +159,23 @@ def subfactory(g0, stops, stop_blueprints, m, n):
     g = layout_y(stops_in_middle(g0, stops, stop_blueprints, m, n))
 
     h = g.height()
+    
+    x0 = g.x_min()
+    
+    # so rail aligns with west edge
+    g.shift([-0.5 - x0, 0])
 
     for g1 in g.entities:
         if isinstance(g1, GroupTrainStop):
-            pass
+            rails = list(rails_x(0, floor_(g.x_max(), 2) + 2, g1.rail_placeholder.position[1]))
+            rail_west = rails[0]
+            rail_east = rails[-1]
+            g1.entities.append(Group(rails))
+
+            
+            
+    
+    
 
     return g
 

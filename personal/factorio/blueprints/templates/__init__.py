@@ -2,7 +2,7 @@ import copy
 import enum
 import numpy as np
 
-from .blueprint import *
+from blueprints.blueprint import *
 
 class GroupTrainStop(Group):
     def __init__(self, entities):
@@ -14,6 +14,10 @@ def pipes_y(x, y0, y1):
 
 def rails_y(x, y0, y1):
     for y in np.arange(y0, y1, 2):
+        yield Entity({'name': 'straight-rail'}, [x, y])
+
+def rails_x(x0, x1, y):
+    for x in np.arange(x0, x1, 2):
         yield Entity({'name': 'straight-rail'}, [x, y])
 
 def fluid_train_stop(wagons):
@@ -30,7 +34,7 @@ def train_stop(wagons, frac_loading):
         #Group(rails),
         ])
     
-    g.rail_placeholder = Entity({'name':'placeholder'}, [3.0, 1.0])
+    g.rail_placeholder = Entity({'name':'placeholder'}, [1.0, 3.0])
 
     g.entities.append(g.rail_placeholder)
 

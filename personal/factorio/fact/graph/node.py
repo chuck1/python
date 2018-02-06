@@ -426,15 +426,13 @@ class Node:
         
         height_stops = np.sum(stops_c) * 6
 
-        w = correct_answer(*quadratic(1, -height_stops, -a_p))
+        count_y = math.ceil((h - height_stops) / bl.tile_y)
 
-        h_p = a_p / w
-        count_y = math.ceil(h_p / bl.tile_y)
-        h_p = count_y * bl.tile_y
 
-        w = a_p / h_p
         count_x = floor_(w / bl.tile_x, 2)
+
         w = count_x * bl.tile_x
+        h_p = count_y * bl.tile_y
 
         a_p = w * h_p
 
