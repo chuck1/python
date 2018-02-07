@@ -4,9 +4,47 @@ import numpy as np
 
 from blueprints.blueprint import *
 
+def layout_x(generator):
+    l = []
+
+    for b in generator:
+        if l:
+            sx = l[-1].x_max() - b.x_min() + 1
+            b.shift([sx, 0])
+        l.append(b)
+    
+    return Group(l)
+
+def layout_y(generator):
+    l = []
+
+    for b in generator:
+        if l:
+            sy = l[-1].y_max() - b.y_min() + 1
+            b.shift([0, sy])
+        l.append(b)
+    
+    return Group(l)
+
+
 class GroupTrainStop(Group):
     def __init__(self, entities):
         super(GroupTrainStop, self).__init__(entities)
+
+
+class GroupTrainStopOrig(GroupTrainStop):
+    pass
+
+class GroupTrainStopTerm(GroupTrainStop):
+    pass
+
+class GroupTrainStopThru(GroupTrainStop):
+    pass
+
+def train_stop_class(station):
+    if station.is_thru(): return GroupTrainStopThru
+    if station.is_orig(): return GroupTrainStopOrig
+    if station.is_term(): return GroupTrainStopTerm
 
 def pipes_y(x, y0, y1):
     for y in range(y0, y1 + 1):
@@ -26,13 +64,19 @@ def fluid_train_stop(wagons):
         Group(rails_y(0.5, 0.5, 0.5 + floor_(wagons * 7, 2))),
         ])
 
-def train_stop(wagons, frac_loading):
+def train_stop(station, wagons, frac_loading, loco_0, loco_1):
     #rails = list(rails_y(3.0, 1.0, 1.0 + floor_(wagons * 7, 2)))
 
-    g = GroupTrainStop([
-        Group(tile(wagon_stop(frac_loading), wagons, 1, x=1, y=0)),
-        #Group(rails),
-        ])
+    loco_0_fuel = loco_fuel()
+
+    wagon_stops = Group(tile(wagon_stop(frac_loading), wagons, 1, x=1, y=0))
+    
+    def prints():
+        for i in range(loco_0): yield loco_fuel()
+        yield wagon_stops
+        for i in range(loco_1): yield loco_fuel()
+    
+    g = train_stop_class(station)([layout_x(prints())])
     
     g.rail_placeholder = Entity({'name':'placeholder'}, [1.0, 3.0])
 
@@ -48,6 +92,14 @@ def fluid_wagon_stop():
         Entity({'name':'pump'}, [-1.5, 0]),
         Entity({'name':'tank'}, [-4.0, 1]),
         ])
+
+def loco_fuel():
+    l = []
+    l.append(Entity({'name':''}, [0.5, 0.5]))
+    l.append(Entity({'name':'requester-chest'}, [2.5, 0.5]))
+    l.append(Entity({'name':'inserter'}, [2.5, 1.5]))
+    l.append(Entity({'name':''}, [6.5, 5.5]))
+    return Group(l)
 
 def wagon_stop(frac_loading):
 

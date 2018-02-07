@@ -386,7 +386,9 @@ def program_factories(args):
     #g.nodes['iron plate'].factory_layout()
     #g.nodes['steel plate'].factory_layout()
     #g.nodes['rocket control unit'].factory_layout()
-    g.nodes['accumulator'].factory_layout()
+    #g.nodes['accumulator'].factory_layout()
+    g.nodes['solar_panel'].factory_layout()
+    #g.nodes['grenade'].factory_layout()
     return
 
     print('factories')

@@ -3,9 +3,11 @@ import enum
 import fractions
 
 from fact.util import *
+from constants import *
 
 from .templates import *
 from .blueprint import *
+import blueprints.templates.rails
 
 def tile_gap(g0, m, n, w_x, w_y, x=0, y=0):
     for i in range(m):
@@ -84,17 +86,6 @@ def add_beacons_north(b):
     for i in range(n):
         b.entities.append(Entity({'name':'beacon'}, [x0 + 1 + 3 * (i + n) + 4, y0 - 2]))
 
-def layout_y(generator):
-    l = []
-
-    for b in generator:
-        if l:
-            sy = l[-1].y_max() - b.y_min() + 1
-            b.shift([0, sy])
-        l.append(b)
-    
-    return Group(l)
-
 def stops_in_middle(g0, stops, stop_blueprints, m, n):
 
     g1 = Group(tile_gap(g0, n, 1, 4, 0))
@@ -164,18 +155,32 @@ def subfactory(g0, stops, stop_blueprints, m, n):
     
     # so rail aligns with west edge
     g.shift([-0.5 - x0, 0])
-
+    
+    # cumulative number of waiting area lines
+    N = 0
+   
     for g1 in g.entities:
-        if isinstance(g1, GroupTrainStop):
+        if isinstance(g1, (GroupTrainStopThru, GroupTrainStopTerm)):
+            # train stop rails
             rails = list(rails_x(0, floor_(g.x_max(), 2) + 2, g1.rail_placeholder.position[1]))
             rail_west = rails[0]
             rail_east = rails[-1]
             g1.entities.append(Group(rails))
+            
+            # waiting area west
+            extra_length = 20
+            d = math.ceil((Constants.train_configuration.length() + extra_length) * math.sqrt(2) / 2 / 2)
+            n = 2
+            waiting_area_west = blueprints.templates.rails.waiting_area_EW(rail_west, d, n, [-N * 4, 0])
+            waiting_area_west.y_min_exclude = True
+            
+            N += n
 
-            
-            
-    
-    
+            g1.entities.append(waiting_area_west)
+
+            e = Entity({'name':'bus_2_placeholder_west'}, waiting_area_west.connection_west.position)
+            e.y_min_exclude = True
+            g1.entities.append(e)
 
     return g
 

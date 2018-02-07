@@ -11,9 +11,9 @@ import copy
 
 def tile(g0, m, n, x=0, y=0):
 
-    h = g0.height()
-    w = g0.width()
-
+    h = math.ceil(g0.height())
+    w = math.ceil(g0.width())
+    
     for i in range(m):
         for j in range(n):
             g = copy.deepcopy(g0)
@@ -47,6 +47,20 @@ class BlueprintBook:
 class Group:
     def __init__(self, entities):
         self.entities = list(entities)
+        
+        self.y_min_exclude = False
+        self.y_max_exclude = False
+        self.x_min_exclude = False
+        self.x_max_exclude = False
+
+    def include_all(self):
+        self.y_min_exclude = False
+        self.y_max_exclude = False
+        self.x_min_exclude = False
+        self.x_max_exclude = False
+
+        for e in self.entities:
+            e.include_all()
 
     def name(self):
         return 'group'
@@ -73,18 +87,36 @@ class Group:
                 ret = e.x_max()
         return ret
      
-    def y_min(self):
+    def y_min_plot(self):
         ret = float("inf")
         for e in self.entities:
-            if e.y_min() < ret:
-                ret = e.y_min()
+            y = e.y_min_plot()
+            if y < ret:
+                ret = y
+        return ret
+
+    def y_min(self):
+        ret = float("inf")
+
+        if self.y_min_exclude:
+            return ret
+
+        for e in self.entities:
+            y = e.y_min()
+            if y < ret:
+                ret = y
         return ret
 
     def y_max(self):
         ret = -float("inf")
+        
+        if self.y_max_exclude:
+            return ret
+
         for e in self.entities:
-            if e.y_max() > ret:
-                ret = e.y_max()
+            y = e.y_max()
+            if y > ret:
+                ret = y
         return ret
 
     def width(self):
@@ -92,6 +124,9 @@ class Group:
 
     def height(self):
         return self.y_max() - self.y_min() + 1
+
+    def height_plot(self):
+        return self.y_max() - self.y_min_plot() + 1
 
     def center(self):
         return np.array([
@@ -122,6 +157,17 @@ class Entity:
         #self.position += [0.5, 0.5]
 
         #print(self.name(), position, f, (f-1)/2, self.position)
+
+        self.y_min_exclude = False
+        self.y_max_exclude = False
+        self.x_min_exclude = False
+        self.x_max_exclude = False
+
+    def include_all(self):
+        self.y_min_exclude = False
+        self.y_max_exclude = False
+        self.x_min_exclude = False
+        self.x_max_exclude = False
 
     def name(self):
         return self.data['name']
@@ -161,7 +207,10 @@ class Entity:
         return self.position[0] + (self.footprint()[0] - 1) / 2
 
     def y_min(self):
+        if self.y_min_exclude: return float('inf')
         return self.position[1] - (self.footprint()[1] - 1) / 2
+
+    y_min_plot = y_min
 
     def y_max(self):
         return self.position[1] + (self.footprint()[1] - 1) / 2
@@ -260,6 +309,14 @@ class Blueprint:
                 ret = e.x_max()
         return ret
      
+    def y_min_plot(self):
+        ret = 0
+        for e in self.entities:
+            y = e.y_min_plot()
+            if y < ret:
+                ret = y
+        return ret
+
     def y_min(self):
         ret = 0
         for e in self.entities:
@@ -293,14 +350,14 @@ class Blueprint:
 
     def plot(self):
         print('plot')
-        print(self.width(), self.height())
+        print(self.width(), self.height_plot())
         
-        h_img = int(self.height()) + 2
+        h_img = int(self.height_plot()) + 2
         w_img = int(self.width()) + 2
         img = np.ones((h_img, w_img, 3))
         
         x0 = math.ceil(self.x_min()) - 1 - 0.5
-        y0 = math.ceil(self.y_min()) - 1 - 0.5
+        y0 = math.ceil(self.y_min_plot()) - 1 - 0.5
         
         names = []
 
@@ -318,9 +375,9 @@ class Blueprint:
 
         imgplot = ax.imshow(img)
 
-        loc = plticker.MultipleLocator(base=1)
-        ax.xaxis.set_major_locator(loc)
-        ax.yaxis.set_major_locator(loc)
+        #loc = plticker.MultipleLocator(base=1)
+        #ax.xaxis.set_major_locator(loc)
+        #ax.yaxis.set_major_locator(loc)
         #ax.grid(which='major', axis='both', linestyle='-')
 
         plt.show()
@@ -330,6 +387,9 @@ class Blueprint:
 
     def height(self):
         return self.y_max() - self.y_min() + 1
+
+    def height_plot(self):
+        return self.y_max() - self.y_min_plot() + 1
 
 
 

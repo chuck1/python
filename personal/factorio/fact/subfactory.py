@@ -22,7 +22,13 @@ class Subfactory:
 
     def blueprint(self):
         
-        stop_blueprints = [bp.templates.train_stop(Constants.train_configuration.wagons, s.inserter_load_fraction(self.factory)) for s in self.stations]
+        stop_blueprints = [bp.templates.train_stop(
+            s, 
+            Constants.train_configuration.wagons, 
+            s.inserter_load_fraction(self.factory),
+            Constants.train_configuration.loco_1, 
+            Constants.train_configuration.loco_2, 
+            ) for s in self.stations]
         
         g = blueprints.build_1.subfactory(
                     blueprints.templates.assembling(), 
