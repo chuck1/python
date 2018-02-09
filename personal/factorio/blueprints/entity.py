@@ -10,23 +10,7 @@ import enum
 import copy
 import progressbar
 
-class EntityPosition:
-    def __init__(self):
-        pass
-    def __get__(self, instance, owner):
-        #print('get')
-        #print(instance)
-        #print(owner)
-        return instance.__position
-    def __set__(self, instance, value):
-        #print('set')
-        #print(instance)
-        #print(value)
-        instance.__position = value
-        instance.invalidate()
-    def __delete__(self, instance):
-        print('delete')
-        print(instance)
+from .entity_position import *
 
 class Entity:
     position = EntityPosition()
@@ -111,12 +95,13 @@ class Entity:
         if self.y_min_exclude: return float('inf')
         return self.position[1] - (self.footprint()[1] - 1) / 2
 
-    y_min_plot = y_min
-
     @property
     def y_max(self):
         if self.y_max_exclude: return float('-inf')
         return self.position[1] + (self.footprint()[1] - 1) / 2
+
+    y_min_plot = y_min
+    y_max_plot = y_max
 
     def width(self):
         return self.x_max - self.x_min + 1
@@ -144,9 +129,9 @@ class Entity:
 
         return np.array([1, 1])
 
-    def plot(self, img, x0, y0, i, n):
-        x = self.position[0] - x0
-        y = self.position[1] - y0
+    def plot(self, img, p0, i, n):
+        x = self.position[0] + p0[0]
+        y = self.position[1] + p0[1]
         
         f = self.footprint()
 
@@ -166,6 +151,17 @@ class Entity:
                 x = int(round(x))
                 y = int(round(y))
                 
+                if y >= np.shape(img)[0]:
+                    print('out of bounds', self.name(), self.position, p0)
+                    print('{} >= {}'.format(y, np.shape(img)[0]))
+                    continue
+
+                if x >= np.shape(img)[1]: 
+                    print()
+                    print('out of bounds', self.name(), self.position, p0)
+                    print('{} >= {}'.format(x, np.shape(img)[1]))
+                    continue
+
                 blank = np.all(img[y, x] == np.array([1, 1, 1]))
                 if blank or (self.name() == 'substation'):
                     img[y, x] = c

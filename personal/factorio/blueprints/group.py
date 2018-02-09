@@ -11,24 +11,22 @@ import copy
 import progressbar
 from cached_property import cached_property
 
+from .entity_position import *
+
 class Group:
+    position = EntityPosition()
+
     def __init__(self, entities):
         self.__entities = list(entities)
-        
-        for e in self.entities:
-            e.group = self
+
+        self.position = np.zeros((2,))
 
         self.y_min_exclude = False
         self.y_max_exclude = False
         self.x_min_exclude = False
         self.x_max_exclude = False
 
-        self.group = None
-        
     def invalidate(self):
-
-        if self.group is not None:
-            self.group.invalidate()
 
         if 'x_min' in self.__dict__:
             del self.__dict__['x_min']
@@ -63,19 +61,19 @@ class Group:
     
     def entities_append(self, e):
         self.__entities.append(e)
-        e.group = self
         self.invalidate()
 
     def name(self):
         return 'group'
 
-    def plot(self, img, x0, y0, i, n):
+    def plot(self, img, p0, i, n):
         for e in self.entities:
-            e.plot(img, x0, y0, i, n)
+            e.plot(img, p0 + self.position, i, n)
 
     def shift(self, p):
-        for e in self.entities:
-            e.shift(p)
+        self.position = self.position + p
+        #for e in self.entities:
+        #    e.shift(p)
 
     @cached_property
     def x_min(self):
@@ -84,7 +82,7 @@ class Group:
             x = e.x_min
             if x < ret:
                 ret = x
-        return ret
+        return ret + self.position[0]
 
     @cached_property
     def x_max(self):
@@ -93,7 +91,7 @@ class Group:
             x = e.x_max
             if x > ret:
                 ret = x
-        return ret
+        return ret + self.position[0]
      
     @cached_property
     def y_min_plot(self):
@@ -102,7 +100,7 @@ class Group:
             y = e.y_min_plot
             if y < ret:
                 ret = y
-        return ret
+        return ret + self.position[1]
 
     @cached_property
     def y_min(self):
@@ -115,7 +113,17 @@ class Group:
             y = e.y_min
             if y < ret:
                 ret = y
-        return ret
+        return ret + self.position[1]
+
+    @cached_property
+    def y_max_plot(self):
+        ret = -float("inf")
+
+        for e in self.entities:
+            y = e.y_max_plot
+            if y > ret:
+                ret = y
+        return ret + self.position[1]
 
     @cached_property
     def y_max(self):
@@ -128,7 +136,7 @@ class Group:
             y = e.y_max
             if y > ret:
                 ret = y
-        return ret
+        return ret + self.position[1]
 
     def width(self):
         return self.x_max - self.x_min + 1

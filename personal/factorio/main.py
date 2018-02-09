@@ -300,14 +300,32 @@ def reroute_through_highest_rank_ancestor():
 
 def define_node_groups(g):
     
-    print(g.nodes.keys())
+    l = sorted(g.nodes.keys())
+    for s in l: print(s)
 
     g.node_groups.append([
         g.nodes['mine iron ore'],
         g.nodes['mine copper ore'],
         g.nodes['mine coal'],
+        g.nodes['mine_crude_oil'],
+        ])
+    
+    g.node_groups.append([
+        g.nodes['iron plate'],
+        g.nodes['copper plate'],
+        g.nodes['advanced_oil_processing'],
         ])
 
+    #g.nodes[''],
+ 
+    g.node_groups.append([
+        g.nodes['grenade'],
+        g.nodes['steel plate'],
+        g.nodes['copper cable'],
+        g.nodes['plastic bar'],
+        g.nodes['sulfur'],
+        ])
+   
     g.node_groups.append([
         g.nodes['science pack 1'],
         g.nodes['science pack 2'],
@@ -358,7 +376,7 @@ def create_graph(args):
     repeat = True
     while repeat:
         repeat = False
-        #if remove_edges_to_older_ancestors(g): repeat = True
+        if remove_edges_to_older_ancestors(g): repeat = True
         #if reroute_through_highest_rank_ancestor(g): repeat = True
     
     for e in g.edges:

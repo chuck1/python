@@ -60,6 +60,18 @@ def rails_x(x0, x1, y):
     for x in np.arange(x0, x1, 2):
         yield Entity({'name': 'straight-rail'}, [x, y])
 
+def rails_point_to_point(p0, p1):
+    if p0[0] == p1[0]:
+        y0 = min(p0[1], p1[1])
+        y1 = max(p0[1], p1[1])
+        yield from rails_y(p0[0], y0, y1)
+    elif p0[1] == p1[1]:
+        x0 = min(p0[0], p1[0])
+        x1 = max(p0[0], p1[0])
+        yield from rails_x(x0, x1, p0[1])
+    else:
+        raise Exception()
+
 def fluid_train_stop(wagons):
     return Group([
         Group(tile(fluid_wagon_stop(), 1, wagons, x=0, y=1)),
@@ -180,13 +192,9 @@ def assembling_pipe():
 def assembling():
     g1 = Group([
         Entity({'name': 'assembling-machine-1'}, [0.5, 0.5]),
-        ])
-    g1 = Group(tile(g1, 2, 1))
-   
-    g2 = Group([
         Entity({'name': 'assembling-machine-1'}, [0.5, 6.5]),
         ])
-    g2 = Group(tile(g2, 2, 1))
+    g1 = Group(tile(g1, 2, 1))
    
     inserters1 = Group([
         Entity({'name': 'inserter'}, [-0.5, 2.5]),
@@ -194,23 +202,31 @@ def assembling():
         Entity({'name': 'inserter'}, [-0.5, 4.5]),
         Entity({'name': 'inserter'}, [0.5, 4.5]),
         ])
-    inserters2 = copy.deepcopy(inserters1)
-    inserters2.shift([4, 0])
+    
+    inserters = Group(tile(inserters1, 2, 1, x=2))
 
     chests1 = Group([
         Entity({'name': 'requester-chest'}, [-0.5, 3.5]),
         Entity({'name': 'passive-provider-chest'}, [0.5, 3.5]),
         ])
-    chests2 = copy.deepcopy(chests1)
-    chests1.shift([4, 0])
+
+    chests = Group(tile(chests1, 2, 1, x=2))
+    
+    #print('chests')
+    #for e in chests.entities:
+    #    print(e.position)
+    #print('assembling machines')
+    #for e in g1.entities:
+    #    print(e.position)
+    #print('inserters')
+    #for e in inserters.entities:
+    #    print(e.position)
+    #raise Exception()
 
     g = Group([
         g1,
-        g2,
-        inserters1,
-        inserters2,
-        chests1,
-        chests2,
+        inserters,
+        chests,
         Group(tile(Entity({'name': 'beacon'}, [0.5, 9.5]), 2, 1)),
         Entity({'name': 'substation'}, [2, 4]),
         ])

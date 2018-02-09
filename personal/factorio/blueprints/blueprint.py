@@ -10,6 +10,7 @@ import enum
 import copy
 import progressbar
 
+
 def tile(g0, m, n, x=0, y=0):
 
     h = math.ceil(g0.height())
@@ -17,10 +18,16 @@ def tile(g0, m, n, x=0, y=0):
     
     for i in range(m):
         for j in range(n):
-            g = copy.deepcopy(g0)
+            #g = copy.deepcopy(g0)
+            g = copy.copy(g0)
+
             #s = [(g0.width() + x) * i, (g0.height() + y) * j]
             s = [(w + x) * i, (h + y) * j]
+            
+            #g.position = g0.position + s
+
             g.shift(s)
+
             yield g
 
 class InserterDirection(enum.Enum):
@@ -57,7 +64,8 @@ class Blueprint:
 
         return Blueprint(p['blueprint'])
 
-    def __init__(self, data=empty_blueprint):
+    def __init__(self, name, data=empty_blueprint):
+        self.name = name
         self.data = data
         self.entities = [Entity.from_dict(e) for e in self.data['entities']]
         self.entities = sorted(self.entities, key=lambda e: e.name())
@@ -93,6 +101,14 @@ class Blueprint:
         for e in self.entities:
             if e.y_min < ret:
                 ret = e.y_min
+        return ret
+
+    def y_max_plot(self):
+        ret = 0
+        for e in self.entities:
+            y = e.y_max_plot
+            if y > ret:
+                ret = y
         return ret
 
     def y_max(self):
@@ -132,8 +148,8 @@ class Blueprint:
         w_img = int(self.width()) + 2
         img = np.ones((h_img, w_img, 3))
         
-        x0 = math.ceil(self.x_min()) - 1 - 0.5
-        y0 = math.ceil(self.y_min_plot()) - 1 - 0.5
+        x0 = -(math.ceil(self.x_min()) - 1 - 0.5)
+        y0 = -(math.ceil(self.y_min_plot()) - 1 - 0.5)
         
         names = []
 
@@ -148,7 +164,7 @@ class Blueprint:
             
             #progressbar.progress_bar(i, n)
 
-            e.plot(img, x0, y0, i_iter, n)
+            e.plot(img, np.array([x0, y0]), i_iter, n)
                
         fig = plt.figure()
 
@@ -160,6 +176,8 @@ class Blueprint:
         #ax.xaxis.set_major_locator(loc)
         #ax.yaxis.set_major_locator(loc)
         #ax.grid(which='major', axis='both', linestyle='-')
+        
+        mpimg.imsave(self.name + '.png', img)
 
         plt.show()
 
@@ -170,7 +188,10 @@ class Blueprint:
         return self.y_max() - self.y_min() + 1
 
     def height_plot(self):
-        return self.y_max() - self.y_min_plot() + 1
+        return self.y_max_plot() - self.y_min_plot() + 1
+
+
+   
 
 
 
