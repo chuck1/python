@@ -3,13 +3,15 @@ import enum
 import numpy as np
 
 from blueprints.blueprint import *
+from blueprints.entity import *
+from blueprints.group import *
 
 def layout_x(generator):
     l = []
 
     for b in generator:
         if l:
-            sx = l[-1].x_max() - b.x_min() + 1
+            sx = l[-1].x_max - b.x_min + 1
             b.shift([sx, 0])
         l.append(b)
     
@@ -20,7 +22,7 @@ def layout_y(generator):
 
     for b in generator:
         if l:
-            sy = l[-1].y_max() - b.y_min() + 1
+            sy = l[-1].y_max - b.y_min + 1
             b.shift([0, sy])
         l.append(b)
     
@@ -75,12 +77,12 @@ def train_stop(station, wagons, frac_loading, loco_0, loco_1):
         for i in range(loco_0): yield loco_fuel()
         yield wagon_stops
         for i in range(loco_1): yield loco_fuel()
-    
-    g = train_stop_class(station)([layout_x(prints())])
-    
-    g.rail_placeholder = Entity({'name':'placeholder'}, [1.0, 3.0])
+   
+    e = Entity({'name':'placeholder'}, [1.0, 3.0])
 
-    g.entities.append(g.rail_placeholder)
+    g = train_stop_class(station)([layout_x(prints()), e])
+    
+    g.rail_placeholder = e
 
     #g.rail_west = rails[0]
     #g.rail_east = rails[-1]

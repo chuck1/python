@@ -4,10 +4,13 @@ from fact.util import *
 
 from blueprints.blueprint import *
 import blueprints.templates
+from blueprints.entity import *
+from blueprints.group import *
 
 class TurnDirection(enum.Enum):
     EN = 0
     NW = 1
+    ES = 1
 
 def turn_90(rail, direction, d=0, s=[0, 0]):
     # rail_s - starting straight rail
@@ -52,7 +55,6 @@ def turn_90(rail, direction, d=0, s=[0, 0]):
 
     return g
 
-
 def S_EW(rail_e, d, s=[0, 0]):
     # s - offset from rail_e
     # return tuple of
@@ -78,6 +80,31 @@ def S_EW(rail_e, d, s=[0, 0]):
     
     return g
 
+def S_WE(rail_w, d, s=[0, 0]):
+    # s - offset from rail_e
+    # return tuple of
+    #  Group containing curved and diagonal rails
+    #  position to place straight rail at opposite end
+    
+    l = []
+    
+    # diagonal rails
+    for i in range(d):
+        x = 8 + 2 * i
+        y = 4 + 2 * i
+        e = Entity({'name':'straight-rail'}, [x, y])
+        e.shift(rail_w.position + s)
+        l.append(e)
+    
+    e = Entity({'name':''}, rail_w.position + s + [14 + 2*d - 2, 6 + 2*d])
+    l.append(e)
+
+    g = Group(l)
+
+    g.connection_east = e
+    
+    return g
+
 def waiting_area_EW(rail_e, d, n, s=[0, 0]):
     # d - number of diagonal rails
     # n - number of parallel lines
@@ -89,9 +116,7 @@ def waiting_area_EW(rail_e, d, n, s=[0, 0]):
     l = []
 
     for i in range(n):
-
         e = S_EW(rail_e, d, s + [-4 * i, 0])
-
         l.append(e)
 
     e = Entity({'name':''}, e.connection_west.position)
@@ -103,19 +128,50 @@ def waiting_area_EW(rail_e, d, n, s=[0, 0]):
 
     return g
 
-def bus_turn(rails_start, rails_end, direction):
+def waiting_area_WE(rail_w, d, n, s=[0, 0]):
+    # d - number of diagonal rails
+    # n - number of parallel lines
+
+    assert(n > 0)
+
+    s = np.array(s)
+
+    l = []
+
+    for i in range(n):
+        e = S_WE(rail_w, d, s + [4 * i, 0])
+        l.append(e)
+
+    e = Entity({'name':''}, e.connection_east.position)
+    l.append(e)
+
+    g = Group(l)
     
+    g.connection_east = e
+
+    return g
+
+def bus_turn(rails_start, rails_end, direction):
+
     if direction == TurnDirection.EN:
-        c0 = min(r.position[0] for r in rails_start)
+        D = 0
     elif direction == TurnDirection.NW:
-        c0 = min(r.position[1] for r in rails_start)
+        D = 1
+    elif direction == TurnDirection.ES:
+        D = 0
+
+    c0 = min(r.position[D] for r in rails_start)
 
     print('bus turn')
-    print('rails end  ', len(rails_end))
     print('rails start', len(rails_start))
-
+    for r in rails_start:
+        print('\t{}'.format(r.position))
+    print('rails end  ', len(rails_end))
+    for r in rails_end:
+        print('\t{}'.format(r.position))
+    
     i_iter = iter(spread(len(rails_end), len(rails_start)))
-
+    
     l = []
 
     p_n = [None]*len(rails_end)
@@ -128,23 +184,45 @@ def bus_turn(rails_start, rails_end, direction):
 
 
         if direction == TurnDirection.EN:
-            c1 = r.position[0]
-            rails = list(blueprints.templates.rails_x(c0, c1, r.position[1]))
+            #c1 = r.position[D]
+            c1 = r.position[D]
+            c0 = rails_end[i].position[D] + 12
+            print('rails', c0, c1)
+
+            rails = list(blueprints.templates.rails_x(c0, c1, r.position[1-D]))
         elif direction == TurnDirection.NW:
-            c1 = r.position[1]
-            rails = list(blueprints.templates.rails_y(r.position[0], c0, c1))
+            #c1 = r.position[D]
+            
+            c1 = r.position[D]
+            c0 = rails_end[i].position[D] + 12
+            print('rails', c0, c1)
+            rails = list(blueprints.templates.rails_y(r.position[1-D], c0, c1))
+        elif direction == TurnDirection.ES:
+            #c1 = r.position[D]
+            c1 = r.position[D]
+            c0 = rails_end[i].position[D] - 12
+            print('rails', c0, c1)
+
+            rails = list(blueprints.templates.rails_x(c0, c1, r.position[1-D]))
 
          
-        g2 = blueprints.blueprint.Group(rails)
+        g2 = blueprints.group.Group(rails)
 
         l.append(g2)
 
         # turn to bus 2 west
         
         if rails:
-            e3 = rails[0]
+            if direction == TurnDirection.EN:
+                e3 = rails[0]
+            elif direction == TurnDirection.NW:
+                e3 = rails[0]        
+            elif direction == TurnDirection.ES:
+                e3 = rails[-1]
         else:
             e3 = Entity({'name':''}, r.position)
+
+        print('turn from', e3.position)
 
         turn = blueprints.templates.rails.turn_90(e3, direction)
 
@@ -152,85 +230,22 @@ def bus_turn(rails_start, rails_end, direction):
         
         l.append(turn)
 
-    for i in range(len(rails_end)):
-        if direction == TurnDirection.EN:
-            turns1 = sorted(turns[i], key=lambda turn: turn.connection_west.position[0])
-        elif direction == TurnDirection.NW:
-            turns1 = sorted(turns[i], key=lambda turn: turn.connection_west.position[1])
+    for i, r in zip(range(len(rails_end)), rails_end):
+        turns1 = sorted(turns[i], key=lambda turn: turn.connection_west.position[1-D])
 
         p0 = turns1[0].connection_west.position
         p1 = turns1[-1].connection_west.position
         
         if direction == TurnDirection.EN:
-            rails = list(blueprints.templates.rails_y(p0[0], p0[1], p1[1]))
+            rails = list(blueprints.templates.rails_y(r.position[0], r.position[1], p1[1]))
         elif direction == TurnDirection.NW:
-            rails = list(blueprints.templates.rails_x(p0[0], p1[0], p0[1]))
+            rails = list(blueprints.templates.rails_x(r.position[0], p1[0], r.position[1]))
+        elif direction == TurnDirection.ES:
+            rails = list(blueprints.templates.rails_y(r.position[0], p0[1], r.position[1]))
     
-        l.append(blueprints.blueprint.Group(rails))
+        l.append(blueprints.group.Group(rails))
 
     return Group(l)
-
-def bus_turn_NW(rails_start, rails_end):
-
-    y0 = min(r.position[1] for r in rails_start)
-
-    print('bus turn NW')
-    print('rails end  ', len(rails_end))
-    print('rails start', len(rails_start))
-
-    i_iter = iter(spread(len(rails_end), len(rails_start)))
-
-    l = []
-
-    p_w = [None]*len(rails_end)
-    p_e = [None]*len(rails_end)
-    
-    turns = [[] for i in range(len(rails_end))]
-
-    for r in rails_start:
-        i = next(i_iter)
-
-        y1 = r.position[1]
-        rails = list(blueprints.templates.rails_y(r.position[0], y0, y1))
-         
-        g2 = blueprints.blueprint.Group(rails)
-
-        l.append(g2)
-
-        # turn to bus 2 west
-        
-        if rails:
-            e3 = rails[0]
-        else:
-            e3 = Entity({'name':''}, r.position)
-
-        turn = blueprints.templates.rails.turn_90_NW(e3)
-        
-        turns[i].append(turn)
-
-        if p_e[i] is None: p_e[i] = turn.connection_west.position
-        p_w[i] = turn.connection_west.position
-
-        l.append(turn)
-
-    for i in range(len(rails_end)):
-        
-
-        turns1 = sorted(turns[i], key=lambda turn: turn.connection_west.position[0])
-
-        p0 = turns1[0].connection_west.position
-        p1 = turns1[-1].connection_west.position
-
-        rails = list(blueprints.templates.rails_x(p0[0], p1[0], p0[1]))
-        
-        print('second bus rails', len(rails))
-
-        l.append(blueprints.blueprint.Group(rails))
-        
-    return Group(l)
-
-
-
 
 
 

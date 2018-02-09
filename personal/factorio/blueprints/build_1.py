@@ -76,15 +76,15 @@ def repeat(b):
         yield b
 
 def add_beacons_north(b):
-    x0 = b.x_min()
-    y0 = b.y_min()
+    x0 = b.x_min
+    y0 = b.y_min
     n = int((b.width() - 4) // 6)
 
     for i in range(n):
-        b.entities.append(Entity({'name':'beacon'}, [x0 + 1 + 3 * (i + 0) + 0, y0 - 2]))
+        b.entities_append(Entity({'name':'beacon'}, [x0 + 1 + 3 * (i + 0) + 0, y0 - 2]))
     
     for i in range(n):
-        b.entities.append(Entity({'name':'beacon'}, [x0 + 1 + 3 * (i + n) + 4, y0 - 2]))
+        b.entities_append(Entity({'name':'beacon'}, [x0 + 1 + 3 * (i + n) + 4, y0 - 2]))
 
 def stops_in_middle(g0, stops, stop_blueprints, m, n):
 
@@ -151,7 +151,7 @@ def subfactory(g0, stops, stop_blueprints, m, n):
 
     h = g.height()
     
-    x0 = g.x_min()
+    x0 = g.x_min
     
     # so rail aligns with west edge
     g.shift([-0.5 - x0, 0])
@@ -162,10 +162,10 @@ def subfactory(g0, stops, stop_blueprints, m, n):
     for g1 in g.entities:
         if isinstance(g1, (GroupTrainStopThru, GroupTrainStopTerm)):
             # train stop rails
-            rails = list(rails_x(0, floor_(g.x_max(), 2) + 2, g1.rail_placeholder.position[1]))
+            rails = list(rails_x(0, floor_(g.x_max, 2) + 2, g1.rail_placeholder.position[1]))
             rail_west = rails[0]
             rail_east = rails[-1]
-            g1.entities.append(Group(rails))
+            g1.entities_append(Group(rails))
             
             # waiting area west
             extra_length = 20
@@ -176,11 +176,38 @@ def subfactory(g0, stops, stop_blueprints, m, n):
             
             N += n
 
-            g1.entities.append(waiting_area_west)
+            g1.entities_append(waiting_area_west)
 
             e = Entity({'name':'bus_2_placeholder_west'}, waiting_area_west.connection_west.position)
             e.y_min_exclude = True
-            g1.entities.append(e)
+            g1.entities_append(e)
+
+    N = 0
+
+    for g1 in g.entities:
+        if isinstance(g1, (GroupTrainStopThru, GroupTrainStopOrig)):
+            # train stop rails
+            rails = list(rails_x(0, floor_(g.x_max, 2) + 2, g1.rail_placeholder.position[1]))
+            rail_west = rails[0]
+            rail_east = rails[-1]
+            g1.entities_append(Group(rails))
+            
+            # waiting area west
+            extra_length = 20
+            d = math.ceil((Constants.train_configuration.length() + extra_length) * math.sqrt(2) / 2 / 2)
+            n = 2
+            waiting_area_east = blueprints.templates.rails.waiting_area_WE(rail_east, d, n, [N * 4, 0])
+            waiting_area_east.y_max_exclude = True
+            
+            N += n
+
+            g1.entities_append(waiting_area_east)
+
+            e = Entity({'name':'bus_2_placeholder_east'}, waiting_area_east.connection_east.position)
+            e.y_max_exclude = True
+            g1.entities_append(e)
+
+    
 
     return g
 

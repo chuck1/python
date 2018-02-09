@@ -14,6 +14,8 @@ from fact.subfactory import *
 import blueprints as bp
 import blueprints.build_1
 import blueprints.templates
+import blueprints.entity
+import blueprints.group
 
 class LegPair:
     def __init__(self, leg0, leg1):
@@ -492,7 +494,7 @@ class Node:
                 c += station.stops_c
                 c += station.stops_f
 
-        return c
+        return int(c)
 
     def subfactory_rails_downstream(self):
         c = 0
@@ -502,7 +504,7 @@ class Node:
                 c += station.stops_c
                 c += station.stops_f
 
-        return c
+        return int(c)
     
     def subfactory_trains_per_sec_upstream(self):
         x = 0
@@ -594,26 +596,28 @@ class Node:
         width = column_width * w
 
         print(crayons.green('upstream'))
-        print('subfactory trains           ', self.subfactory_trains_per_sec_upstream())
-        print('subfactory rails            ', self.subfactory_rails_upstream())
+        print('subfactory trains           {:8.3f}'.format(self.subfactory_trains_per_sec_upstream()))
+        print('subfactory rails            {:4}'.format(self.subfactory_rails_upstream()))
         print()
-        print('bus 2 trains                ', self.bus_2_trains_per_sec_upstream())
-        print('bus 2 rails                 ', self.bus_2_rails_upstream())
-        print('bus 2 width                 ', self.bus_2_width_up())
+        print('bus 2 trains                {:8.3f}'.format(self.bus_2_trains_per_sec_upstream()))
+        print('bus 2 rails                 {:4}'.format(self.bus_2_rails_upstream()))
+        print('bus 2 rails                 {:4}'.format(self.bus_2_rails_up_1()))
+        #print('bus 2 width                 {:4}'.format(self.bus_2_width_up())
         print()
-        print('bus 1 trains                ', self.bus_1_trains_per_sec_upstream())
-        print('bus 1 rails                 ', self.bus_1_rails_upstream())
-        print('bus 1 width                 ', bus_1_width_up)
+        print('bus 1 trains                {:8.3f}'.format(self.bus_1_trains_per_sec_upstream()))
+        print('bus 1 rails                 {:4}'.format(self.bus_1_rails_upstream()))
+        print('bus 1 rails                 {:4}'.format(self.bus_1_rails_up_1()))
+        #print('bus 1 width                 {:4}', bus_1_width_up)
         print()
         print(crayons.green('downstream'))
-        print('subfactory trains           ', self.subfactory_trains_per_sec_downstream())
+        print('subfactory trains           {:8.3f}', self.subfactory_trains_per_sec_downstream())
         print('subfactory rails            ', self.subfactory_rails_downstream())
         print()
-        print('bus 2 trains                ', self.bus_2_trains_per_sec_downstream())
+        print('bus 2 trains                {:8.3f}', self.bus_2_trains_per_sec_downstream())
         print('bus 2 rails                 ', self.bus_2_rails_downstream())
         print('bus 2 width                 ', self.bus_2_width_down())
         print()
-        print('bus 1 trains                ', self.bus_1_trains_per_sec_downstream())
+        print('bus 1 trains                {:8.3f}', self.bus_1_trains_per_sec_downstream())
         print('bus 1 rails                 ', self.bus_1_rails_downstream())
         print('bus 1 width                 ', bus_1_width_down)
         print()
@@ -625,15 +629,21 @@ class Node:
     
     def bus_1_rails_up_1(self):
         bus_1_rails_0 = self.bus_1_rails_upstream()
-        rails_0 = self.bus_2_rails_up_1()
-        R = math.floor(rails_0 / bus_1_rails_0)
-        return int(math.ceil(rails_0 / R))
+        rails_in = int(self.bus_2_rails_up_1() * self.subfactory_grid_width)
+        R = max(math.floor(rails_in / bus_1_rails_0), 1)
+        return int(math.ceil(rails_in / R))
 
     def bus_2_rails_up_1(self):
-        bus_2_rails_0 = self.bus_2_rails_upstream()
-        subfactory_rails = int(self.subfactory_rails_upstream() * self.subfactory_grid_height)
-        R = math.floor(subfactory_rails / bus_2_rails_0)
-        return int(math.ceil(subfactory_rails / R))
+        rails_out_0 = self.bus_2_rails_upstream()
+        rails_in = int(self.subfactory_rails_upstream() * self.subfactory_grid_height)
+        R = math.floor(rails_in / rails_out_0)
+        return int(math.ceil(rails_in / R))
+
+    def bus_2_rails_down_1(self):
+        rails_out_0 = self.bus_2_rails_downstream()
+        rails_in = int(self.subfactory_rails_downstream() * self.subfactory_grid_height)
+        R = math.floor(rails_in / rails_out_0)
+        return int(math.ceil(rails_in / R))
 
     def bus_2_rails_up_dist(self):
         subfactory_rails = int(self.subfactory_rails_upstream() * self.subfactory_grid_height)
@@ -645,9 +655,13 @@ class Node:
 
         yield from spread(self.bus_2_rails_up_1(), subfactory_rails)
 
+    def bus_2_rails_down_dist(self):
+        subfactory_rails = int(self.subfactory_rails_downstream() * self.subfactory_grid_height)
+        yield from spread(self.bus_2_rails_down_1(), subfactory_rails)
+
     def blueprint(self):
         b = self.blueprint_bus_2()
-        g = blueprints.blueprint.Group(list(blueprints.blueprint.tile(
+        g = blueprints.group.Group(list(blueprints.blueprint.tile(
             b,
             self.subfactory_grid_width,
             1)))
@@ -660,15 +674,15 @@ class Node:
         
         #y0 = floor_(g.y_min(), 2) - 12
 
+        x0 = floor_(g.x_min, 2) - 12
         y0 = min([e.position[1] for e in get_rails_2()]) - 12
 
         def get_rails_3():
             for i in range(self.bus_1_rails_up_1()):
-                x = floor_(g.x_min(), 2)
                 y = y0 - i * 4
-                yield blueprints.blueprint.Entity({'name':''}, [x, y])
+                yield blueprints.entity.Entity({'name':''}, [x0, y])
         
-        g.entities.append(blueprints.templates.rails.bus_turn(
+        g.entities_append(blueprints.templates.rails.bus_turn(
             list(get_rails_2()), 
             list(get_rails_3()), 
             blueprints.templates.rails.TurnDirection.NW))
@@ -683,7 +697,7 @@ class Node:
 
         subfactory_blueprint = self.subfactory.blueprint()
         
-        g = blueprints.blueprint.Group(list(blueprints.blueprint.tile(
+        g = blueprints.group.Group(list(blueprints.blueprint.tile(
             subfactory_blueprint, 
             1, #self.subfactory_grid_width, 
             self.subfactory_grid_height)))
@@ -692,10 +706,9 @@ class Node:
 
         l1 = [g]
         
-        
-        bus_i_iter = iter(self.bus_2_rails_up_dist())
-        
         # bus 2 connection upstream
+
+        bus_i_iter = iter(self.bus_2_rails_up_dist())
         
         def get_rails_1():
             for e in g.entities:
@@ -703,22 +716,43 @@ class Node:
                     if isinstance(e1, (blueprints.templates.GroupTrainStopThru, blueprints.templates.GroupTrainStopTerm)):
                         yield next(e2 for e2 in e1.entities if e2.name() == 'bus_2_placeholder_west')
 
-        rails_2 = []
+        rails_2_up = []
         
         for i in range(self.bus_2_rails_up_1()):
-            x = floor_(g.x_min(), 2) - 4 * i - 12
-            y = floor_(g.y_min(), 2) - 12
-            e = blueprints.blueprint.Entity({'name':''}, [x, y])
+            x = floor_(g.x_min, 2) - 4 * i - 12
+            y = floor_(g.y_min, 2) - 12
+            e = blueprints.entity.Entity({'name':''}, [x, y])
+            rails_2_up.append(e)
+            l1.append(e)
+        
+        l1.append(blueprints.templates.rails.bus_turn(list(get_rails_1()), rails_2_up, blueprints.templates.rails.TurnDirection.EN))
+
+        # bus 2 connection downstream
+
+        bus_i_iter = iter(self.bus_2_rails_down_dist())
+        
+        def get_rails_1():
+            for e in g.entities:
+                for e1 in e.entities:
+                    if isinstance(e1, (blueprints.templates.GroupTrainStopThru, blueprints.templates.GroupTrainStopOrig)):
+                        yield next(e2 for e2 in e1.entities if e2.name() == 'bus_2_placeholder_east')
+
+        rails_2 = []
+        
+        for i in range(self.bus_2_rails_down_1()):
+            x = floor_(g.x_max, 2) + 4 * i + 12
+            y = floor_(g.y_max, 2) + 12
+            e = blueprints.entity.Entity({'name':''}, [x, y])
             rails_2.append(e)
             l1.append(e)
         
-        l1.append(blueprints.templates.rails.bus_turn(list(get_rails_1()), rails_2, blueprints.templates.rails.TurnDirection.EN))
-
+        l1.append(blueprints.templates.rails.bus_turn(list(get_rails_1()), rails_2, blueprints.templates.rails.TurnDirection.ES))
+        
         ########
 
-        g1 = blueprints.blueprint.Group(l1)
+        g1 = blueprints.group.Group(l1)
 
-        g1.bus_2_connections_north = rails_2
+        g1.bus_2_connections_north = rails_2_up
 
         return g1
 
