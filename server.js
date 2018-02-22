@@ -1,6 +1,6 @@
 const WebSocket = require('ws');
 
-const wss = new WebSocket.Server({ host: '192.168.56.2', port: 13000 });
+const wss = new WebSocket.Server({ port: 10005 });
 
 wss.on('connection', function connection(ws) {
 	
@@ -15,8 +15,7 @@ wss.on('connection', function connection(ws) {
 	});
 
 	ws.on('close', function(e) {
-		console.log('close');
-		console.log(e);
+		console.log('close', e);
 	});
 
 	ws.send('something');
