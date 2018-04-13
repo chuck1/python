@@ -1,542 +1,209 @@
-import sys
-import math
-import scipy.optimize
 import matplotlib.pyplot as plt
-import numpy
+import math
+import numpy as np
 
-G = 6.67E-11
+import theory
+from rocket import *
+from stage import *
+from engine import *
+from util import *
 
-# J kg K Pa
+def breakpoint(): import pdb; pdb.set_trace();
 
-def air_density(h):
+def simulate(r):
+    t1 = 800
+    dt = 0.05
+    n = int(t1 // dt) + 1
+    T = np.linspace(0, t1, n)
+    a_para = np.zeros(n)
+    A = np.zeros((n,2))
+    V = np.zeros((n,2))
+    X = np.zeros((n,2))
+    X[0,1] = theory.radius_earth + 0e3
+    TR = np.zeros(n)
+    DR = np.zeros(n)
+    mass = np.zeros(n)
 
-    # temperature lapse rate K/m
-    L = 0.0065
-    g = 9.8
-    R = 8.31
-    M = 0.02896
-    T0 = 288.15
-    p0 = 101325
-   
-    a = L * h / T0
+    for s in r.stages:
+        s.init_sim(n)
 
-    if a > 1:
-        return 0
-
-    p = p0 * (1.0 - a)**(g * M / R / L)
+    stages = list(r.stages)
+    stages_drag = list(r.stages)
     
-    T = T0 - L * h
+    mass[0] = r.mass_wet
 
-    d = p * M / R / T
-     
-    if math.isnan(d):
-        print "L * h / T0",(L * h / T0)
-        print "h",h
-        print "p",p
-        print "T",T
-        raise Exception()
+    stages[0].activate()
 
-    return d
+    #mass_prop = [s.mass_prop for s in stages]
 
-def orbital_speed(h):
-    r_E = 6371000
-    r = r_E + h
-    v = numpy.sqrt(G * 6E24 / r)
-    return v
+    for i in range(1, n):
 
-class Flight(object): pass
+        thrust = sum(s.sim.thrust for s in stages)
 
-def ascent(stages, res, a0, plot=False):
-    steps = 1000
+        speed0 = mag(V[i-1])
 
-    d_x, d_y, v_x, v_y = res
-    
-    d_X = numpy.zeros(steps * len(stages) + 1)
-    d_Y = numpy.zeros(steps * len(stages) + 1)
-    v_X = numpy.zeros(steps * len(stages) + 1)
-    v_Y = numpy.zeros(steps * len(stages) + 1)
-    a_X = numpy.zeros(steps * len(stages) + 1)
-    a_Y = numpy.zeros(steps * len(stages) + 1)
-    D = numpy.zeros(steps * len(stages) + 1)
-    m = numpy.zeros(steps * len(stages) + 1)
-    a = numpy.zeros(steps * len(stages) + 1)
-    t = numpy.zeros(steps * len(stages) + 1)
-    v_term = numpy.zeros(steps * len(stages) + 1)
-
-    d_X[0] = d_x[-1]
-    d_Y[0] = d_y[-1]
-    v_X[0] = v_x[-1]
-    v_Y[0] = v_y[-1]
-
-    i = 1
-
-    c = 343
-    
-    for stage in stages:
-
-        mass_dry = stage.mass_dry
-        mass_wet = stage.mass_wet
-        mass_flow = stage.mass_flow
-        T = stage.T
-        CdA = stage.CdA
-
-        t1 = (mass_wet - mass_dry) / mass_flow
+        drag = sum(s.drag(speed0, alt(X[i-1])) for s in stages_drag)
         
-        dt = t1 / steps
-    
-        m[i-1] = mass_wet
+        if speed0 == 0:
+            V_dir = np.array([.01, 1])
+            V_dir /= mag(V_dir)
+        else:
+            V_dir = V[i-1] / speed0
 
-        g = 9.8
+        Drag = -V_dir * drag
+
+        Thrust = V_dir * thrust
+
+        TR[i] = thrust
+        DR[i] = drag
         
-        j = 0
+        vec_grav = -X[i-1] / mag(X[i-1]) * theory.grav(mag(X[i-1]))
 
-        while j < steps:
+        A[i] = (Thrust + Drag) / mass[i-1] + vec_grav
 
-            t[i] = t[i-1] + dt
+        if np.any(np.isnan(A[i])):
+            print(Thrust)
+            print(Drag)
+            print(vec_grav)
+            breakpoint()
+        
+        a_para[i] = np.dot(A[i], V_dir)
 
-            if v_Y[i-1] == 0:
-                a[i] = a0
-            elif v_X[i-1] == 0:
-                a[i] = math.pi/2.0
-            else:
-                a[i] = math.atan(v_Y[i-1] / v_X[i-1])
-          
-            if a[i] < 0:
-                break;
+        V[i] = V[i-1] + A[i] * dt
 
-            ad = air_density(d_Y[i-1])
-            D[i] = 0.5 * CdA * ad * (v_X[i-1]**2 + v_Y[i-1]**2)
-            W = m[i-1] * g
+        X[i] = X[i-1] + V[i] * dt
+
+        if np.any(np.isnan(X[i])):
+            breakpoint()
+
+        if alt(X[i]) < 0:
+            print('stop')
+            break
+
+        if np.any(np.isnan(A[i])): breakpoint()
+
+        for s in stages:
+            for e in s.engines:
+                e.sim.mdot[i] = e.mdot
+                e.sim.mdot_fuel[i] = e.mdot_fuel
+                e.sim.mdot_oxidizer[i] = e.mdot_oxidizer
+
+        mdot = sum(s.sim.mdot for s in stages)
+
+        
+        if stages:
+            #print(f'{T[i]:8.2f} {mdot:8.2f} {mag(V[i]):8.2f} {mass[i-1]} {stages[0].sim.mass_prop[i-1]}')
+
+            stages[0].sim.mass_prop[i] = stages[0].sim.mass_prop[i-1] - mdot * dt
             
-            v_term[i] = math.sqrt(2 * m[i-1] * g / ad / stage.CdA)
+            for s in stages[1:]:
+                s.sim.mass_prop[i] = s.sim.mass_prop[i-1]
 
-            if 0:
-                print "i",i
-                print D[i]
-                print "a",a
-                print m
+            if stages[0].sim.mass_prop[i] < 0:
+
+                stages[0].sim.t_off = T[i]
+
+                stages.pop(0)
+            
+                if stages:
+                    if not stages[0].sim.active:
+                        stages[0].activate()
+
+                if len(stages_drag) > 1:
+                    stages_drag.pop(0)
+
+        mass[i] = sum(s.sim.mass(i) for s in stages_drag)
+
+    theta = np.arctan2(X[:i,1], X[:i,0])
     
-            a_X[i] = ((T - D[i]) * math.cos(a[i])    ) / m[i-1]
-            a_Y[i] = ((T - D[i]) * math.sin(a[i]) - W) / m[i-1]
+    fig, axs = plt.subplots(2, 3)
+
+    axs[0, 0].plot(T[:i], np.linalg.norm(V[:i], axis=1))
+    axs[0, 0].plot([T[0], T[i]], [343, 343])
+    axs[0, 0].set_ylabel('speed (m/s)')
+
+    axs[0, 1].plot(T[:i], np.linalg.norm(X[:i], axis=1) - theory.radius_earth)
+    axs[0, 1].set_ylabel('altitude (m)')
+
+    axs[0, 2].plot(T[:i], TR[:i])
+    axs[0, 2].plot(T[:i], DR[:i])
+
+    axs[1, 0].plot(T[:i], a_para[:i] / 9.81, label='flight direction')
+    axs[1, 0].set_ylabel('accel (g)')
+    axs[1, 0].legend()
+
+    def plot_flow(ax):
+        for s in r.stages:
+            for e in s.engines:
+                ax.plot(T, e.sim.mdot_fuel / e.density_f * 1000, label='F')
+                ax.plot(T, e.sim.mdot_oxidizer / e.density_o * 1000, label='O')
+        ax.legend()
+        ax.set_ylabel('flow rate (L/s)')
+
+    def plot_mass(ax):
+        ax.plot(T[:i], mass[:i])
+        ax.set_ylabel('mass (kg)')
+
+    plot_mass(axs[1, 1])
+    plot_flow(axs[1, 2])
     
-            if math.isnan(a_Y[i]):
-                print "m[i-1]", m[i-1]
-                print "a[i]  ", a[i]
-                print "ad ", ad
-                print "D  ", D[i]
-                print "d_X", d_x
-                print "d_Y", d_y
-                print "v_X", v_x
-                print "v_Y", v_Y[i-1]
-                print "a_Y", a_Y[i]
-                raise Exception()
+
+    fig, ax = plt.subplots(1, 1)
+    ax.plot(X[:i,0], X[:i,1])
+    ax.plot(theory.radius_earth * np.cos(theta), theory.radius_earth * np.sin(theta))
+    ax.axis('equal')
+    plt.show()
     
-            v_X[i] = v_X[i-1] + a_X[i] * dt
-            v_Y[i] = v_Y[i-1] + a_Y[i] * dt
-    
-            d_X[i] += d_X[i-1] + v_X[i] * dt
-            d_Y[i] += d_Y[i-1] + v_Y[i] * dt
-    
-            m[i] = m[i-1] - mass_flow * dt
-    
-            if math.isnan(v_Y[i]) | math.isnan(d_Y[i]):
-                print "d_X", d_x
-                print "d_Y", d_y
-                print "D  ", D[i]
-                print "v_X", v_x
-                print "v_Y", v_Y[i]
-                print "v_Y", v_Y[i-1]
-                print "a_Y", a_Y[i]
-                raise Exception()
-
-            i += 1
-            j += 1
-
-    # post
-
-    v = numpy.sqrt(numpy.power(v_Y, 2) + numpy.power(v_X, 2))
-
-    # plots
-    
-    if plot:
-        plt.figure()
-        
-        if numpy.max(D) > 0:
-            p = plt.plot(t, D / numpy.max(D), label='drag')
-        
-        p = plt.plot(t, a / math.pi, label='a / pi')
-        p = plt.plot(t, a_Y / g, label='a_Y / g')
-        #p = plt.plot(t, v_Y / v_term, label='v_Y / v_term')
-        #p = plt.plot(t, v / c, label='mach')
-        plt.xlabel('t')
-        
-        plt.legend()
-        
-        # trajectory
-    
-        plt.figure()
-        plt.plot(d_X, d_Y)
-        
-        for i in range(len(stages)):
-            j = steps * i - 1
-            plt.plot(d_X[j], d_Y[j], 'o')
-    
-        plt.xlabel('x')
-        plt.ylabel('y')
-        plt.axis('equal')
-    
-        # horizontal speed
-    
-        plt.figure()
-        plt.plot(t, v_X / orbital_speed(d_Y))
-        plt.xlabel('t')
-        plt.ylabel('v_x / v_orbit')
-    
-        plt.show()
-   
-    #return d_X, d_Y, v_X, v_Y
-
-    flight = Flight()
-
-    flight.v_X_scaled = v_X / orbital_speed(d_Y)
-
-    return flight
-
-def tank_length(V, r):
-
-    def f(X, V, r):
-
-        L = X[0]
-    
-        V2 = 4.0/3.0 * math.pi * r**3.0 + math.pi * r**2.0 * L
-
-        return V - V2
-
-    return scipy.optimize.fsolve(f, [r], (V, r))[0]
-
-class Tank(object):
-    def __init__(self):
-        pass
-
-    def length(self):
-        return tank_length(self.volume, self.r)
-
-    def m_dry(self):
-        d = 2700
-        L = tank_length(self.volume, self.r)
-       
-        A = 4.0 * math.pi * self.r**2.0 + 2.0 * math.pi * self.r * L
-
-        V = A * self.t
-
-        m = d * V
-
-        return m
-
-class Other(object): pass
-
-class Vessel(object):
-    parts = list()
-
-    def mass_dry(self):
-        y = 0
-        for p in self.parts:
-            y += p.m_dry()
-        return y
-
-    def mass_wet(self):
-        y = 0
-        for p in self.parts:
-            y += p.m_wet()
-        return y
-
-
-def f1(X, A_e):
-    x1 = X[0]
-
-    a = g1**(-g2)
-
-    b = 1.0 + (g-1.0)/2.0 * x1**2.0
-
-    x2 = a * b**g2 / A_e * A_s
-
-    return [x1 - x2]
-
-def f2(A_e):
-    return scipy.optimize.fsolve(f1, [100], (A_e))[0]
-
-####################################################
-
-d_o = 1141
-d_f = 719.7
-
-M_o = 16
-M_f = 114.23
-
-mol_f = 2
-mol_o = 25
-
-n_CO2 = 16
-n_H2O = 18
-
-M_CO2 = 44
-M_H2O = 18
-
-M_products = (n_CO2 * M_CO2 + n_H2O * M_H2O) / (n_CO2 + n_H2O)
-M_products = 22
-
-g = 1.22
-R = 8.314 / M_products * 1000
-
-ratio_area = 7.0
-
-r_e = 30E-3
-
-
-p_0 = 101300
-
-T_t = 3533
-#T_t = 4000
-
-p_t = 6.89E6
-p_t = numpy.linspace(5E6, 10E6, 100)
-p_t = 7e6
-
-###########################################################
-
-A_e = math.pi * r_e**2.0
-
-
-A_s = A_e / ratio_area
-
-r_s = numpy.sqrt(A_s / math.pi)
-
-g1 = (g+1.0)/2.0
-g2 = (g+1.0)/2.0/(g-1.0)
-
-m = A_s * p_t / math.sqrt(T_t) * math.sqrt(g / R) * (g1)**(-g2)
-
-f2v = numpy.vectorize(f2)
-
-M_e = f2(A_e)
-
-a = 1 + (g-1)/2 * numpy.power(M_e, 2)
-
-p_e = p_t / numpy.power(a, g/(g-1))
-
-T_e = T_t / a
-
-V_e = M_e * numpy.sqrt(g * R * T_e)
-
-F = m * V_e + (p_e - p_0) * A_e
-
-if 0:
-    print "{:<16}{:16.2f}".format("m",m)
-    print "{:<16}{:16.2f}".format("M_e",M_e)
-    print "{:<16}{:16.2f}".format("T_e",T_e)
-    print "{:<16}{:16.2f}".format("p_e",p_e)
-    print "{:<16}{:16.2f}".format("F",F)
-
-if 0:
-    plt.figure()
-    plt.plot(p_t, p_e)
-    plt.xlabel("p_t")
-    plt.ylabel("p_e")
-
-    plt.figure()
-    plt.plot(p_t, V_e)
-    plt.xlabel("p_t")
-    plt.ylabel("V_e")
-
+def plot_mach_factor():
+    M = np.linspace(0, 10, 1000)
+    f = [mach_factor(M1) for M1 in M]
+    plt.plot(M, f)
     plt.show()
 
-    sys.exit(0)
-
-if 0:
-    plt.figure()
-    plt.plot(r_e, M_e, '-')
-
-    plt.figure()
-    plt.plot(r_e, V_e)
-    plt.ylabel("V_e")
- 
-    plt.figure()
-    plt.plot(r_e, T_e)
-    plt.ylabel("T_e")
-   
-    plt.figure()
-    plt.plot(r_e, p_t)
-    plt.plot(r_e, p_e)
-
-    plt.show()
-
-    sys.exit(0)
-
-dV = 9000
-
-mr = numpy.exp(dV / V_e) 
-
-g3 = (g-1.0)/g
-
-V_e2 = numpy.sqrt(T_t * R * 2.0 / g3 * (1.0 - numpy.power(p_e / p_t, g3) ))
-
-
-
-
-
-mass_ratio_f = mol_f * M_f / (mol_f * M_f + mol_o * M_o)
-o_ratio = 1 - mass_ratio_f
-
-f_V_ratio = mass_ratio_f / d_f / (mass_ratio_f / d_f + o_ratio / d_o)
-o_V_ratio = 1 - f_V_ratio
-
-d = 1 / (mass_ratio_f / d_f + o_ratio / d_o)
-
-print "{:<32}{:16.2e}".format("propellent mixture density",d)
-
-tank_f = Tank()
-tank_o = Tank()
-
-tank_f.volume = 0.1
-tank_o.volume = tank_f.volume / f_V_ratio * o_V_ratio
-
-tank_f.t = 0.006
-tank_o.t = 0.006
-
-tank_f.r = 0.15
-tank_o.r = 0.15
-
-print "{:<32}{:16.2e}".format("f volume ratio",f_V_ratio)
-print "{:<32}{:16.2e}".format("o volume ratio",o_V_ratio)
-
-#print "{:<32}{:16.2e}".format("tank dry mass",tank.m_dry)
-#print "{:<32}{:16.2e}".format("tank wet mass",tank.volume * d + tank.m_dry)
-
-
-m_f_1 = tank_f.volume * d_f
-m_o_1 = m_f_1 / mass_ratio_f * o_ratio
-V_o_1 = m_o_1 / d_o
-ff_o_1 = V_o_1 / tank_o.volume
-
-m_o_2 = tank_o.volume * d_o
-m_f_2 = m_o_2 / o_ratio * mass_ratio_f
-V_f_2 = m_f_2 / d_f
-ff_f_2 = V_f_2 / tank_f.volume
-
-
-print "{:<32}{:16.2e}".format("fill fraction o 1",ff_o_1)
-print "{:<32}{:16.2e}".format("fill fraction f 2",ff_f_2)
-
-if ff_o_1 < ff_f_2:
-    m_f = m_f_1
-    m_o = m_o_1
-else:
-    m_f = m_f_2
-    m_o = m_o_2
-
-print "{:<32}{:16.2e}".format("mass f",m_f)
-print "{:<32}{:16.2e}".format("mass o",m_o)
-
-tank_f.m_wet = lambda: tank_f.m_dry() + m_f
-tank_o.m_wet = lambda: tank_o.m_dry() + m_o
-
-
-vessel = Vessel()
-
-t_burn = (m_f + m_o) / m
-
-other = Other()
-other.m_dry = other.m_wet = lambda: 8.0
-
-vessel.parts.append(tank_f)
-vessel.parts.append(tank_o)
-vessel.parts.append(other)
-
-print "{:<32}{:16.1f} mm".format("r_s",r_s*1000)
-print "{:<32}{:16.1f} mm".format("r_e",r_e*1000)
-print "{:<32}{:16.2e}".format("g",g)
-print "{:<32}{:16.2e}".format("g1",g1)
-print "{:<32}{:16.2e}".format("g2",g2)
-print "{:<32}{:16.2e}".format("A_s",A_s)
-print "{:<32}{:16.2e}".format("R",R)
-print "{:<32}{:16.2e}".format("M_products",M_products)
-print "{:<32}{:16.2e}".format("p_e",p_e)
-print "{:<32}{:16.2e}".format("T_e",T_e)
-print "{:<32}{:16.2e}".format("V_e",V_e)
-print "{:<32}{:16.2e}".format("V_e",V_e2)
-print "{:<32}{:16.2e}".format("M_e",M_e)
-print "{:<32}{:16.2e}".format("dV",dV)
-print "{:<32}{:16.2e}".format("mr",mr)
-print "{:<32}{:16.2e}".format("mass ratio f",mass_ratio_f)
-print "{:<32}{:16.2e}".format("burn time",t_burn)
-print "{:<32}{:16.2e}".format("tank f mass ratio",tank_f.m_wet() / tank_f.m_dry())
-print "{:<32}{:16.2e}".format("tank o mass ratio",tank_o.m_wet() / tank_o.m_dry())
-print "{:<32}{:16.2e}".format("tank f volume    ",tank_f.volume)
-print "{:<32}{:16.2e}".format("tank o volume    ",tank_o.volume)
-print "{:<32}{:16.2e}".format("tank f length    ",tank_f.length())
-print "{:<32}{:16.2e}".format("tank o length    ",tank_o.length())
-print "{:<32}{:16.2e}".format("tank f L/D       ",tank_f.length() / tank_f.r / 2.0)
-print "{:<32}{:16.2e}".format("tank o L/D       ",tank_o.length() / tank_o.r / 2.0)
-print "{:<32}{:16.2e}".format("tank f radius    ",tank_f.r)
-print "{:<32}{:16.2e}".format("tank o radius    ",tank_o.r)
-print "{:<32}{:16.2e}".format("density f        ",d_f)
-print "{:<32}{:16.2e}".format("density o        ",d_o)
-print "{:<32}{:16.2e}".format("mass flow        ",m)
-
-print "{:<32}{:16.2e}".format("vessel mass dry",vessel.mass_dry())
-print "{:<32}{:16.2e}".format("vessel mass wet",vessel.mass_wet())
-print "{:<32}{:16.2e}".format("vessel mass ratio",vessel.mass_wet() / vessel.mass_dry())
-
-weight = vessel.mass_wet() * 9.81
-
-TWR = F / weight
-
-print "{:<32}{:16.2e}".format("TWR",TWR)
-
-
-
-# ascent rate
-
-r1 = 0.2
-r2 = 0.1
-
-class Stage(object): pass
-
-s1 = Stage()
-s1.mass_dry =   93.5
-s1.mass_wet =  442.0
-s1.mass_flow =   3.17
-s1.T =        8729.1
-s1.CdA = math.pi * r1**2 * 0.75
-
-s2 = Stage()
-s2.mass_dry =     7.8
-s2.mass_wet =    73.2
-s2.mass_flow =    0.6
-s2.T =         1671.0
-s2.CdA = math.pi * r2**2 * 0.75
-
-
-
-
-
-for a in numpy.linspace(0.0015, 0.0020, 10):
-    flight = ascent([s1,s2], ([0], [0], [0], [0]), math.pi/2 - a)
-
-    print numpy.max(flight.v_X_scaled)
-
-
-
-
-
-
-
-
-
-
-
-
-
+def test1():
+    r = Rocket()
+
+    s1 = Stage(100, 20, 0.200, [Engine(0.005), Engine(0.005)])
+
+    s2 = Stage( 50, 10, 0.100, [Engine(0.005)])
+    
+    s1.co_staged = [s2]
+
+    s3 = Stage(20, 10, 0.100, [Engine(0.005)])
+    
+    r.stages = [
+            s1, 
+            s2, 
+            s3,
+            ]
+    
+    print('delta v total:', r.deltav())
+    
+    return r
+
+def test2():
+    r = Rocket()
+    s1 = Stage()
+    
+    s1.Isp = 200.
+    s1.m_wet = 20.0
+    s1.m_dry = 10.0
+    
+    r.stages = [s1]
+    
+    print(r.deltav())
+
+
+#plot_mach_factor()
+
+r = test1()
+
+simulate(r)
+
+r.print_info()
+
+#radio = Radio()
+#print radio.power(400e3, 5e-6)
 
 
 
