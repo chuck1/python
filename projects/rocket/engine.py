@@ -60,6 +60,10 @@ class Engine:
         return theory.choked_flow(self.A_throat, self.p_c, self.T_c, gamma)
 
     @property
+    def isp(self):
+        return self.v_e / 9.81
+
+    @property
     def thrust(self):
         return theory.thrust(self.mdot, self.v_e, 0, 0, 0)
 

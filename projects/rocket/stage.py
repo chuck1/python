@@ -4,6 +4,7 @@ import numpy as np
 
 import theory
 from rocket import *
+from engine import *
 
 def breakpoint(): import pdb; pdb.set_trace();
 
@@ -52,10 +53,6 @@ class StageSimData:
         if self.active: return self.stage.thrust
         return 0
 
-    def activate(self):
-        self.active = True
-        for s in self.stage.co_staged:
-            s.sim.active = True
 
 def battery_capacity_mAh(e, V):
     return e / V / (60*60) * 1000
@@ -67,6 +64,11 @@ class Stage:
         self.engines = engines
         self.A_drag = D_drag**2 / 4 * math.pi
         self.co_staged = co_staged
+
+    def activate(self):
+        self.sim.active = True
+        for s in self.co_staged:
+            s.sim.active = True
 
     def init_sim(self, n):
 
@@ -159,7 +161,6 @@ def alt(x):
     r = mag(x)
     return r - theory.radius_earth
 
-
 def simulate(r):
     t1 = 800
     dt = 0.05
@@ -182,7 +183,7 @@ def simulate(r):
     
     mass[0] = r.mass_wet
 
-    stage[0].activate()
+    stages[0].activate()
 
     #mass_prop = [s.mass_prop for s in stages]
 
@@ -195,7 +196,7 @@ def simulate(r):
         drag = sum(s.drag(speed0, alt(X[i-1])) for s in stages_drag)
         
         if speed0 == 0:
-            V_dir = np.array([.08, 1])
+            V_dir = np.array([.01, 1])
             V_dir /= mag(V_dir)
         else:
             V_dir = V[i-1] / speed0
@@ -227,10 +228,10 @@ def simulate(r):
             breakpoint()
 
         if alt(X[i]) < 0:
-            print(X[i])
+            print('stop')
             break
 
-        #if math.isnan(A[i]): breakpoint()
+        if np.any(np.isnan(A[i])): breakpoint()
 
         for s in stages:
             for e in s.engines:
@@ -239,13 +240,13 @@ def simulate(r):
                 e.sim.mdot_oxidizer[i] = e.mdot_oxidizer
 
         mdot = sum(s.sim.mdot for s in stages)
-        
-        #print(f'{mag(V[i]):8.2f} {mass[i-1]} {mass_prop}')
+
         
         if stages:
+            #print(f'{T[i]:8.2f} {mdot:8.2f} {mag(V[i]):8.2f} {mass[i-1]} {stages[0].sim.mass_prop[i-1]}')
 
             stages[0].sim.mass_prop[i] = stages[0].sim.mass_prop[i-1] - mdot * dt
-
+            
             for s in stages[1:]:
                 s.sim.mass_prop[i] = s.sim.mass_prop[i-1]
 
@@ -254,6 +255,10 @@ def simulate(r):
                 stages[0].sim.t_off = T[i]
 
                 stages.pop(0)
+            
+                if stages:
+                    if not stages[0].sim.active:
+                        stages[0].activate()
 
                 if len(stages_drag) > 1:
                     stages_drag.pop(0)
@@ -264,17 +269,17 @@ def simulate(r):
     
     fig, axs = plt.subplots(2, 3)
 
-    axs[0, 0].plot(T, np.linalg.norm(V, axis=1))
-    axs[0, 0].plot([T[0], T[-1]], [343, 343])
+    axs[0, 0].plot(T[:i], np.linalg.norm(V[:i], axis=1))
+    axs[0, 0].plot([T[0], T[i]], [343, 343])
     axs[0, 0].set_ylabel('speed (m/s)')
 
     axs[0, 1].plot(T[:i], np.linalg.norm(X[:i], axis=1) - theory.radius_earth)
     axs[0, 1].set_ylabel('altitude (m)')
 
-    axs[0, 2].plot(T, TR)
-    axs[0, 2].plot(T, DR)
+    axs[0, 2].plot(T[:i], TR[:i])
+    axs[0, 2].plot(T[:i], DR[:i])
 
-    axs[1, 0].plot(T, a_para / 9.81, label='flight direction')
+    axs[1, 0].plot(T[:i], a_para[:i] / 9.81, label='flight direction')
     axs[1, 0].set_ylabel('accel (g)')
     axs[1, 0].legend()
 
@@ -290,8 +295,9 @@ def simulate(r):
         ax.plot(T[:i], mass[:i])
         ax.set_ylabel('mass (kg)')
 
-    #plot_flow(axs[1, 1])
     plot_mass(axs[1, 1])
+    plot_flow(axs[1, 2])
+    
 
     fig, ax = plt.subplots(1, 1)
     ax.plot(X[:i,0], X[:i,1])
@@ -307,12 +313,20 @@ def plot_mach_factor():
 
 def test1():
     r = Rocket()
-    s1 = Stage(80, 20, 0.200, [Engine(0.005), Engine(0.005)], co_staged=[s2])
-    s2 = Stage(40, 10, 0.100, [Engine(0.005)])
-    s2 = Stage(20, 10, 0.100, [Engine(0.005)])
+
+    s1 = Stage(100, 20, 0.200, [Engine(0.005), Engine(0.005)])
+
+    s2 = Stage( 50, 10, 0.100, [Engine(0.005)])
     
-    r.stages = [s1, s2, s3]
-    #r.stages = [s2]
+    s1.co_staged = [s2]
+
+    s3 = Stage(20, 10, 0.100, [Engine(0.005)])
+    
+    r.stages = [
+            s1, 
+            s2, 
+            s3,
+            ]
     
     print('delta v total:', r.deltav())
     
