@@ -14,3 +14,11 @@ def thrust(mdot, v_e, p_e, p_o, A_e):
 def choked_flow(A, p_t, T_t, gamma):
     return A * p_t / math.sqrt(T_t) * math.sqrt(gamma / R) * ((gamma + 1) / 2)**(-(gamma + 1)/2/(gamma - 1))
 
+radius_earth = 6371e3
+
+def grav(r):
+    G = 6.67408e-11
+    m_e = 5.972e24
+    return G * m_e / (r)**2
+
+

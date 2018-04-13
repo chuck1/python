@@ -31,23 +31,46 @@ def mach_factor(M):
         return y0 * math.exp(-a * (M - x0))
 
 class StageSimData:
-    def __init__(self, n):
-        pass
+    def __init__(self, stage, n):
+        self.stage = stage
+
+        self.mass_prop = np.zeros(n)
+        self.mass_prop[0] = stage.mass_prop
+
+        self.active = False
+
+    def mass(self, i):
+        return self.stage.m_dry + self.mass_prop[i]
+    
+    @property
+    def mdot(self):
+        if self.active: return self.stage.mdot
+        return 0
+
+    @property
+    def thrust(self):
+        if self.active: return self.stage.thrust
+        return 0
+
+    def activate(self):
+        self.active = True
+        for s in self.stage.co_staged:
+            s.sim.active = True
 
 def battery_capacity_mAh(e, V):
     return e / V / (60*60) * 1000
 
 class Stage:
-    def __init__(self, m_wet, m_dry, A_drag, engines):
+    def __init__(self, m_wet, m_dry, D_drag, engines, co_staged=[]):
         self.m_wet = m_wet
         self.m_dry = m_dry
         self.engines = engines
-        self.A_drag = A_drag
+        self.A_drag = D_drag**2 / 4 * math.pi
+        self.co_staged = co_staged
 
-       
     def init_sim(self, n):
 
-        self.sim = StageSimData(n)
+        self.sim = StageSimData(self, n)
 
         for e in self.engines:
             e.init_sim(n)
@@ -80,7 +103,7 @@ class Stage:
 
     @property
     def isp(self):
-        return 0
+        return self.engines[0].isp
 
     @property
     def mass_prop(self):
@@ -129,105 +152,85 @@ class Stage:
 
         return drag
 
-class EngineSimData:
-    def __init__(self, n):
-        self.mdot = np.zeros(n)
-        self.mdot_fuel = np.zeros(n)
-        self.mdot_oxidizer = np.zeros(n)
 
-class Engine:
-    def __init__(self, D_throat):
-        self.T_c = 3676 # K
-        self.p_c = 6.89e6 # Pa
-        self.v_e = 2941 # m/s
-        
-        self.D_throat = D_throat
-        self.A_throat = self.D_throat**2 / 4 * math.pi
+mag = np.linalg.norm
 
-        self.o_f_ratio = 2.56
+def alt(x):
+    r = mag(x)
+    return r - theory.radius_earth
 
-        self.density_o = 1141 # kg/m3
-        self.density_f = 810 # kg/m3
 
-        self.p_tank_o = 101325 # Pa
-        self.p_tank_f = 101325 # Pa
-
-    def print_info(self):
-        print(f'pump power o {self.pump_power_o:8.1f} W')
-        print(f'pump power f {self.pump_power_f:8.1f} W')
-
-    @property
-    def pump_power_o(self):
-        p = self.p_c - self.p_tank_o
-        V = self.mdot_oxidizer / self.density_o
-        return p * V
-
-    @property
-    def pump_power_f(self):
-        p = self.p_c - self.p_tank_f
-        V = self.mdot_fuel / self.density_f
-        return p * V
-
-    @property
-    def mdot_fuel(self):
-        return self.mdot * (1 / (1 + self.o_f_ratio))
-
-    @property
-    def mdot_oxidizer(self):
-        return self.mdot * (1 / (1 + 1 / self.o_f_ratio))
-
-    @property
-    def mdot(self):
-        gamma = 1.2
-        return theory.choked_flow(self.A_throat, self.p_c, self.T_c, gamma)
-
-    @property
-    def thrust(self):
-        return theory.thrust(self.mdot, self.v_e, 0, 0, 0)
-
-    def init_sim(self, n):
-        self.sim = EngineSimData(n)
-
-   
 def simulate(r):
-    t1 = 500
-    dt = 0.1
+    t1 = 800
+    dt = 0.05
     n = int(t1 // dt) + 1
     T = np.linspace(0, t1, n)
-    A = np.zeros(n)
-    V = np.zeros(n)
-    X = np.zeros(n)
+    a_para = np.zeros(n)
+    A = np.zeros((n,2))
+    V = np.zeros((n,2))
+    X = np.zeros((n,2))
+    X[0,1] = theory.radius_earth + 0e3
     TR = np.zeros(n)
     DR = np.zeros(n)
+    mass = np.zeros(n)
 
     for s in r.stages:
         s.init_sim(n)
 
     stages = list(r.stages)
     stages_drag = list(r.stages)
-    mass = r.mass_wet
     
-    mass_prop = [s.mass_prop for s in stages]
+    mass[0] = r.mass_wet
+
+    stage[0].activate()
+
+    #mass_prop = [s.mass_prop for s in stages]
 
     for i in range(1, n):
 
-        thrust = sum(s.thrust for s in stages)
-        drag = sum(s.drag(V[i-1], X[i-1]) for s in stages_drag)
+        thrust = sum(s.sim.thrust for s in stages)
+
+        speed0 = mag(V[i-1])
+
+        drag = sum(s.drag(speed0, alt(X[i-1])) for s in stages_drag)
         
-        drag = math.copysign(drag, V[i-1])
+        if speed0 == 0:
+            V_dir = np.array([.08, 1])
+            V_dir /= mag(V_dir)
+        else:
+            V_dir = V[i-1] / speed0
+
+        Drag = -V_dir * drag
+
+        Thrust = V_dir * thrust
 
         TR[i] = thrust
         DR[i] = drag
+        
+        vec_grav = -X[i-1] / mag(X[i-1]) * theory.grav(mag(X[i-1]))
 
-        A[i] = (thrust - drag) / mass - 9.81
+        A[i] = (Thrust + Drag) / mass[i-1] + vec_grav
+
+        if np.any(np.isnan(A[i])):
+            print(Thrust)
+            print(Drag)
+            print(vec_grav)
+            breakpoint()
+        
+        a_para[i] = np.dot(A[i], V_dir)
 
         V[i] = V[i-1] + A[i] * dt
+
         X[i] = X[i-1] + V[i] * dt
-        
-        if X[i] < 0:
+
+        if np.any(np.isnan(X[i])):
+            breakpoint()
+
+        if alt(X[i]) < 0:
+            print(X[i])
             break
 
-        if math.isnan(A[i]): breakpoint()
+        #if math.isnan(A[i]): breakpoint()
 
         for s in stages:
             for e in s.engines:
@@ -235,53 +238,65 @@ def simulate(r):
                 e.sim.mdot_fuel[i] = e.mdot_fuel
                 e.sim.mdot_oxidizer[i] = e.mdot_oxidizer
 
-        mdot = sum(s.mdot for s in stages)
+        mdot = sum(s.sim.mdot for s in stages)
         
-        #print(f'{V[i]:8.2f} {mass_prop}')
+        #print(f'{mag(V[i]):8.2f} {mass[i-1]} {mass_prop}')
+        
+        if stages:
 
-        if mass_prop:
-            mass_prop[0] -= mdot * dt
+            stages[0].sim.mass_prop[i] = stages[0].sim.mass_prop[i-1] - mdot * dt
 
-            if mass_prop[0] < 0:
+            for s in stages[1:]:
+                s.sim.mass_prop[i] = s.sim.mass_prop[i-1]
+
+            if stages[0].sim.mass_prop[i] < 0:
 
                 stages[0].sim.t_off = T[i]
 
                 stages.pop(0)
-                mass_prop.pop(0)
 
                 if len(stages_drag) > 1:
                     stages_drag.pop(0)
-   
-    fig = plt.figure()
-    ax = fig.add_subplot(231)
-    ax.plot(T, V)
-    ax.plot([T[0], T[-1]], [343, 343])
-    ax.set_ylabel('speed (m/s)')
 
-    ax = fig.add_subplot(232)
-    ax.plot(T, X)
-    ax.set_ylabel('altitude (m)')
+        mass[i] = sum(s.sim.mass(i) for s in stages_drag)
 
-    ax = fig.add_subplot(233)
-    ax.plot(T, TR)
-    ax.plot(T, DR)
+    theta = np.arctan2(X[:i,1], X[:i,0])
+    
+    fig, axs = plt.subplots(2, 3)
 
-    ax = fig.add_subplot(234)
-    ax.plot(T, A / 9.81)
-    ax.set_ylabel('accel (g)')
+    axs[0, 0].plot(T, np.linalg.norm(V, axis=1))
+    axs[0, 0].plot([T[0], T[-1]], [343, 343])
+    axs[0, 0].set_ylabel('speed (m/s)')
 
-    ax = fig.add_subplot(235)
-    for s in r.stages:
-        for e in s.engines:
-            ax.plot(T, e.sim.mdot_fuel)
-    ax.set_ylabel('mdot F (kg/s)')
+    axs[0, 1].plot(T[:i], np.linalg.norm(X[:i], axis=1) - theory.radius_earth)
+    axs[0, 1].set_ylabel('altitude (m)')
 
-    ax = fig.add_subplot(236)
-    for s in r.stages:
-        for e in s.engines:
-            ax.plot(T, e.sim.mdot_oxidizer / e.density_o * 1000)
-    ax.set_ylabel('O flow rate (L/s)')
+    axs[0, 2].plot(T, TR)
+    axs[0, 2].plot(T, DR)
 
+    axs[1, 0].plot(T, a_para / 9.81, label='flight direction')
+    axs[1, 0].set_ylabel('accel (g)')
+    axs[1, 0].legend()
+
+    def plot_flow(ax):
+        for s in r.stages:
+            for e in s.engines:
+                ax.plot(T, e.sim.mdot_fuel / e.density_f * 1000, label='F')
+                ax.plot(T, e.sim.mdot_oxidizer / e.density_o * 1000, label='O')
+        ax.legend()
+        ax.set_ylabel('flow rate (L/s)')
+
+    def plot_mass(ax):
+        ax.plot(T[:i], mass[:i])
+        ax.set_ylabel('mass (kg)')
+
+    #plot_flow(axs[1, 1])
+    plot_mass(axs[1, 1])
+
+    fig, ax = plt.subplots(1, 1)
+    ax.plot(X[:i,0], X[:i,1])
+    ax.plot(theory.radius_earth * np.cos(theta), theory.radius_earth * np.sin(theta))
+    ax.axis('equal')
     plt.show()
     
 def plot_mach_factor():
@@ -292,11 +307,12 @@ def plot_mach_factor():
 
 def test1():
     r = Rocket()
-    s1 = Stage(40, 4, 0.01570, [Engine(0.005), Engine(0.005)])
-    s2 = Stage(40, 8, 0.00785, [Engine(0.005)])
+    s1 = Stage(80, 20, 0.200, [Engine(0.005), Engine(0.005)], co_staged=[s2])
+    s2 = Stage(40, 10, 0.100, [Engine(0.005)])
+    s2 = Stage(20, 10, 0.100, [Engine(0.005)])
     
-    #r.stages = [s1, s2]
-    r.stages = [s2]
+    r.stages = [s1, s2, s3]
+    #r.stages = [s2]
     
     print('delta v total:', r.deltav())
     
