@@ -1,3 +1,4 @@
+import copy
 import matplotlib.pyplot as plt
 import math
 import numpy as np
@@ -5,15 +6,17 @@ import numpy as np
 import theory
 from rocket import *
 from engine import *
+from util import *
 
 def breakpoint(): import pdb; pdb.set_trace();
 
 
 class StageSimData:
-    def __init__(self, stage, n):
+    def __init__(self, stage, sim):
         self.stage = stage
+        self.sim = sim
 
-        self.mass_prop = np.zeros(n)
+        self.mass_prop = np.zeros(self.sim.n)
         self.mass_prop[0] = stage.mass_prop
 
         self.active = False
@@ -35,21 +38,21 @@ class Stage:
     def __init__(self, m_wet, m_dry, D_drag, engines, co_staged=[]):
         self.m_wet = m_wet
         self.m_dry = m_dry
-        self.engines = engines
+        self.engines = [copy.copy(e) for e in engines]
         self.A_drag = D_drag**2 / 4 * math.pi
         self.co_staged = co_staged
 
-    def activate(self):
+    def activate(self, i):
         self.sim.active = True
         for s in self.co_staged:
             s.sim.active = True
 
-    def init_sim(self, n):
+    def init_sim(self, sim):
 
-        self.sim = StageSimData(self, n)
+        self.sim = StageSimData(self, sim)
 
         for e in self.engines:
-            e.init_sim(n)
+            e.init_sim(sim.n)
 
     def print_info(self):
  
