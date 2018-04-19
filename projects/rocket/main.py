@@ -255,7 +255,7 @@ def test3():
         print(f'{a:16.4f} {y:16.1f}')
         Y.append(y)
     
-    #r.print_info()
+    r.print_info()
     
     #radio = Radio()
     #print radio.power(400e3, 5e-6)
@@ -270,8 +270,9 @@ def test4():
     r = test1()
     s = Simulation(V_dir=np.array([0.722, 1]))
     s.simulate(r, plot=True)
+    r.print_info()
 
-test3()
+test4()
 
 
 
