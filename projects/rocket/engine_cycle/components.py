@@ -86,14 +86,43 @@ def _f(p, p0, p1, s):
     assert p is not p1
     return getattr(p1, s)
 
-class Split:
-    def __init__(self, p0, p1, p2, f1, f2):
-        
-        p0._functions_m.append(lambda p: p1.m / f1 * (f1 + f2))
-        p0._functions_m.append(lambda p: p2.m / f2 * (f1 + f2))
+def _split_f0(p, p0, p1, func):
+    f = func()
+    m0 = p1.m / f
+    assert p1.m > 0
+    assert m0 > 0
+    return m0
 
-        p1._functions_m.append(lambda p: p0.m * f1 / (f1 + f2))
-        p2._functions_m.append(lambda p: p0.m * f2 / (f1 + f2))
+def _split_f1(p, p0, p2, func):
+    f = func()
+    m0 = p2.m / (1 - f)
+    assert p2.m > 0
+    assert m0 > 0
+    return m0
+
+def _split_f2(p, p0, func):
+    f = func()
+    m1 = p0.m * f
+    assert m1 > 0
+    return m1
+
+def _split_f3(p, p0, func):
+    f = func()
+    assert f > 0
+    assert (1 - f) > 0
+    m2 = p0.m * (1 - f)
+    assert m2 > 0
+    return m2
+
+
+class Split:
+    def __init__(self, p0, p1, p2, f):
+        
+        p0._functions_m.append(lambda p: _split_f0(p, p0, p1, f))
+        p0._functions_m.append(lambda p: _split_f1(p, p0, p2, f))
+
+        p1._functions_m.append(lambda p: _split_f2(p, p0, f))
+        p2._functions_m.append(lambda p: _split_f3(p, p0, f))
         
         equal([p0, p1, p2], 'p')
         equal([p0, p1, p2], 'T')

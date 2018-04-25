@@ -95,8 +95,10 @@ class OpenDecoupled(Cycle):
         self.turb = Turbine(self.p[2], self.p[3], 0.9)
 
 class ClosedDecoupledPreheat(Cycle):
-    def __init__(self):
+    def __init__(self, bypass):
         super(ClosedDecoupledPreheat, self).__init__(9)
+        
+        self._bypass = bypass
 
         Mix(self.p[0], self.p[8], self.p[1])
     
@@ -107,7 +109,7 @@ class ClosedDecoupledPreheat(Cycle):
 
         Heat(self.p[3], self.p[4], self.q_chamber)
 
-        Split(self.p[4], self.p[5], self.p[6], 2, 1)
+        Split(self.p[4], self.p[5], self.p[6], lambda: 1 - self.bypass())
 
         #p[5].h = p[6].h = p[4].h
     
@@ -118,36 +120,21 @@ class ClosedDecoupledPreheat(Cycle):
         equal([self.p[0], self.p[5]], 'm')
         equal([self.p[1], self.p[4]], 'm')
 
-    def do(self, x, bypass_fraction):
+    def bypass(self):
+        return self._bypass
+
+    def do(self, x):
 
         prop, q_chamber, p_chamber, energy_comb = self.setup_0()
         
         self.clear()
 
         self.p[7]._guess['h'] = x[0]
-        #p[7]._volatile_h = True
-        
-        #print()
-        #print(self.p[7].h)
 
         self.p[5].p = p_chamber
 
         self.p[8].T = self.p[0].T + 5
-
-        #self.p[6].m = self.p[5].m * 0.5
-        #self.p[4].m = self.p[5].m + self.p[6].m
-        #self.p[1].m = self.p[4].m
-
-    
-        #p[6].m = p[8].m = p[0].m * bypass_fraction
-    
-        #p[1].p = p[7].p = p[8].p = p[0].p
-        #p[2].p = p[3].p = p[4].p = p[5].p = p[6].p = p_chamber
-        
-
-
-        #self.p[3] = self.p[2]
-        
+               
         self.p[4].m
         self.p[6].m
 
@@ -182,7 +169,7 @@ class ClosedDecoupledPreheat(Cycle):
 
         return y - x
 
-def solve(c, x_0, args, plot=False):
+def solve(c, x_0, args=(), plot=False):
 
     y = c.do(x_0, *args)
 
@@ -194,9 +181,7 @@ def solve(c, x_0, args, plot=False):
 
     #s = o.getvalue()
 
-    print(res)
-    
-    print(c.do(res, *args))
+    c.do(res, *args)
 
     if plot:
         c.plot()
@@ -212,9 +197,9 @@ c0.print_()
 
 #partial_closed_decoupled_preheat([50000, 40000], 0.5)
 
-c1 = ClosedDecoupledPreheat()
+c1 = ClosedDecoupledPreheat(0.1)
 
-solve(c1, [50000], (0.5,))
+solve(c1, [50000])
 
 c1.print_()
 
@@ -222,12 +207,31 @@ def test(c, s, X):
     
     def _f(x):
         setattr(c, s, x)
-        c.do()
-        return c.power_frac()
+        solve(c, [50000])
+        y = c.power_frac(), c.pump.power()
+        print(x, y)
+        return y
 
     y = [_f(x) for x in X]
 
-#test(c1, 
+    return y
+
+X = np.linspace(0.01, 0.2, 10)
+Y = test(c1, '_bypass', X)
+
+print(Y)
+
+power_frac, pump_power = list(zip(*Y))
+
+fig, axs = plt.subplots(1, 2)
+
+ax = axs[0]
+ax.plot(X, power_frac)
+
+ax = axs[1]
+ax.plot(X, pump_power)
+
+plt.show()
 
 
 
