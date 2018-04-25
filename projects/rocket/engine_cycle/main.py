@@ -33,7 +33,7 @@ class Cycle:
 
         self.energy_comb = self.prop.h * (self.p[0].m + self.p[0].m / self.prop.mass_ratio)
     
-        self.q_chamber = self.energy_comb * 0.0015
+        self.q_chamber = self.energy_comb * 0.005
 
     def clear(self):
         for p in self.p[1:]:
@@ -45,6 +45,9 @@ class Cycle:
         p_chamber = 6.89e6
     
         return self.prop, self.q_chamber, p_chamber, self.energy_comb
+
+    def power_frac(self):
+        return self.turb.power() / self.pump.power()
 
     def print_(self):
         #print(f'enery comb    {energy_comb:10.0f}')
@@ -95,7 +98,6 @@ class ClosedDecoupledPreheat(Cycle):
     def __init__(self):
         super(ClosedDecoupledPreheat, self).__init__(9)
 
-
         Mix(self.p[0], self.p[8], self.p[1])
     
         self.pump = Pump(self.p[1], self.p[2], 0.8)
@@ -113,6 +115,9 @@ class ClosedDecoupledPreheat(Cycle):
 
         equal([self.p[7], self.p[8]], 'p')
 
+        equal([self.p[0], self.p[5]], 'm')
+        equal([self.p[1], self.p[4]], 'm')
+
     def do(self, x, bypass_fraction):
 
         prop, q_chamber, p_chamber, energy_comb = self.setup_0()
@@ -125,15 +130,14 @@ class ClosedDecoupledPreheat(Cycle):
         #print()
         #print(self.p[7].h)
 
-
         self.p[5].p = p_chamber
 
-        self.p[5].m = self.p[0].m
-        self.p[6].m = self.p[5].m * 0.5
-        self.p[4].m = self.p[5].m + self.p[6].m
-        self.p[1].m = self.p[4].m
-
         self.p[8].T = self.p[0].T + 5
+
+        #self.p[6].m = self.p[5].m * 0.5
+        #self.p[4].m = self.p[5].m + self.p[6].m
+        #self.p[1].m = self.p[4].m
+
     
         #p[6].m = p[8].m = p[0].m * bypass_fraction
     
@@ -143,11 +147,19 @@ class ClosedDecoupledPreheat(Cycle):
 
 
         #self.p[3] = self.p[2]
-    
+        
+        self.p[4].m
+        self.p[6].m
 
         self.p[7].p
 
         self.p[7].p
+
+        self.p[1].m
+        self.p[2].h
+        self.p[3].h
+        self.p[4].h
+        self.p[6].h
         self.p[6].s
         
         y = np.array([self.p[7].h])
@@ -205,4 +217,20 @@ c1 = ClosedDecoupledPreheat()
 solve(c1, [50000], (0.5,))
 
 c1.print_()
+
+def test(c, s, X):
+    
+    def _f(x):
+        setattr(c, s, x)
+        c.do()
+        return c.power_frac()
+
+    y = [_f(x) for x in X]
+
+#test(c1, 
+
+
+
+
+
 
