@@ -19,12 +19,20 @@ def test5():
     r.print_info()
 
 def test_cycles():
-    energy_comb_frac = 0.006
-    c0 = cycle.cycle.OpenDecoupled(pr=1.3, energy_comb_frac=energy_comb_frac)
-    c0.do()
+    energy_comb_frac = 0.008
+    power_frac=1.5
+
+    c0 = cycle.cycle.OpenDecoupled(
+            #pr=1.3, 
+            power_frac=power_frac,
+            energy_comb_frac=energy_comb_frac)
+    c0.solve()
     c0.print_()
 
-    c1 = cycle.cycle.ClosedDecoupledPreheat(bypass=0.1, energy_comb_frac=energy_comb_frac)
+    c1 = cycle.cycle.ClosedDecoupledPreheat(
+            #bypass=0.1,
+            power_frac=power_frac,
+            energy_comb_frac=energy_comb_frac)
     c1.solve()
     c1.print_()
 

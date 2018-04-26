@@ -1,8 +1,10 @@
 from CoolProp.CoolProp import PropsSI
 import itertools
 
+from .point import *
+
 class Pump:
-    def __init__(self, p0, p1, e):
+    def __init__(self, p0, p1, e=0.8):
         self.p0 = p0
         self.p1 = p1
 
@@ -12,7 +14,7 @@ class Pump:
             p1.h_s = PropsSI("H", "P", p1.p, "S", p0.s, p1.f)
             return (p1.h_s - p0.h + p0.h * e) / e
 
-        p1._functions_h.append(_h)
+        p1._functions['h'].append(_h)
 
     def power(self):
         return flow_power(self.p0, self.p1)
@@ -35,7 +37,7 @@ class Turbine:
 
         equal([p0, p1], 'm')
 
-        p1._functions_h.append(lambda p: _turbine_h(p, p0, p1, e))
+        p1._functions['h'].append(lambda p: _turbine_h(p, p0, p1, e))
 
     def power(self):
         return -flow_power(self.p0, self.p1)
@@ -44,7 +46,7 @@ class Heat:
     def __init__(self, p0, p1, q):
         equal([p0, p1], 'm')
         equal([p0, p1], 'p')
-        p1._functions_h.append(lambda p: p0.h + q * p0.m)
+        p1._functions['h'].append(lambda p: p0.h + q * p0.m)
 
 def flow_power(p0, p1):
     p0.m
@@ -56,21 +58,21 @@ class Mix:
     def __init__(self, p0, p1, p2):
         equal([p0, p1, p2], 'p')
 
-        p2._functions_m.append(lambda p: p0.m + p1.m)
-        p0._functions_m.append(lambda p: p2.m - p1.m)
-        p1._functions_m.append(lambda p: p2.m - p0.m)
+        p2._functions['m'].append(lambda p: p0.m + p1.m)
+        p0._functions['m'].append(lambda p: p2.m - p1.m)
+        p1._functions['m'].append(lambda p: p2.m - p0.m)
 
-        p2._functions_h.append(lambda p: (p0.h * p0.m + p1.h * p1.m) / p2.m)
+        p2._functions['h'].append(lambda p: (p0.h * p0.m + p1.h * p1.m) / p2.m)
 
 def equal1(p0, p1, s):
         assert p0 is not p1
         
-        l0 = getattr(p0, '_functions_' + s)
-        l1 = getattr(p1, '_functions_' + s)
+        l0 = p0._functions[s]
+        l1 = p1._functions[s]
 
         assert l0 is not l1
 
-        getattr(p0, '_functions_' + s).append(lambda p: _f(p, p0, p1, s))
+        p0._functions[s].append(lambda p: _f(p, p0, p1, s))
 
 def equal(pts, s):
     for i, j in itertools.permutations(range(len(pts)), 2):
@@ -118,11 +120,11 @@ def _split_f3(p, p0, func):
 class Split:
     def __init__(self, p0, p1, p2, f):
         
-        p0._functions_m.append(lambda p: _split_f0(p, p0, p1, f))
-        p0._functions_m.append(lambda p: _split_f1(p, p0, p2, f))
+        p0._functions['m'].append(lambda p: _split_f0(p, p0, p1, f))
+        p0._functions['m'].append(lambda p: _split_f1(p, p0, p2, f))
 
-        p1._functions_m.append(lambda p: _split_f2(p, p0, f))
-        p2._functions_m.append(lambda p: _split_f3(p, p0, f))
+        p1._functions['m'].append(lambda p: _split_f2(p, p0, f))
+        p2._functions['m'].append(lambda p: _split_f3(p, p0, f))
         
         equal([p0, p1, p2], 'p')
         equal([p0, p1, p2], 'T')

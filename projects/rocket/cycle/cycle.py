@@ -14,22 +14,36 @@ from .components import *
 
 def breakpoint(): import pdb; pdb.set_trace();
 
-def point_tank(f):
+def point_tank_f(f):
     p = Point(0, f)
     p.T = 293
     p.p = 10e5
     p.m = 2 # kg / s
     return p
 
-class Cycle:
-    def __init__(self, n, energy_comb_frac=0.005):
-        self.prop = PropEthanolLOX()
-        self.p = [Point(i, self.prop.f.s) for i in range(n)]
+def point_tank_o(i, f):
+    p = Point(i, f)
+    p.Q = 0
+    p.p = 10e5
+    p.m = 2 # kg / s
+    return p
 
-        self.p[0] = point_tank(self.prop.f.s)
+class Cycle:
+    def __init__(self, n_f, n_o, energy_comb_frac=0.005):
+        self.prop = PropEthanolLOX()
+        
+        self.n_f = n_f
+
+        p_f = [Point(i, self.prop.f.s) for i in range(n_f)] 
+        self.p_o = [Point(i + n_f, self.prop.o.s) for i in range(n_o)]
+ 
+        p_f[0] = point_tank_f(self.prop.f.s)
+        self.p_o[0] = point_tank_o(4, self.prop.o.s)
+
+        self.p = p_f + self.p_o
 
         assert self.p[0] != self.p[1]
-        assert self.p[0]._functions_p is not self.p[1]._functions_p
+        assert self.p[0]._functions['p'] is not self.p[1]._functions['p']
 
         self.energy_comb = self.prop.h * (self.p[0].m + self.p[0].m / self.prop.mass_ratio)
     
@@ -38,19 +52,23 @@ class Cycle:
         self.p_chamber = 6.89e6
 
     def clear(self):
-        for p in self.p[1:]:
+        for i in range(len(self.p)):
+            if i == 0: continue
+            if i == self.n_f: continue
+            p = self.p[i]
             for s in ['T', 'p', 'm', 's', 'h']:
                 p.clear(s)
 
     def power_frac(self):
-        return self.turb.power() / self.pump.power()
+        return self.turb.power() / (self.pump.power() + self.pump_o.power())
 
     def print_(self):
         #print(f'enery comb    {energy_comb:10.0f}')
         #print(f'q_chamber     {q_chamber:10.0f}')
         print(f'pump power    {self.pump.power():10.0f}')
+        print(f'pump o power  {self.pump_o.power():10.0f}')
         print(f'turbine power {self.turb.power():10.0f}')
-        print(f'power frac    {self.turb.power() / self.pump.power():10.3f}')
+        print(f'power frac    {self.power_frac():10.3f}')
 
         print(f'{"points":10} {"p":>10} {"T":>10} {"m":>12} {"h":>10} {"s":>10}')
         for i in range(len(self.p)):
@@ -60,7 +78,7 @@ class Cycle:
             p_.m
             p_.h
             p_.s
-            print(f'{i!s:10} {p_.p:10.0f} {p_.T:10.0f} {p_.m:12.1f} {p_.h:10.0f} {p_.s:10.0f}')
+            print(f'{i!s:10} {p_.p:10.0f} {p_.T:10.0f} {p_.m:12.3f} {p_.h:10.0f} {p_.s:10.0f}')
 
         print()
 
@@ -79,7 +97,7 @@ class Cycle:
 
         y = self.do(self.x_0)
 
-        assert y != [0]
+        assert not np.all(y == 0)
 
         #o = io.StringIO()
         #with contextlib.redirect_stdout(o):
@@ -90,29 +108,54 @@ class Cycle:
         self.do(res)
 
 class OpenDecoupled(Cycle):
-    def __init__(self, pr=None, **kwargs):
-        super(OpenDecoupled, self).__init__(4, **kwargs)
+    def __init__(self, pr=None, power_frac=None, **kwargs):
+        super(OpenDecoupled, self).__init__(4, 2, **kwargs)
 
-        self.pr = pr
+        self._pr = pr
+        self._power_frac = power_frac
 
-        self.pump = Pump(self.p[0], self.p[1], 0.8)
+        self.pump = Pump(self.p[0], self.p[1])
     
         Heat(self.p[1], self.p[2], self.q_chamber)
     
         self.turb = Turbine(self.p[2], self.p[3], 0.9)
 
-    def do(self):
+        self.pump_o = Pump(self.p_o[0], self.p_o[1])
+
+    def print_(self):
+        print(f'pr            {self.pr():13.2f}')
+        super(OpenDecoupled, self).print_()
+ 
+    def pr(self):
+        return self._pr or self.x[0]
+
+    @property
+    def x_0(self):
+        return [1.2]
+
+    def do(self, x):
+        self.x = x
+
         self.clear()
 
         self.p[3].p = self.p_chamber
 
-        self.p[1].p = self.p[2].p = self.p[3].p * self.pr
+        self.p_o[1].p = self.p_chamber
+
+        self.p[1].p = self.p[2].p = self.p[3].p * self.pr()
+
+        y = np.array([
+            (self._power_frac or self.power_frac()) - self.power_frac(),
+            ])
+
+        return y
 
 class ClosedDecoupledPreheat(Cycle):
-    def __init__(self, bypass=None, **kwargs):
-        super(ClosedDecoupledPreheat, self).__init__(9, **kwargs)
+    def __init__(self, bypass=None, power_frac=None, **kwargs):
+        super(ClosedDecoupledPreheat, self).__init__(9, 2, **kwargs)
         
         self._bypass = bypass
+        self._power_frac = power_frac
 
         Mix(self.p[0], self.p[8], self.p[1])
     
@@ -125,8 +168,6 @@ class ClosedDecoupledPreheat(Cycle):
 
         Split(self.p[4], self.p[5], self.p[6], lambda: 1 - self.bypass())
 
-        #p[5].h = p[6].h = p[4].h
-    
         self.turb = Turbine(self.p[6], self.p[7], 0.9)
 
         equal([self.p[7], self.p[8]], 'p')
@@ -134,18 +175,35 @@ class ClosedDecoupledPreheat(Cycle):
         equal([self.p[0], self.p[5]], 'm')
         equal([self.p[1], self.p[4]], 'm')
 
-        self.x_0 = [5000]
+        # oxidizer loop
+        
+        self.pump_o = Pump(self.p_o[0], self.p_o[1])
 
+    @property
+    def x_0(self):
+        if self._bypass is not None:
+            return [5000]
+        else:
+            return [5000, 0.05]
+
+    def print_(self):
+        print(f'bypass        {self.bypass():15.4f}')
+        super(ClosedDecoupledPreheat, self).print_()
+ 
     def bypass(self):
-        return self._bypass
+        return self._bypass or self.x[1]
 
     def do(self, x):
 
         self.clear()
+        
+        self.x = x
 
         self.p[7]._guess['h'] = x[0]
 
         self.p[5].p = self.p_chamber
+
+        self.p_o[1].p = self.p_chamber
 
         self.p[8].T = self.p[0].T + 5
                
@@ -163,7 +221,15 @@ class ClosedDecoupledPreheat(Cycle):
         self.p[6].h
         self.p[6].s
         
-        y = np.array([self.p[7].h])
+        if self._bypass is not None:
+            y = np.array([
+                self.p[7].h - x[0],
+                ])
+        else:
+            y = np.array([
+                self.p[7].h - x[0],
+                self.power_frac() - self._power_frac,
+                ])
         
         self.p[0].h
         self.p[7].h
@@ -181,7 +247,7 @@ class ClosedDecoupledPreheat(Cycle):
 
         self.pump.power()
 
-        return y - x
+        return y
 
 
 

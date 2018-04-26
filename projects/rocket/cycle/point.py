@@ -9,7 +9,12 @@ class PointProperty:
         self.s = s
 
     def calc(self, p):
-        for f in getattr(p, '_functions_' + self.s):
+        funcs = getattr(p, '_functions')
+        
+        if self.s not in funcs:
+            funcs[self.s] = []
+
+        for f in funcs[self.s]:
             try:
                 return f(p)
             except MyException as e:
@@ -25,8 +30,8 @@ class PointProperty:
         
                 y = getattr(p, '_' + self.s)
 
-                if getattr(p, '_volatile_' + self.s):
-                    delattr(p, '_' + self.s)
+                #if getattr(p, '_volatile_' + self.s):
+                #    delattr(p, '_' + self.s)
     
                 return y
 
@@ -70,31 +75,42 @@ def entropy_1(p):
     #print(p.p, p.T, p_sat)
     return PropsSI("S", "P", p.p, "T", p.T, p.f)
 
-class Point:
+class PropertyClass:
+    def __init__(self):
+        self._stack = []
+        self._functions = {}
+
+class Point(PropertyClass):
 
     h = PointProperty('h')
     s = PointProperty('s')
     T = PointProperty('T')
     m = PointProperty('m')
     p = PointProperty('p')
+    Q = PointProperty('Q')
 
     def __init__(self, i, f):
+        super(Point, self).__init__()
+
         self.i = i
         self.f = f
-        self._stack = []
 
-        self._functions_p = []
-        self._functions_h = [
+        self._functions['p'] = []
+        self._functions['h'] = [
+                lambda p: PropsSI("H", "P", p.p, "Q", p.Q, p.f),
                 lambda p: PropsSI("H", "P", p.p, "T", p.T, p.f),
                 ]
-        self._functions_s = [
+        self._functions['s'] = [
                 lambda p: PropsSI("S", "P", p.p, "H", p.h, p.f),
                 lambda p: entropy_1(p),
                 ]
-        self._functions_T = [
+        self._functions['T'] = [
                 lambda p: PropsSI("T", "P", p.p, "H", p.h, p.f),
+                lambda p: PropsSI("T", "P", p.p, "Q", p.Q, p.f),
                 ]
-        self._functions_m = [
+        self._functions['m'] = [
+                ]
+        self._functions['Q'] = [
                 ]
 
         self._volatile_p = False
