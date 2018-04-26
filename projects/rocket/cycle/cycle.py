@@ -34,13 +34,13 @@ class Cycle:
         
         self.n_f = n_f
 
-        p_f = [Point(i, self.prop.f.s) for i in range(n_f)] 
+        self.p_f = [Point(i, self.prop.f.s) for i in range(n_f)] 
         self.p_o = [Point(i + n_f, self.prop.o.s) for i in range(n_o)]
  
-        p_f[0] = point_tank_f(self.prop.f.s)
+        self.p_f[0] = point_tank_f(self.prop.f.s)
         self.p_o[0] = point_tank_o(4, self.prop.o.s)
 
-        self.p = p_f + self.p_o
+        self.p = self.p_f + self.p_o
 
         assert self.p[0] != self.p[1]
         assert self.p[0]._functions['p'] is not self.p[1]._functions['p']
@@ -59,8 +59,12 @@ class Cycle:
             for s in ['T', 'p', 'm', 's', 'h']:
                 p.clear(s)
 
+        for c in self.components:
+            c.clear()
+
     def power_frac(self):
-        return self.turb.power() / (self.pump.power() + self.pump_o.power())
+        p_o = self.pump_o.power()
+        return self.turb.power() / (self.pump.power() + p_o)
 
     def print_(self):
         #print(f'enery comb    {energy_comb:10.0f}')
@@ -71,8 +75,18 @@ class Cycle:
         print(f'power frac    {self.power_frac():10.3f}')
 
         print(f'{"points":10} {"p":>10} {"T":>10} {"m":>12} {"h":>10} {"s":>10}')
-        for i in range(len(self.p)):
-            p_ = self.p[i]
+        for i in range(len(self.p_f)):
+            p_ = self.p_f[i]
+            p_.p
+            p_.T
+            p_.m
+            p_.h
+            p_.s
+            print(f'{i!s:10} {p_.p:10.0f} {p_.T:10.0f} {p_.m:12.3f} {p_.h:10.0f} {p_.s:10.0f}')
+
+        print(f'{"points":10} {"p":>10} {"T":>10} {"m":>12} {"h":>10} {"s":>10}')
+        for i in range(len(self.p_o)):
+            p_ = self.p_o[i]
             p_.p
             p_.T
             p_.m
@@ -116,14 +130,17 @@ class OpenDecoupled(Cycle):
 
         self.pump = Pump(self.p[0], self.p[1])
     
-        Heat(self.p[1], self.p[2], self.q_chamber)
-    
+        self.heat_chamber = Heat(self.p[1], self.p[2])
+
         self.turb = Turbine(self.p[2], self.p[3], 0.9)
 
         self.pump_o = Pump(self.p_o[0], self.p_o[1])
 
+        self.components = [self.heat_chamber]
+
     def print_(self):
         print(f'pr            {self.pr():13.2f}')
+        print(f'heat chamber  {self.heat_chamber.q:13.2f}')
         super(OpenDecoupled, self).print_()
  
     def pr(self):
@@ -137,6 +154,8 @@ class OpenDecoupled(Cycle):
         self.x = x
 
         self.clear()
+
+        self.heat_chamber.q = self.q_chamber
 
         self.p[3].p = self.p_chamber
 
@@ -152,7 +171,7 @@ class OpenDecoupled(Cycle):
 
 class ClosedDecoupledPreheat(Cycle):
     def __init__(self, bypass=None, power_frac=None, **kwargs):
-        super(ClosedDecoupledPreheat, self).__init__(9, 2, **kwargs)
+        super(ClosedDecoupledPreheat, self).__init__(9, 3, **kwargs)
         
         self._bypass = bypass
         self._power_frac = power_frac
@@ -164,13 +183,13 @@ class ClosedDecoupledPreheat(Cycle):
         equal([self.p[2], self.p[3]], 'p')
         equal([self.p[2], self.p[3]], 'h')
 
-        Heat(self.p[3], self.p[4], self.q_chamber)
+        self.heat_chamber = Heat(self.p[3], self.p[4])
 
         Split(self.p[4], self.p[5], self.p[6], lambda: 1 - self.bypass())
 
         self.turb = Turbine(self.p[6], self.p[7], 0.9)
 
-        equal([self.p[7], self.p[8]], 'p')
+        self.heat_condenser = Heat(self.p[7], self.p[8])
 
         equal([self.p[0], self.p[5]], 'm')
         equal([self.p[1], self.p[4]], 'm')
@@ -178,6 +197,14 @@ class ClosedDecoupledPreheat(Cycle):
         # oxidizer loop
         
         self.pump_o = Pump(self.p_o[0], self.p_o[1])
+
+        self.heat_condenser_o = Heat(self.p_o[1], self.p_o[2])
+
+        # couple the condenser sides
+        self.heat_condenser._functions['q'].append(lambda c: -self.heat_condenser_o.q)
+        self.heat_condenser_o._functions['q'].append(lambda c: -self.heat_condenser.q)
+
+        self.components = [self.heat_chamber]
 
     @property
     def x_0(self):
@@ -188,24 +215,27 @@ class ClosedDecoupledPreheat(Cycle):
 
     def print_(self):
         print(f'bypass        {self.bypass():15.4f}')
+        print(f'q condenser   {self.heat_condenser.q:15.4f}')
+        print(f'heat chamber  {self.heat_chamber.q:13.2f}')
+        print(f'              {flow_power(self.p_f[0], self.p_f[5]):13.2f}')
         super(ClosedDecoupledPreheat, self).print_()
  
     def bypass(self):
         return self._bypass or self.x[1]
 
     def do(self, x):
-
-        self.clear()
-        
         self.x = x
+        self.clear()
+
+        self.heat_chamber.q = self.q_chamber
 
         self.p[7]._guess['h'] = x[0]
 
         self.p[5].p = self.p_chamber
 
-        self.p_o[1].p = self.p_chamber
+        self.p_o[2].p = self.p_chamber
 
-        self.p[8].T = self.p[0].T + 5
+        self.p[8].T = self.p[0].T + 0
                
         self.p[4].m
         self.p[6].m

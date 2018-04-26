@@ -79,6 +79,11 @@ class PropertyClass:
     def __init__(self):
         self._stack = []
         self._functions = {}
+        self._guess = {}
+
+    def clear(self, s):
+        if hasattr(self, '_' + s):
+            delattr(self, '_' + s)
 
 class Point(PropertyClass):
 
@@ -119,11 +124,7 @@ class Point(PropertyClass):
         self._volatile_T = False
         self._volatile_m = False
 
-        self._guess = {}
 
-    def clear(self, s):
-        if hasattr(self, '_' + s):
-            delattr(self, '_' + s)
 
     def __str__(self):
         return f'point_{self.i}'

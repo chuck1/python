@@ -42,15 +42,28 @@ class Turbine:
     def power(self):
         return -flow_power(self.p0, self.p1)
 
-class Heat:
-    def __init__(self, p0, p1, q):
+class Heat(PropertyClass):
+
+    q = PointProperty('q')
+    
+    def __init__(self, p0, p1):
+        super(Heat, self).__init__()
+        
         equal([p0, p1], 'm')
         equal([p0, p1], 'p')
-        p1._functions['h'].append(lambda p: p0.h + q * p0.m)
+        p1._functions['h'].append(lambda p: p0.h + self.q * p0.m)
+
+        self._functions['q'] = [
+                lambda c: (p1.h - p0.h) * p0.m,
+                ]
+
+    def clear(self):
+        super(Heat, self).clear('q')
 
 def flow_power(p0, p1):
     p0.m
     p0.h
+    p1.p
     p1.h
     return p0.m * (p1.h - p0.h)
 
