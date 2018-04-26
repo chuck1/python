@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import math
 import numpy as np
 
-import theory
+from . import theory
 
 def breakpoint(): import pdb; pdb.set_trace();
 

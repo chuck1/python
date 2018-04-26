@@ -8,9 +8,9 @@ from CoolProp.CoolProp import PropsSI
 import numpy as np
 import matplotlib.pyplot as plt
 
-from propellants import *
-from point import *
-from components import *
+from .propellants import *
+from .point import *
+from .components import *
 
 def breakpoint(): import pdb; pdb.set_trace();
 
@@ -21,11 +21,11 @@ def point_tank(f):
     p.m = 2 # kg / s
     return p
 
-
 class Cycle:
-    def __init__(self, n):
+    def __init__(self, n, energy_comb_frac=0.005):
         self.prop = PropEthanolLOX()
         self.p = [Point(i, self.prop.f.s) for i in range(n)]
+
         self.p[0] = point_tank(self.prop.f.s)
 
         assert self.p[0] != self.p[1]
@@ -33,18 +33,14 @@ class Cycle:
 
         self.energy_comb = self.prop.h * (self.p[0].m + self.p[0].m / self.prop.mass_ratio)
     
-        self.q_chamber = self.energy_comb * 0.005
+        self.q_chamber = self.energy_comb * energy_comb_frac
+
+        self.p_chamber = 6.89e6
 
     def clear(self):
         for p in self.p[1:]:
             for s in ['T', 'p', 'm', 's', 'h']:
                 p.clear(s)
-
-    def setup_0(self):
-
-        p_chamber = 6.89e6
-    
-        return self.prop, self.q_chamber, p_chamber, self.energy_comb
 
     def power_frac(self):
         return self.turb.power() / self.pump.power()
@@ -79,24 +75,42 @@ class Cycle:
 
         plt.show()
 
-class OpenDecoupled(Cycle):
+    def solve(self):
 
-    def do(self, pr_turb):
-    
-        prop, q_chamber, p_chamber, energy_comb = self.setup_0()
-    
-        self.p[3].p = p_chamber
-        self.p[1].p = self.p[2].p = self.p[3].p * pr_turb
-    
+        y = self.do(self.x_0)
+
+        assert y != [0]
+
+        #o = io.StringIO()
+        #with contextlib.redirect_stdout(o):
+        res = scipy.optimize.fsolve(self.do, self.x_0)
+
+        #s = o.getvalue()
+
+        self.do(res)
+
+class OpenDecoupled(Cycle):
+    def __init__(self, pr=None, **kwargs):
+        super(OpenDecoupled, self).__init__(4, **kwargs)
+
+        self.pr = pr
+
         self.pump = Pump(self.p[0], self.p[1], 0.8)
     
-        Heat(self.p[1], self.p[2], q_chamber)
+        Heat(self.p[1], self.p[2], self.q_chamber)
     
         self.turb = Turbine(self.p[2], self.p[3], 0.9)
 
+    def do(self):
+        self.clear()
+
+        self.p[3].p = self.p_chamber
+
+        self.p[1].p = self.p[2].p = self.p[3].p * self.pr
+
 class ClosedDecoupledPreheat(Cycle):
-    def __init__(self, bypass):
-        super(ClosedDecoupledPreheat, self).__init__(9)
+    def __init__(self, bypass=None, **kwargs):
+        super(ClosedDecoupledPreheat, self).__init__(9, **kwargs)
         
         self._bypass = bypass
 
@@ -120,18 +134,18 @@ class ClosedDecoupledPreheat(Cycle):
         equal([self.p[0], self.p[5]], 'm')
         equal([self.p[1], self.p[4]], 'm')
 
+        self.x_0 = [5000]
+
     def bypass(self):
         return self._bypass
 
     def do(self, x):
 
-        prop, q_chamber, p_chamber, energy_comb = self.setup_0()
-        
         self.clear()
 
         self.p[7]._guess['h'] = x[0]
 
-        self.p[5].p = p_chamber
+        self.p[5].p = self.p_chamber
 
         self.p[8].T = self.p[0].T + 5
                
@@ -168,73 +182,6 @@ class ClosedDecoupledPreheat(Cycle):
         self.pump.power()
 
         return y - x
-
-def solve(c, x_0, args=(), plot=False):
-
-    y = c.do(x_0, *args)
-
-    assert y != [0]
-
-    #o = io.StringIO()
-    #with contextlib.redirect_stdout(o):
-    res = scipy.optimize.fsolve(c.do, x_0, args)
-
-    #s = o.getvalue()
-
-    c.do(res, *args)
-
-    if plot:
-        c.plot()
-
-c0 = OpenDecoupled(4)
-c0.do(2.0)
-
-c0.print_()
-
-#partial_closed_decoupled(0)
-
-#solve(partial_closed_decoupled, [70000], (1.0,))
-
-#partial_closed_decoupled_preheat([50000, 40000], 0.5)
-
-c1 = ClosedDecoupledPreheat(0.1)
-
-solve(c1, [50000])
-
-c1.print_()
-
-def test(c, s, X):
-    
-    def _f(x):
-        setattr(c, s, x)
-        solve(c, [50000])
-        y = c.power_frac(), c.pump.power()
-        print(x, y)
-        return y
-
-    y = [_f(x) for x in X]
-
-    return y
-
-X = np.linspace(0.01, 0.2, 10)
-Y = test(c1, '_bypass', X)
-
-print(Y)
-
-power_frac, pump_power = list(zip(*Y))
-
-fig, axs = plt.subplots(1, 2)
-
-ax = axs[0]
-ax.plot(X, power_frac)
-
-ax = axs[1]
-ax.plot(X, pump_power)
-
-plt.show()
-
-
-
 
 
 

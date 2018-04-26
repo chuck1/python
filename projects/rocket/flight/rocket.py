@@ -2,17 +2,17 @@ import matplotlib.pyplot as plt
 import math
 import numpy as np
 
-import theory
+from . import theory
 
 def breakpoint(): import pdb; pdb.set_trace();
 
 class Rocket:
     stages = []
 
-    def print_info(self):
+    def print_info(self, indent=''):
         for s in self.stages:
-            print('stage:')
-            s.print_info()
+            print(indent + 'stage:')
+            s.print_info(indent+'  ')
 
     @property
     def mass_wet(self):
