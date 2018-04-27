@@ -19,7 +19,7 @@ def test5():
     r.print_info()
 
 def test_cycles():
-    energy_comb_frac = 0.008
+    energy_comb_frac = 0.03
     power_frac=1.5
 
     c0 = cycle.cycle.OpenDecoupled(

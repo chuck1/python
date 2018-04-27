@@ -51,7 +51,7 @@ class Heat(PropertyClass):
         
         equal([p0, p1], 'm')
         equal([p0, p1], 'p')
-        p1._functions['h'].append(lambda p: p0.h + self.q * p0.m)
+        p1._functions['h'].append(lambda p: p0.h + self.q / p0.m)
 
         self._functions['q'] = [
                 lambda c: (p1.h - p0.h) * p0.m,
@@ -93,7 +93,6 @@ def equal(pts, s):
         p1 = pts[j]
         
         equal1(p0, p1, s)
-
 
 def _f(p, p0, p1, s):
     #print(f'{p}.{s} = {p1}.{s}')

@@ -67,8 +67,8 @@ class Cycle:
         return self.turb.power() / (self.pump.power() + p_o)
 
     def print_(self):
-        #print(f'enery comb    {energy_comb:10.0f}')
-        #print(f'q_chamber     {q_chamber:10.0f}')
+        print(f'enery comb    {self.energy_comb:10.0f}')
+        print(f'q_chamber     {self.q_chamber:10.0f}')
         print(f'pump power    {self.pump.power():10.0f}')
         print(f'pump o power  {self.pump_o.power():10.0f}')
         print(f'turbine power {self.turb.power():10.0f}')
@@ -148,7 +148,7 @@ class OpenDecoupled(Cycle):
 
     @property
     def x_0(self):
-        return [1.2]
+        return [1.4]
 
     def do(self, x):
         self.x = x
