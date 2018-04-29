@@ -2,13 +2,11 @@ import math
 import numpy as np
 
 class quat:
-	def __init__(self,x,y,z,t):
+    def __init__(self,x,y,z,t):
 		
 		self.x = x * math.sin(t/2)
 		self.y = y * math.sin(t/2)
 		self.z = z * math.sin(t/2)
-		
-		
 		
 		self.w = math.cos(t/2)
 		

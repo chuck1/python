@@ -1,0 +1,13 @@
+{
+    "author": "Charles Rymal",
+    "url": "",
+    "author_email": "charlesrymal@gmail.com",
+    "name": "mybuiltins",
+    "packages": [
+        "mybuiltins",
+    ],
+    "description": "",
+    "license": "MIT",
+    "packages_data": {},
+    "scripts": []
+}

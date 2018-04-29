@@ -1,0 +1,1 @@
+scp home:~/madras.txt .

@@ -1,0 +1,104 @@
+digraph {
+	graph [overlap=scalexy]
+	advanced_oil_processing [pos="5.715008696684283,6.4380408845185935!"]
+	sulfuric_acid [pos="5.53391084812513,5.7679976855932855!"]
+	science_pack_2 [pos="5.550399097636131,5.6919988796785805!"]
+	plastic_bar [pos="5.561573524905019,5.886831540159873!"]
+	satellite_launch [pos="5.458195401167714,5.650297288582136!"]
+	science_pack_1 [pos="5.301274008813607,5.473402710322408!"]
+	rocket_fuel [pos="5.586602048925998,6.0441690865503634!"]
+	mine_crude_oil [pos="6.0756929940242355,8.241577757783254!"]
+	stone_brick [pos="7.5377930695148425,7.096853859219551!"]
+	speed_module_1 [pos="5.565995508752549,5.70792600574193!"]
+	science_pack_3 [pos="5.582498771959454,5.722389832670865!"]
+	electronic_circuit [pos="5.551937287402212,5.711999222193235!"]
+	steel_plate [pos="5.598169709689617,5.753618470957193!"]
+	low_density_structure [pos="5.361569461035005,5.587835673168049!"]
+	copper_plate [pos="4.808570742439795,5.057008709713982!"]
+	electric_engine_unit [pos="5.640968532490362,5.8996676769017755!"]
+	processing_unit [pos="5.538718516143336,5.707602386382478!"]
+	iron_plate [pos="5.524161288138263,5.68558452726013!"]
+	copper_cable [pos="5.375949885127163,5.547818668181106!"]
+	production_science_pack [pos="5.773247888676488,5.901486370817218!"]
+	mine_coal [pos="5.4839072855465565,5.735110694929098!"]
+	rocket_control_unit [pos="5.520969808687866,5.688608560235514!"]
+	high_tech_science_pack [pos="5.478781036934189,5.63953776760326!"]
+	research [pos="5.5072338930536695,5.666071814196113!"]
+	mine_copper_ore [pos="1.35079617337444,1.9879449207521172!"]
+	mine_iron_ore [pos="5.759291540828708,5.722584863515991!"]
+	military_science_pack [pos="5.384408583773579,5.579478843411303!"]
+	sulfur [pos="5.624459772404706,6.1030192850559395!"]
+	advanced_circuit [pos="5.617870754057258,5.774157233273744!"]
+	battery [pos="5.360723863361018,5.560085195750558!"]
+	electric_furnace [pos="6.1317703554845515,6.131528983566926!"]
+		mine_iron_ore -> iron_plate
+		mine_copper_ore -> copper_plate
+		iron_plate -> steel_plate
+		copper_plate -> copper_cable
+		iron_plate -> electronic_circuit
+		copper_cable -> electronic_circuit
+		mine_crude_oil -> advanced_oil_processing
+		advanced_oil_processing -> sulfur
+		iron_plate -> sulfuric_acid
+		sulfur -> sulfuric_acid
+		mine_coal -> plastic_bar
+		advanced_oil_processing -> plastic_bar
+		copper_cable -> advanced_circuit
+		electronic_circuit -> advanced_circuit
+		plastic_bar -> advanced_circuit
+		electronic_circuit -> processing_unit
+		advanced_circuit -> processing_unit
+		sulfuric_acid -> processing_unit
+		processing_unit -> rocket_control_unit
+		speed_module_1 -> rocket_control_unit
+		copper_plate -> low_density_structure
+		plastic_bar -> low_density_structure
+		steel_plate -> low_density_structure
+		advanced_oil_processing -> rocket_fuel
+		iron_plate -> battery
+		copper_plate -> battery
+		sulfuric_acid -> battery
+		electronic_circuit -> speed_module_1
+		advanced_circuit -> speed_module_1
+		electronic_circuit -> electric_engine_unit
+		iron_plate -> electric_engine_unit
+		steel_plate -> electric_engine_unit
+		advanced_oil_processing -> electric_engine_unit
+		advanced_circuit -> electric_furnace
+		steel_plate -> electric_furnace
+		stone_brick -> electric_furnace
+		copper_plate -> science_pack_1
+		iron_plate -> science_pack_1
+		electronic_circuit -> science_pack_2
+		iron_plate -> science_pack_2
+		advanced_circuit -> science_pack_3
+		electronic_circuit -> science_pack_3
+		iron_plate -> science_pack_3
+		steel_plate -> science_pack_3
+		mine_coal -> military_science_pack
+		iron_plate -> military_science_pack
+		copper_plate -> military_science_pack
+		steel_plate -> military_science_pack
+		electric_engine_unit -> production_science_pack
+		electric_furnace -> production_science_pack
+		battery -> high_tech_science_pack
+		copper_cable -> high_tech_science_pack
+		processing_unit -> high_tech_science_pack
+		speed_module_1 -> high_tech_science_pack
+		low_density_structure -> satellite_launch
+		rocket_control_unit -> satellite_launch
+		rocket_fuel -> satellite_launch
+		iron_plate -> satellite_launch
+		battery -> satellite_launch
+		processing_unit -> satellite_launch
+		electronic_circuit -> satellite_launch
+		copper_plate -> satellite_launch
+		steel_plate -> satellite_launch
+		science_pack_1 -> research
+		science_pack_2 -> research
+		science_pack_3 -> research
+		military_science_pack -> research
+		production_science_pack -> research
+		high_tech_science_pack -> research
+		satellite_launch -> research
+}

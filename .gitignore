@@ -1,2 +1,5 @@
 *.pyc
 log
+*.gv
+*.gv.pdf
+env/
